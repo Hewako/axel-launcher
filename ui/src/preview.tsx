@@ -98,6 +98,11 @@ mockIPC((cmd, args) => {
           await emit("launch-event", { id, event: { type: "exited", info: { code: -1, duration_secs: 31, killed: false, crashed: true, log_file: "", tail: [], analysis } } });
           await emit("launch-finished", { id });
         }
+        if (params.has("run")) {
+          await new Promise((r) => setTimeout(r, 1500));
+          await emit("launch-event", { id, event: { type: "started", command: "java …" } });
+          for (const line of ["[14:02:21] [main/INFO]: Loading Minecraft 26.3 with Fabric Loader 0.19.5", "[14:02:23] [main/INFO]: Loading 86 mods", "[14:02:28] [main/WARN]: Mod distanthorizons recommends sodium >=0.7.3", "[14:02:31] [main/INFO]: Applying mixins…", "[14:02:36] [Render thread/INFO]: Setting user: Steve_Builder"]) await emit("launch-event", { id, event: { type: "log", line } });
+        }
       }, 50);
       return null;
     }

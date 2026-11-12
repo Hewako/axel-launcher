@@ -4,19 +4,33 @@ import { api, errText, importer, loaderName, relTime, snapshots, statusOf, type 
 import { isActive, launches, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
+import { progressOf } from "../ui/common";
+import type { FixRun } from "./InstancePage";
 import { address, nick, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
+
+/** Время игры «12:05», тикает раз в секунду. */
+function Clock({ since }: { since: number }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  const s = Math.max(0, Math.floor((now - since) / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const two = (n: number) => String(n).padStart(2, "0");
+  return <>{h ? `${h}:${two(m)}` : two(m)}:{two(sec)}</>;
+}
 
 /** Метка строки журнала: «Установлено» → зелёная, «Обновлено» → синяя, «Удалено»/«Выключено» → красная. */
 const TONE: Record<string, string> = { "Установлено": "ok", "Добавлено": "ok", "Включено": "ok", "Обновлено": "info", "Удалено": "err", "Выключено": "err" };
 
-export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, onNew, liveCrash, bisecting, onBisect }: {
+export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onLogs, onNew, liveCrash, bisecting, onBisect }: {
   inst: Instance;
   state?: LaunchState;
   doctor: { report: DoctorReport; journal: JournalEntry[] } | null;
   accounts: AccountRef[];
   /** Есть, когда все блокирующие замечания Mod Doctor чинятся выключением мода. */
   fix?: () => Promise<void>;
+  /** «Починить и играть» в процессе (макеты 12–13). */
+  fixRun: FixRun | null;
   onGo: (tab: "mods" | "snapshots" | "profile") => void;
   onLogs: () => void;
   /** Открыть «Новый профиль» (импорт сборки). */
@@ -74,6 +88,89 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, onN
   const gb = (mb: number) => (mb / 1024).toLocaleString(undefined, { maximumFractionDigits: 1 });
   const java = launch?.resolved.java_path.value;
   const mem = launch?.resolved.max_memory_mb.value;
+
+  const modName = (f: string) => f.replace(/\.jar(\.disabled)?$/i, "");
+  const nick0 = acc ? nick(acc.name, streamer) : t("нет аккаунта");
+
+  // Макет 12: починка идёт.
+  if (fixRun && state?.phase !== "running") {
+    const steps: [string, string][] = [
+      [t("Сохраняем снимок перед починкой"), t("Вернуться можно на вкладке «Откат»")],
+      [fixRun.off.length ? t("Выключаем: {0}", fixRun.off.map(modName).join(", ")) : t("Выключаем мешающие моды"), t("Файлы остаются в профиле, моды можно включить обратно")],
+      [t("Проверяем, что моды совместимы"), fixRun.step > 2 && fixRun.warnings.length ? t("Остались предупреждения: {0}", fixRun.warnings.map((w) => tc(w)).join("; ")) : t("Mod Doctor проверяет профиль ещё раз")],
+      [t("Запускаем игру"), mem ? t("Minecraft {0}, {1} ГБ памяти", inst.game_version, gb(mem)) : `Minecraft ${inst.game_version}`],
+    ];
+    return (
+      <div className="ov">
+        <section className="card">
+          <h3>{t("Чиним профиль, шаг {0} из {1}", Math.min(fixRun.step + 1, steps.length), steps.length)}</h3>
+          <p className="muted">{t("Окно можно не держать открытым. Если что-то пойдёт не так, ничего не потеряется: снимок уже сохранён.")}</p>
+          <ol className="fixsteps" aria-live="polite">
+            {steps.map(([title, hint], i) => {
+              const st = i < fixRun.step ? "done" : i === fixRun.step ? "now" : "wait";
+              return (
+                <li key={i} className={st}>
+                  <span className="mark" aria-hidden>{st === "done" ? <Icon name="check" size={14} /> : null}</span>
+                  <span className="grow"><b>{title}</b><small>{hint}</small></span>
+                  <span className="muted small">{st === "done" ? t("готово") : st === "now" ? (i === 3 && state?.phase === "preparing" ? `${Math.round(progressOf(state).pct)}%` : t("идёт")) : t("ждёт")}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+        <div className="stack">
+          <section className="card">
+            <h3>{t("Если передумали")}</h3>
+            <p className="muted">{t("Во время скачивания нажмите «Отменить» вверху. Уже сделанные шаги можно откатить из снимка.")}</p>
+            <div className="row"><button className="btn" onClick={() => onGo("snapshots")}>{t("Открыть снимки")}</button></div>
+          </section>
+          <section className="card">
+            <h3>{t("Что останется как есть")}</h3>
+            <p className="muted">{t("Миры, ресурспаки, шейдеры и настройки игры не меняются.")}</p>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  // Макет 13: игра запущена.
+  if (state?.phase === "running") {
+    const tail = state.logs.slice(-5);
+    return (
+      <div className="ov">
+        <div className="stack">
+          <section className="verdict ok" aria-label={t("Игра запущена")}>
+            <h3>{t("Игра запущена")}</h3>
+            {fixRun?.off.length ? <p>{t("Починка прошла: выключено — {0}.", fixRun.off.map(modName).join(", "))}{fixRun.warnings.length ? ` ${t("Осталось предупреждений: {0}, играть они не мешают.", fixRun.warnings.length)}` : ""}</p>
+              : <p>{t("Окно Minecraft открыто. Если игра упадёт, здесь появится причина.")}</p>}
+            <div className="acts">
+              <button className="btn" onClick={onLogs}>{t("Открыть лог")}</button>
+              {fixRun?.off.length ? <span className="muted small">{t("Выключенные моды можно включить на вкладке «Моды» после закрытия игры.")}</span> : null}
+            </div>
+          </section>
+          <section className="card">
+            <h3>{t("Лог запуска, в реальном времени")}</h3>
+            {tail.length ? <div className="logtail mono">{tail.map((l, i) => <div key={i} className={/\b(WARN|ERROR|FATAL)\b/.test(l) ? (/WARN/.test(l) ? "w" : "e") : ""}>{l}</div>)}</div>
+              : <p className="muted">{t("Игра ещё ничего не написала в лог.")}</p>}
+            <div className="row foot">
+              <span className="muted small grow">{t("Показаны последние строки: {0}.", tail.length)}</span>
+              <button className="btn link" onClick={onLogs}>{t("Весь лог")}</button>
+            </div>
+          </section>
+        </div>
+        <div className="stack">
+          <section className="card">
+            <h3>{t("Сейчас")}</h3>
+            <dl className="kv">
+              <dt>{t("Игра идёт")}</dt><dd className="mono"><Clock since={state.runningAt ?? state.startedAt} /></dd>
+              {mem ? <><dt>{t("Память")}</dt><dd>{t("до {0} ГБ", gb(mem))}</dd></> : null}
+              <dt>{t("Аккаунт")}</dt><dd>{nick0}</dd>
+            </dl>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ov">
@@ -196,7 +293,7 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, onN
         <section className="card">
           <h3>{t("Сводка")}</h3>
           <dl className="kv">
-            <dt>{t("Аккаунт")}</dt><dd>{acc ? nick(acc.name, streamer) : t("нет аккаунта")}</dd>
+            <dt>{t("Аккаунт")}</dt><dd>{nick0}</dd>
             <dt>Java</dt><dd>{java ? t("указана вручную") : t("подбирается автоматически")}</dd>
             <dt>{t("Память")}</dt><dd>{mem ? (launch?.total_memory_mb ? t("{0} ГБ из {1} ГБ", gb(mem), gb(launch.total_memory_mb)) : t("{0} ГБ", gb(mem))) : "—"}</dd>
             <dt>{t("Снимков")}</dt><dd>{snaps.length ? t("{0}, последний {1}", snaps.length, relTime(Math.max(...snaps.map((s) => s.created_at)))) : "0"}</dd>

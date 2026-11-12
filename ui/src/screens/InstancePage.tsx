@@ -19,6 +19,9 @@ import { nick, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
 
 /** Адрес места в профиле: так на него ссылаются разбор краша и уведомления. */
+/** Починка «Починить и играть» в процессе. */
+export type FixRun = { step: 0 | 1 | 2 | 3; off: string[]; at: number; warnings: string[] };
+
 export type Tab = "overview" | "mods" | "deps" | "resources" | "configs" | "options" | "launch" | "snapshots" | "servers" | "profile";
 type Main = "overview" | "mods" | "rollback" | "game";
 type Sub = "mods" | "resources" | "deps" | "launch" | "options" | "servers" | "profile";
@@ -302,14 +305,29 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   useEffect(() => { modsApi.view(inst.id).then((d) => { setDoctor(d); onDoctor(inst.id, d.report); }).catch(() => setDoctor(null)); }, [inst.id, main, reload, state?.phase]);
   const blocking = doctor?.report.findings.filter((f) => f.severity === "blocking") ?? [];
   // «Починить и играть» — только если каждое блокирующее замечание чинится выключением мода (как в Mod Doctor).
+  // Ход починки для карточки «Чиним профиль» (макет 12): 0 — снимок, 1 — выключаем, 2 — проверяем, 3 — запуск.
+  const [fixRun, setFixRun] = useState<FixRun | null>(null);
   const fix = blocking.length > 0 && blocking.every((f) => f.fixes.some((x) => x.kind !== "install")) ? async () => {
-    await snapshots.create(inst.id, t("Перед «Починить и играть»"));
-    for (const f of blocking) {
-      const x = f.fixes.find((k) => k.kind !== "install");
-      const off = x?.kind === "disable" ? [x.file_name] : x?.kind === "keep_one" ? x.file_names.slice(1) : [];
-      for (const file of off) await modsApi.toggle(inst.id, file, false);
-    }
+    const run: FixRun = { step: 0, off: [], at: Date.now(), warnings: [] };
+    setFixRun(run);
+    try {
+      await snapshots.create(inst.id, t("Перед «Починить и играть»"));
+      setFixRun({ ...run, step: 1 });
+      for (const f of blocking) {
+        const x = f.fixes.find((k) => k.kind !== "install");
+        const off = x?.kind === "disable" ? [x.file_name] : x?.kind === "keep_one" ? x.file_names.slice(1) : [];
+        for (const file of off) { await modsApi.toggle(inst.id, file, false); run.off.push(file); }
+      }
+      setFixRun({ ...run, step: 2 });
+      const v = await modsApi.view(inst.id);
+      setDoctor(v);
+      onDoctor(inst.id, v.report);
+      run.warnings = v.report.findings.filter((f) => f.severity !== "blocking").map((f) => f.title);
+      setFixRun({ ...run, step: 3 });
+    } catch (e) { setFixRun(null); throw e; }
   } : undefined;
+  // Починка закончилась вместе с запуском: игра вышла или не стартовала.
+  useEffect(() => { if (state?.phase === "done" || state?.phase === "failed") setFixRun((r) => (r && r.step === 3 ? null : r)); }, [state?.phase]);
   const issues = doctor?.report.findings.length ?? 0;
   // Поиск виновника краша идёт несколько запусков: полоса видна на любой вкладке.
   const [bisect, setBisect] = useState<Bisect | null>(null);
@@ -393,7 +411,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
               </div>
             )}
           </div>
-          <PlayButton inst={inst} state={state} compact fix={fix} />
+          <PlayButton inst={inst} state={state} compact fix={fixRun ? undefined : fix} />
         </div>
       </div>
       {bisect && (
@@ -410,12 +428,12 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
       <div className="tabsrow">
         <TabStrip className="mtabs" label={t("Вкладки профиля")} items={tabs} value={main} onPick={(m) => setPlace([m, undefined])} />
       </div>
-      {state && isActive(state) && <LaunchProgress state={state} />}
+      {state && isActive(state) && !(main === "overview" && state.phase === "running") && <LaunchProgress state={state} />}
       {main === "overview" && (
         <div className="stack">
           {state?.phase === "failed" && state.error && <div className="alert err" style={{ whiteSpace: "pre-line" }}><div className="h">{t("Запуск не удался")}</div><span>{state.error}</span></div>}
           {state?.phase === "done" && state.exit?.analysis && <CrashCard inst={inst} a={state.exit.analysis} code={state.exit.code} onOpenTab={go} />}
-          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fix} onGo={go} onLogs={onLogs} onNew={onNew} liveCrash={!!(state?.phase === "done" && state.exit?.analysis)} bisecting={!!bisect} onBisect={() => bisectStep("start")} />
+          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fixRun ? undefined : fix} fixRun={fixRun} onGo={go} onLogs={onLogs} onNew={onNew} liveCrash={!!(state?.phase === "done" && state.exit?.analysis)} bisecting={!!bisect} onBisect={() => bisectStep("start")} />
         </div>
       )}
       {main === "mods" && (

@@ -19,6 +19,8 @@ export interface LaunchState {
   exit?: ExitInfo;
   error?: string;
   startedAt: number;
+  /** Когда игра реально запустилась (событие started) — для «Игра идёт 00:42». */
+  runningAt?: number;
 }
 
 const MAX_LOG_LINES = 5000;
@@ -66,7 +68,7 @@ class LaunchStore {
           case "account": return { ...s, account: `${e.name} (${e.provider})` };
           case "java": return { ...s, javaLabel: tc(e.label), javaReason: tc(e.reason) };
           case "warning": pushNote({ kind: "warn", title: e.message, profile: id }); return { ...s, warnings: [...s.warnings, tc(e.message)] };
-          case "started": return { ...s, phase: "running", stageLabel: t("Игра запущена"), command: e.command, progress: undefined };
+          case "started": return { ...s, phase: "running", stageLabel: t("Игра запущена"), command: e.command, progress: undefined, runningAt: Date.now() };
           case "log": {
             const logs = s.logs.length >= MAX_LOG_LINES ? s.logs.slice(-MAX_LOG_LINES + 1) : s.logs.slice();
             logs.push(e.line);

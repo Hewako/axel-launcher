@@ -151,7 +151,7 @@ export function PlayButton({ inst, state, compact, fix }: { inst: Instance; stat
   if (active) {
     return (
       <div className="play">
-        <button className="go solo stop" onClick={stop} style={compact ? { padding: "8px 16px", minWidth: 0, fontSize: 14 } : undefined}>
+        <button className={`go solo stop ${state?.phase === "running" ? "running" : ""}`} onClick={stop} style={compact ? { padding: "8px 16px", minWidth: 0, fontSize: 14 } : undefined}>
           {state?.phase === "running" ? <><Icon name="stop" size={15} /> {t("Закрыть игру")}</> : <>{t("Отменить")}{progressOf(state).downloading ? ` · ${Math.round(progressOf(state).pct)}%` : ""}</>}
         </button>
       </div>
