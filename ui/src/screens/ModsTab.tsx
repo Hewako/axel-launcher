@@ -2,8 +2,9 @@
 // Любое изменение модов — через предпросмотр и автоматический снимок.
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, errText, mods, sizeText, type Bisect, type CatalogSource, type Channel, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
+import { api, errText, isPackPath, mods, sizeText, type CatalogSource, type Channel, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
+import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
 import { typing } from "./InstancePage";
 
@@ -40,7 +41,7 @@ export function PlanDialog({ title, plan, onClose, onApply }: { title: string; p
         </div>
       )}
       {plan.notes.map((n, i) => <span key={i} className="muted small">• {tc(n)}</span>)}
-      <span className="muted small">{t("Перед изменением будет создан снимок — отменить можно на вкладке «Снимки». Файлы скачиваются с Modrinth и проверяются по хэшу.")}</span>
+      <span className="muted small">{t("Перед изменением будет создан снимок — отменить можно на вкладке «Откат». Файлы скачиваются с Modrinth и проверяются по хэшу.")}</span>
       {error && <div className="alert err"><span>{error}</span></div>}
       <div className="acts">
         <button className="btn" onClick={onClose}>{t("Отмена")}</button>
@@ -129,7 +130,7 @@ export function CatalogDialog({ inst, initial, onClose, onPlan, kinds = ["mod", 
         )}
       </div>
       <span className="muted small">{t("Показано то, что подходит к Minecraft")} {inst.game_version}{kind === "mod" ? t(" и {0}", inst.loader) : ""}{t(". Ставится только по вашему нажатию.")}</span>
-      {kind === "shader" && <span className="muted small">{t("Шейдеры работают с модом Iris (Fabric/Quilt) или Oculus (NeoForge). После установки шейдер можно выбрать на вкладке «Ресурсы».")}</span>}
+      {kind === "shader" && <span className="muted small">{t("Шейдеры работают с модом Iris (Fabric/Quilt) или Oculus (NeoForge). После установки шейдер можно выбрать в разделе «Ресурсы и конфиги».")}</span>}
       {error && <div className="alert err"><span>{error}</span></div>}
       <div className="hits">
         {hits === null && <p className="muted"><span className="spinner" /> {t("Ищем…")}</p>}
@@ -153,7 +154,7 @@ function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; files: ModF
   const name = (file: string) => files.find((x) => x.file_name === file)?.mods[0]?.name ?? file;
   return (
     <div className={`alert ${f.severity === "blocking" ? "err" : "warn"}`}>
-      <div className="h">{f.severity === "blocking" ? "✖" : "⚠"} {tc(f.title)}</div>
+      <div className="h"><Icon name={f.severity === "blocking" ? "error" : "warn"} size={16} /> {tc(f.title)}</div>
       <span className="small">{tc(f.detail)}</span>
       <span className="muted small">{t("Основание:")} {tc(f.evidence)}</span>
       {f.fixes.length > 0 && (
@@ -176,7 +177,14 @@ function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; files: ModF
   );
 }
 
-export function ModsTab({ inst, running }: { inst: Instance; running: boolean }) {
+export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
+  inst: Instance;
+  running: boolean;
+  /** Подвкладки: на макете они в одной строке с поиском и «Добавить». */
+  tabs: React.ReactNode;
+  bisecting: boolean;
+  onBisect: () => void;
+}) {
   const dialog = useDialog();
   const [data, setData] = useState<{ files: ModFile[]; report: DoctorReport; journal: JournalEntry[] } | null>(null);
   const [error, setError] = useState("");
@@ -191,7 +199,6 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
 
   const [groups, setGroups] = useState<{ names: string[]; groups: Record<string, string> }>({ names: [], groups: {} });
   const [grouping, setGrouping] = useState(false);
-  const [bisect, setBisect] = useState<Bisect | null>(null);
   const [chip, setChip] = useState<"all" | "issues" | "updates" | "off">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
@@ -204,7 +211,6 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
   const load = useCallback(() => {
     mods.view(inst.id).then((d) => { setData(d); setError(""); }).catch((e) => setError(errText(e)));
     mods.groups(inst.id).then(setGroups).catch(() => {});
-    mods.bisectStatus(inst.id).then(setBisect).catch(() => setBisect(null));
   }, [inst.id]);
   useEffect(load, [load]);
   const refreshUpdates = useCallback(() => {
@@ -227,7 +233,11 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
         else if (e.payload.type === "drop") {
           setDragging(false);
           const jars = e.payload.paths.filter((p) => p.toLowerCase().endsWith(".jar"));
-          if (jars.length === 0) { await dialog.alert(t("Не JAR-файлы"), t("Перетащите файлы модов с расширением .jar.")); return; }
+          if (jars.length === 0) {
+            // Сборку или папку забирает окно целиком: откроется «Новый профиль».
+            if (!e.payload.paths.some(isPackPath)) await dialog.alert(t("Не JAR-файлы"), t("Перетащите файлы модов с расширением .jar."));
+            return;
+          }
           try {
             const added = await mods.addFiles(inst.id, jars);
             load();
@@ -254,30 +264,10 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
     return (data?.files ?? []).filter((f) => !q || f.file_name.toLowerCase().includes(q) || f.mods.some((m) => m.name.toLowerCase().includes(q) || m.id.includes(q)));
   }, [data, filter]);
 
-  if (inst.loader === "vanilla") return <div className="card empty"><p>{t("В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt или NeoForge.")}</p></div>;
-  if (error) return <div className="alert err"><span>{error}</span></div>;
-  if (!data) return <p className="muted"><span className="spinner" /> {t("Проверяем моды…")}</p>;
+  if (inst.loader === "vanilla") return <>{tabs}<div className="card empty"><p>{t("В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt или NeoForge.")}</p></div></>;
+  if (error) return <>{tabs}<div className="alert err"><span>{error}</span></div></>;
+  if (!data) return <>{tabs}<p className="muted"><span className="spinner" /> {t("Проверяем моды…")}</p></>;
 
-  const bisectStep = async (action: "start" | "answer" | "cancel", crashed?: boolean) => {
-    if (action === "start" && !(await dialog.confirm({
-      title: t("Найти мод, из-за которого падает игра?"),
-      body: t("Лаунчер будет по очереди выключать половину модов (вместе с теми, кому они нужны). После каждого шага запустите игру и ответьте, повторился ли краш. Обычно хватает 3–6 запусков. Перед началом сохраняется снимок."),
-      confirm: t("Начать"),
-    }))) return;
-    try {
-      const r = await mods.bisectStep(inst.id, action, crashed);
-      load();
-      if (r?.kind === "found") {
-        const off = await dialog.confirm({
-          title: t("Вероятный виновник: {0}", r.file),
-          body: t("Все моды снова включены. Выключить этот мод? Его можно будет включить обратно в любой момент."),
-          confirm: t("Выключить"),
-          cancel: t("Оставить"),
-        });
-        if (off) await toggle(r.file, false);
-      }
-    } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); load(); }
-  };
   const toggleGroup = async (g: string, enabled: boolean) => {
     try { await mods.toggleGroup(inst.id, g, enabled); load(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
   };
@@ -296,7 +286,7 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
     const world = f.world_content
       ? t(" Этот мод добавляет в мир блоки, измерения или генерацию: без него часть построек и чанков может пропасть. Axel' сначала сделает бэкап последнего мира.")
       : "";
-    const ok = await dialog.confirm({ title: t("Удалить {0}?", f.mods[0]?.name ?? f.file_name), body: t("Перед удалением будет создан снимок — вернуть мод можно на вкладке «Снимки». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
+    const ok = await dialog.confirm({ title: t("Удалить {0}?", f.mods[0]?.name ?? f.file_name), body: t("Перед удалением будет создан снимок — вернуть мод можно на вкладке «Откат». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
     if (!ok) return;
     try { await mods.remove(inst.id, f.file_name); load(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
   };
@@ -320,7 +310,7 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
   const updateCount = available?.changes.length ?? 0;
   const stateOf = (f: ModFile) => r.mods.find((m) => m.file_name === f.file_name);
 
-  const issue = (f: ModFile) => { const s = stateOf(f)?.state; return s === "blocked" || s === "warning"; };
+  const issue = (f: ModFile) => { const s = stateOf(f)?.state; return s === "blocked" || s === "warning" || s === "unknown"; };
   const counts = { all: data.files.length, issues: data.files.filter(issue).length, updates: data.files.filter((f) => updateFor(f)).length, off: data.files.filter((f) => !f.enabled).length };
   const visible = shown.filter((f) => chip === "all" || (chip === "issues" ? issue(f) : chip === "updates" ? !!updateFor(f) : !f.enabled));
   const rowsIssues = visible.filter(issue);
@@ -335,7 +325,7 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
       <tr key={f.rel_path} className={`${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} onClick={() => setSelected(f.file_name)}>
         <td><button className={`tog ${f.enabled ? "on" : ""}`} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${m?.name ?? f.file_name}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
         <td><button className="rowname" aria-pressed={sel?.file_name === f.file_name} onClick={() => setSelected(f.file_name)}><b>{m?.name ?? f.file_name}</b>{(st?.notes.length ?? 0) > 0 && <span className="muted"> {tc(st!.notes[0])}</span>}</button></td>
-        <td className="mono">{m?.version ?? "?"}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")}> 🔒</span>}</td>
+        <td className="mono">{m?.version ?? "?"}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")} aria-label={t("закреплена")}> <Icon name="lock" size={14} /></span>}</td>
         <td>{f.source ? sourceName[f.source.source] : t("вручную")}</td>
         <td>{st && <span className={`state ${stateCls[st.state]}`}>{tc(st.state_label)}</span>}</td>
       </tr>
@@ -390,27 +380,24 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
       <div className="findings">
         {r.findings.filter((f) => f.files.length === 0).map((f, i) => <FindingCard key={i} f={f} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
       </div>
-      {bisect && (
-        <div className="alert warn" style={{ marginBottom: 12 }}>
-          <div className="h">{t("Поиск виновника краша · шаг {0}", bisect.round)}</div>
-          <span>{t("Выключено модов: {0}. Подозреваемых осталось: {1}. Запустите игру и ответьте:", bisect.disabled.length, bisect.suspects.length)}</span>
-          <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn" disabled={running} onClick={() => bisectStep("answer", true)}>{t("Игра снова упала")}</button>
-            <button className="btn" disabled={running} onClick={() => bisectStep("answer", false)}>{t("Игра работает")}</button>
-            <button className="btn link small" disabled={running} onClick={() => bisectStep("cancel")}>{t("Прекратить поиск")}</button>
-          </div>
-        </div>
-      )}
+      <div className="modbar">
+        {tabs}
+        <span style={{ flex: 1 }} />
+        <span className="searchbox">
+          <Icon name="search" size={16} />
+          <input ref={search} className="field" placeholder={t("Найти мод…")} aria-label={t("Найти мод…")} aria-keyshortcuts="/" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <kbd aria-hidden>/</kbd>
+        </span>
+        <button className="btn" disabled={running} onClick={() => setCatalog("")}>{t("+ Добавить мод")}</button>
+      </div>
       <div className="modbar">
         <div className="chips" role="group" aria-label={t("Фильтр модов")}>
           {CHIPS.map(([k, l, n]) => <button key={k} className={`fchip ${chip === k ? "on" : ""}`} aria-pressed={chip === k} onClick={() => setChip(k)}>{l} <span className="muted">{n}</span></button>)}
         </div>
         <span style={{ flex: 1 }} />
-        <input ref={search} className="field" style={{ maxWidth: 220 }} placeholder={t("Найти мод…")} aria-label={t("Найти мод…")} aria-keyshortcuts="/" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <button className="btn" disabled={running || checking || updateCount === 0} onClick={updates} title={available === null ? t("обновления проверяются…") : updateCount ? t("обновления есть у {0}", updateCount) : t("обновлений нет")}>
           {checking ? t("Проверяем…") : picked.size ? t("Обновить выбранные ({0})… (предпросмотр)", picked.size) : t("Обновить всё… (предпросмотр)")}
         </button>
-        <button className="btn pri" disabled={running} onClick={() => setCatalog("")}>{t("+ Добавить мод")}</button>
       </div>
       {data.files.length > 0 && (
         <div className="groupbar" role="group" aria-label={t("Наборы модов")}>
@@ -426,7 +413,7 @@ export function ModsTab({ inst, running }: { inst: Instance; running: boolean })
               </label>
             );
           })}
-          {!bisect && data.files.filter((f) => f.enabled).length > 1 && <button className="btn link small" disabled={running} onClick={() => bisectStep("start")}>{t("Найти виновника краша…")}</button>}
+          {!bisecting && data.files.filter((f) => f.enabled).length > 1 && <button className="btn link small" disabled={running} onClick={onBisect}>{t("Найти виновника краша…")}</button>}
           <button className="btn link small" disabled={grouping} onClick={autoGroups}>{grouping ? t("Раскладываем…") : t("Разложить автоматически")}</button>
         </div>
       )}

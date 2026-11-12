@@ -101,7 +101,7 @@ function CopyFromDialog({ inst, instances, onClose }: { inst: Instance; instance
     try {
       await api.copyBetween(from, inst.id, items);
       onClose();
-      await dialog.alert(t("Перенесено"), t("Перед переносом сохранён снимок — вернуть как было можно на вкладке «Снимки»."));
+      await dialog.alert(t("Перенесено"), t("Перед переносом сохранён снимок — вернуть как было можно на вкладке «Откат»."));
     } catch (e) { await dialog.alert(t("Не перенесено"), errText(e)); } finally { setBusy(false); }
   };
   return (
@@ -186,7 +186,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       await importer.updateApply(inst.id, update.path, update.off, update.versionId);
       setUpdate(null);
       onChanged({ ...inst, pack: inst.pack && { ...inst.pack, version: update.plan.to, version_id: update.versionId ?? inst.pack.version_id } });
-      await dialog.alert(t("Сборка обновлена"), t("Перед обновлением сохранён снимок — вернуть как было можно на вкладке «Снимки и миры»."));
+      await dialog.alert(t("Сборка обновлена"), t("Перед обновлением сохранён снимок — вернуть как было можно на вкладке «Откат»."));
     } catch (e) { await dialog.alert(t("Сборку не обновить"), errText(e)); } finally { setUpdating(false); }
   };
   const streamer = useStreamer();
@@ -259,7 +259,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
         </div>
         <div className="setting">
           <div className="lbl">{t("Избранное")}<span className="hint">{t("показывается первым")}</span></div>
-          <label className="row"><input type="checkbox" checked={meta.favorite} onChange={(e) => save({ favorite: e.target.checked })} /> {t("в избранном")}</label>
+          <label className="row"><input type="checkbox" checked={meta.favorite} onChange={(e) => save({ favorite: e.target.checked })} /></label>
           <span />
         </div>
       </section>
@@ -323,7 +323,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
         <h3 id="ps-danger">{t("Опасная зона")}</h3>
         <div className="setting">
           <div className="lbl">{t("Архив")}<span className="hint">{t("в конце рельсы, бледнее; файлы останутся на месте")}</span></div>
-          <label className="row"><input type="checkbox" checked={meta.archived} onChange={(e) => save({ archived: e.target.checked })} /> {t("в архиве")}</label>
+          <label className="row"><input type="checkbox" checked={meta.archived} onChange={(e) => save({ archived: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">

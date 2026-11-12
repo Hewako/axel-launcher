@@ -688,7 +688,8 @@ struct ModsView {
     journal: Vec<quarry_core::mods::manage::JournalEntry>,
 }
 
-#[tauri::command]
+// Читает все JAR профиля: не на главном потоке, иначе окно замирает.
+#[tauri::command(async)]
 fn mods_view(state: State<AppState>, id: String) -> CmdResult<ModsView> {
     let store = InstanceStore::new(state.data.clone());
     let inst = store.get(&id).map_err(err)?;

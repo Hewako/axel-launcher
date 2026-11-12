@@ -85,7 +85,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
     <div className="row small" style={{ marginBottom: 8 }}>
       {presets(c).length > 0 && (
         <select className="field auto mini" aria-label={t("Применить пресет")} value="" disabled={running || dirty}
-          onChange={(e) => e.target.value && act(() => gameOptions.applyPreset(inst.id, e.target.value), t("Пресет применён. Перед этим сохранён снимок — вернуть можно на вкладке «Снимки и миры»."))}>
+          onChange={(e) => e.target.value && act(() => gameOptions.applyPreset(inst.id, e.target.value), t("Пресет применён. Перед этим сохранён снимок — вернуть можно на вкладке «Откат»."))}>
           <option value="">{t("Применить пресет…")}</option>
           {presets(c).map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
         </select>
@@ -106,7 +106,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="btn pri" disabled={!dirty || running} onClick={() => act(() => gameOptions.set(inst.id, draft))}>{t("Сохранить изменения")}</button>
         <button className="btn" disabled={!dirty} onClick={() => setDraft({})}>{t("Отменить")}</button>
-        <span className="muted small">{t("Перед сохранением делается снимок — вернуть можно на вкладке «Снимки и миры».")}</span>
+        <span className="muted small">{t("Перед сохранением делается снимок — вернуть можно на вкладке «Откат».")}</span>
       </div>
 
       <h4>{t("Графика")}</h4>

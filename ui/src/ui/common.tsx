@@ -3,6 +3,7 @@ import { api, errText, mb, statusOf, type Instance, type QuickPlay } from "../ap
 import { isActive, launches, type LaunchState } from "../launches";
 import { Modal, useDialog } from "./Dialog";
 import { t } from "../i18n";
+import { Icon } from "./icons";
 
 const ICONS = [
   "linear-gradient(#5d9e3a 0 30%,#7a5537 30% 100%)",
@@ -44,18 +45,29 @@ function useSpeed(done: number, total: number): { speed: number; eta: number | n
 const fmtEta = (sec: number) => (sec < 60 ? t("{0} с", Math.ceil(sec)) : t("{0} мин {1} с", Math.floor(sec / 60), Math.ceil(sec % 60)));
 
 let pausedNow = false;
+let pauseListeners: ((v: boolean) => void)[] = [];
+
+/** Кнопка «Пауза / Продолжить» для идущей загрузки: одна пауза на все места, где она видна. */
+export function PauseButton({ downloading }: { downloading: boolean }) {
+  const [paused, setPaused] = useState(pausedNow);
+  useEffect(() => { pauseListeners.push(setPaused); return () => { pauseListeners = pauseListeners.filter((f) => f !== setPaused); }; }, []);
+  const set = (v: boolean) => { pausedNow = v; pauseListeners.forEach((f) => f(v)); api.pauseDownloads(v).catch(() => {}); };
+  // Загрузка закончилась или отменена — пауза не должна остаться на следующие загрузки.
+  useEffect(() => { if (!downloading && pausedNow) set(false); }, [downloading]);
+  return downloading ? <button className="btn link small" onClick={() => set(!paused)}>{paused ? t("Продолжить") : t("Пауза")}</button> : null;
+}
+
+/** Идёт ли скачивание файлов и сколько процентов готово. */
+export function progressOf(state?: LaunchState) {
+  const p = state?.progress;
+  const pct = p && p.bytes_total > 0 ? Math.min(100, (p.bytes_done / p.bytes_total) * 100) : p && p.files_total > 0 ? (p.files_done / p.files_total) * 100 : 0;
+  return { pct, downloading: state?.phase === "preparing" && !!p && p.files_total > 0 && p.files_done < p.files_total };
+}
 
 export function LaunchProgress({ state }: { state: LaunchState }) {
   const p = state.progress;
-  const pct = p && p.bytes_total > 0 ? Math.min(100, (p.bytes_done / p.bytes_total) * 100) : p && p.files_total > 0 ? (p.files_done / p.files_total) * 100 : 0;
+  const { pct, downloading } = progressOf(state);
   const { speed, eta } = useSpeed(p?.bytes_done ?? 0, p?.bytes_total ?? 0);
-  const [paused, setPaused] = useState(pausedNow);
-  const togglePause = () => { pausedNow = !paused; setPaused(pausedNow); api.pauseDownloads(pausedNow).catch(() => {}); };
-  const downloading = state.phase === "preparing" && !!p && p.files_total > 0 && p.files_done < p.files_total;
-  // Загрузка закончилась или отменена — пауза не должна остаться на следующие загрузки.
-  useEffect(() => {
-    if (!downloading && pausedNow) { pausedNow = false; setPaused(false); api.pauseDownloads(false).catch(() => {}); }
-  }, [downloading]);
   return (
     <div className="prep" aria-live="polite">
       <div className="row small">
@@ -64,14 +76,14 @@ export function LaunchProgress({ state }: { state: LaunchState }) {
         {p && p.files_total > 0 && (
           <span className="muted">
             {p.files_done} {t("из")} {p.files_total} {t("файлов ·")} {mb(p.bytes_done)} / {mb(p.bytes_total)} {t("МБ")}{p.retries ? t(" · повторов: {0}", p.retries) : ""}
-            {downloading && (paused ? t(" · на паузе") : speed > 0 ? t(" · {0} МБ/с{1}", (speed / 1048576).toFixed(1), eta !== null ? t(" · осталось ≈ {0}", fmtEta(eta)) : "") : "")}
+            {downloading && (pausedNow ? t(" · на паузе") : speed > 0 ? t(" · {0} МБ/с{1}", (speed / 1048576).toFixed(1), eta !== null ? t(" · осталось ≈ {0}", fmtEta(eta)) : "") : "")}
           </span>
         )}
-        {downloading && <button className="btn link small" onClick={togglePause}>{paused ? t("Продолжить") : t("Пауза")}</button>}
+        <PauseButton downloading={downloading} />
       </div>
       {p && p.files_total > 0 && <div className="bar wide"><i style={{ width: `${pct}%` }} /></div>}
       {state.javaReason && <span className="muted small">Java: {state.javaReason}</span>}
-      {state.warnings.map((w, i) => <span key={i} className="small" style={{ color: "var(--warn)" }}>⚠ {w}</span>)}
+      {state.warnings.map((w, i) => <span key={i} className="small" style={{ color: "var(--warn)" }}><Icon name="warn" size={14} /> {w}</span>)}
     </div>
   );
 }
@@ -139,15 +151,15 @@ export function PlayButton({ inst, state, compact, fix }: { inst: Instance; stat
     return (
       <div className="play">
         <button className="go solo stop" onClick={stop} style={compact ? { padding: "8px 16px", minWidth: 0, fontSize: 14 } : undefined}>
-          {state?.phase === "running" ? t("■ Закрыть игру") : t("Отменить")}
+          {state?.phase === "running" ? <><Icon name="stop" size={15} /> {t("Закрыть игру")}</> : <>{t("Отменить")}{progressOf(state).downloading ? ` · ${Math.round(progressOf(state).pct)}%` : ""}</>}
         </button>
       </div>
     );
   }
   return (
     <div className={`play ${fix ? "fix" : ""}`} ref={ref}>
-      <button className="go" onClick={() => go(undefined, false, false, fix)} style={compact ? { padding: "8px 18px", minWidth: 0, fontSize: 14 } : undefined}>{fix ? t("Починить и играть") : t("▶ Играть")}</button>
-      <button className="more" aria-label={t("Другие варианты запуска")} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>▾</button>
+      <button className="go" onClick={() => go(undefined, false, false, fix)} style={compact ? { padding: "8px 18px", minWidth: 0, fontSize: 14 } : undefined}><Icon name={fix ? "wrench" : "play"} size={16} /> {fix ? t("Починить и играть") : t("Играть")}{compact && <kbd>Enter</kbd>}</button>
+      <button className="more" aria-label={t("Другие варианты запуска")} aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="chevron" size={16} /></button>
       {menu && (
         <div className="menu" role="menu">
           <button role="menuitem" onClick={() => setQuick("singleplayer")}>{t("Сразу в мир…")}<small>{t("Quick Play: запуск сразу в выбранный мир")}</small></button>

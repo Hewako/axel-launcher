@@ -74,8 +74,8 @@ export function CrashCard({ inst, a, code, onOpenTab, onReport }: {
         {onReport && <button className="btn" onClick={onReport}>{t("Отчёт для поддержки")}</button>}
       </div>
       {done ? (
-        <span className="small">{t("Готово: {0}. Можно запускать —", done)} <button className="btn link small" onClick={play}>{t("▶ Играть")}</button></span>
-      ) : <span className="small muted">{t("Перед починкой создаётся снимок — отменить можно на вкладке «Снимки и миры».")}</span>}
+        <span className="small">{t("Готово: {0}. Можно запускать —", done)} <button className="btn link small" onClick={play}>{t("Играть")}</button></span>
+      ) : <span className="small muted">{t("Перед починкой создаётся снимок — отменить можно на вкладке «Откат».")}</span>}
       {a.actions.some((x) => x.kind === "update_drivers") && <span className="small muted">{t("Совет: обновите драйвер видеокарты.")}</span>}
     </div>
   );

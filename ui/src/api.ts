@@ -273,6 +273,9 @@ export function mb(bytes: number): string {
 }
 
 /** Статус сборки по последнему настоящему запуску (разбор игрока, п. 4). */
+/** Сборка или папка, а не мод: .mrpack, .zip или путь без расширения. */
+export const isPackPath = (p: string) => /\.(mrpack|zip)$/i.test(p) || !/\.[^/\\]+$/.test(p);
+
 export function statusOf(i: Instance, phase?: "preparing" | "running" | "done" | "failed"): { text: string; cls: "ok" | "warn" | "err" | "" } {
   if (phase === "preparing") return { text: t("подготовка…"), cls: "warn" };
   if (phase === "running") return { text: t("игра запущена"), cls: "ok" };

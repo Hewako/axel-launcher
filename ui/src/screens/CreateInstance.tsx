@@ -2,22 +2,18 @@
 // Совместимость проверяется до создания (ядро ещё раз проверит перед скачиванием).
 import { useEffect, useMemo, useState } from "react";
 import { api, errText, loaderName, type Instance, type LoaderKind, type LoaderVersion, type VersionEntry } from "../api";
-import { Modal, Panel } from "../ui/Dialog";
+import { Icon } from "../ui/icons";
 import { t } from "../i18n";
 
-const LOADERS: { kind: LoaderKind; ready: boolean; note?: string }[] = [
-  { kind: "vanilla", ready: true },
-  { kind: "fabric", ready: true },
-  { kind: "quilt", ready: true },
-  { kind: "neoforge", ready: true },
-  { kind: "forge", ready: false, note: t("позже") },
-];
+// Forge — после v1.0 (план, Приложение А), поэтому в выборе его нет.
+const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "neoforge"];
 
-export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () => void; onCreated: (i: Instance) => void; embedded?: boolean }) {
+export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void }) {
   const [name, setName] = useState("");
   const [snapshots, setSnapshots] = useState(false);
   const [query, setQuery] = useState("");
   const [versions, setVersions] = useState<VersionEntry[] | null>(null);
+  const [latest, setLatest] = useState("");
   const [offline, setOffline] = useState(false);
   const [version, setVersion] = useState<string>("");
   const [java, setJava] = useState<string>("");
@@ -26,7 +22,6 @@ export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () =
   const [loaderVersion, setLoaderVersion] = useState<string>("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const Wrap = embedded ? Panel : Modal;
 
   useEffect(() => {
     setVersions(null);
@@ -34,6 +29,7 @@ export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () =
       .then((r) => {
         setVersions(r.versions);
         setOffline(r.offline);
+        setLatest(r.latest_release);
         setVersion((v) => v || r.latest_release);
       })
       .catch((e) => setError(errText(e)));
@@ -57,9 +53,10 @@ export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () =
       .catch((e) => { setLoaderVersions([]); setError(errText(e)); });
   }, [loader, version]);
 
+  // Выбранная версия остаётся в списке, даже если поиск её отфильтровал.
   const shown = useMemo(
-    () => (versions ?? []).filter((v) => v.id.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 300),
-    [versions, query],
+    () => (versions ?? []).filter((v) => v.id === version || v.id.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 300),
+    [versions, query, version],
   );
 
   const incompatible = loader !== "vanilla" && loaderVersions !== null && loaderVersions.length === 0;
@@ -78,42 +75,47 @@ export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () =
   };
 
   return (
-    <Wrap title={embedded ? t("Создать с нуля") : t("Новый профиль")} onClose={onClose} wide>
+    <section className="card panel" aria-label={t("Создать с нуля")}>
+      <div>
+        <h3>{t("Создать с нуля")}</h3>
+        <p className="muted small">{t("Готово за полминуты. Настройки подберём сами.")}</p>
+      </div>
       <form className="form" onSubmit={(e) => { e.preventDefault(); if (canCreate) create(); }}>
-        <label>
-          <span>{t("Название")}</span>
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Например: Технология+")} maxLength={64} data-autofocus />
+        <label className="frow">
+          <span className="lbl">{t("Название")}</span>
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Например: Технология+")} maxLength={64} />
         </label>
-        <div className="form" style={{ gap: 6 }}>
-          <div className="row" style={{ justifyContent: "space-between" }}>
-            <span className="muted small">{t("Версия Minecraft")}{offline ? t(" · нет сети, список из кеша") : ""}</span>
-            <label className="row small" style={{ display: "flex" }}>
-              <input type="checkbox" checked={snapshots} onChange={(e) => setSnapshots(e.target.checked)} /> {t("снапшоты")}
-            </label>
+        <div className="frow">
+          <div className="lbl">
+            {t("Версия Minecraft")}
+            <span className="hint">{version && version === latest ? t("Последняя стабильная") : ""}{offline ? t(" · нет сети, список из кеша") : ""}</span>
           </div>
-          <input className="field" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Найти версию…")} aria-label={t("Поиск версии")} />
-          <div className="vlist" role="listbox" aria-label={t("Версии")}>
-            {versions === null && <div className="muted small" style={{ padding: 10 }}><span className="spinner" /> {t("Загружаем список версий…")}</div>}
-            {shown.map((v) => (
-              <button type="button" key={v.id} role="option" aria-selected={v.id === version} className={v.id === version ? "on" : ""} onClick={() => setVersion(v.id)}>
-                <span>{v.id}{v.type !== "release" ? <span className="muted"> · {v.type}</span> : null}</span>
-                <span className="muted small">{v.releaseTime.slice(0, 10)}</span>
-              </button>
-            ))}
+          <div className="stack tight">
+            {versions === null ? <span className="muted small"><span className="spinner" /> {t("Загружаем список версий…")}</span> : (
+              <select className="field" aria-label={t("Версии")} value={version} onChange={(e) => setVersion(e.target.value)}>
+                {shown.map((v) => <option key={v.id} value={v.id}>{v.id}{v.type !== "release" ? ` · ${v.type}` : ""} · {v.releaseTime.slice(0, 10)}</option>)}
+              </select>
+            )}
+            <div className="row" style={{ flexWrap: "nowrap" }}>
+              <input className="field" style={{ flex: 1, minWidth: 0 }} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Найти версию…")} aria-label={t("Поиск версии")} />
+              <label className="row small" style={{ display: "flex", flexWrap: "nowrap" }}>
+                <input type="checkbox" checked={snapshots} onChange={(e) => setSnapshots(e.target.checked)} /> {t("снапшоты")}
+              </label>
+            </div>
+            {java && <span className="muted small">{version}: {java}</span>}
           </div>
-          {java && <span className="muted small">{version}: {java}</span>}
         </div>
-        <label>
-          <span>{t("Загрузчик")}</span>
-          <select className="field" value={loader} onChange={(e) => setLoader(e.target.value as LoaderKind)}>
+        <div className="stack tight">
+          <span className="lbl" id="loader-label">{t("Загрузчик")}</span>
+          <div className="seg subtabs loaderseg" role="radiogroup" aria-labelledby="loader-label">
             {LOADERS.map((l) => (
-              <option key={l.kind} value={l.kind} disabled={!l.ready}>{loaderName[l.kind]}{l.note ? ` — ${l.note}` : ""}</option>
+              <button type="button" key={l} role="radio" aria-checked={loader === l} className={loader === l ? "on" : ""} onClick={() => setLoader(l)}>{l === "vanilla" ? t("Без модов") : loaderName[l]}</button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         {loader !== "vanilla" && (
-          <label>
-            <span>{t("Версия")} {loaderName[loader]}</span>
+          <label className="frow">
+            <span className="lbl">{t("Версия")} {loaderName[loader]}</span>
             {loaderVersions === null ? (
               <span className="muted small"><span className="spinner" /> {t("Проверяем совместимость…")}</span>
             ) : incompatible ? (
@@ -128,11 +130,10 @@ export function CreateInstance({ onClose, onCreated, embedded }: { onClose: () =
           </label>
         )}
         {error && <div className="alert err"><span>{error}</span></div>}
-        <div className="acts">
-          <button type="button" className="btn" onClick={onClose}>{t("Отмена")}</button>
-          <button type="submit" className="btn cta" disabled={!canCreate}>{busy ? t("Создаём…") : t("Создать")}</button>
+        <div>
+          <button type="submit" className="btn cta" disabled={!canCreate}>{busy ? t("Создаём…") : <><Icon name="plus" size={16} /> {t("Создать")}</>}</button>
         </div>
       </form>
-    </Wrap>
+    </section>
   );
 }

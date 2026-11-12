@@ -1,23 +1,28 @@
 // Вкладка «Обзор» (вариант F, макет 01): вердикт Mod Doctor, что изменилось, последний запуск; справа быстрый старт и сводка.
 import { useEffect, useState } from "react";
-import { api, errText, relTime, snapshots, statusOf, type AccountRef, type DoctorReport, type Instance, type JournalEntry, type QuickPlay, type ResolvedLaunch, type Server, type SnapshotInfo, type WorldInfo } from "../api";
+import { api, errText, importer, relTime, snapshots, statusOf, type AccountRef, type DoctorReport, type Instance, type JournalEntry, type QuickPlay, type ResolvedLaunch, type Server, type SnapshotInfo, type WorldInfo } from "../api";
 import { isActive, launches, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
+import { Icon } from "../ui/icons";
 import { address, nick, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
 
 /** Метка строки журнала: «Установлено» → зелёная, «Обновлено» → янтарная, «Удалено»/«Выключено» → красная. */
 const TONE: Record<string, string> = { "Установлено": "ok", "Добавлено": "ok", "Включено": "ok", "Обновлено": "warn", "Удалено": "err", "Выключено": "err" };
 
-export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
+export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liveCrash, bisecting, onBisect }: {
   inst: Instance;
   state?: LaunchState;
   doctor: { report: DoctorReport; journal: JournalEntry[] } | null;
   accounts: AccountRef[];
   /** Есть, когда все блокирующие замечания Mod Doctor чинятся выключением мода. */
   fix?: () => Promise<void>;
-  onGo: (tab: "mods" | "snapshots") => void;
+  onGo: (tab: "mods" | "snapshots" | "profile") => void;
   onLogs: () => void;
+  /** Над «Обзором» уже показан разбор только что случившегося краша. */
+  liveCrash: boolean;
+  bisecting: boolean;
+  onBisect: () => void;
 }) {
   const dialog = useDialog();
   const streamer = useStreamer();
@@ -26,6 +31,12 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
   const [snaps, setSnaps] = useState<SnapshotInfo[]>([]);
   const [launch, setLaunch] = useState<{ resolved: ResolvedLaunch; total_memory_mb?: number } | null>(null);
   const phase = state?.phase;
+  // Новая версия сборки: один запрос при открытии профиля, закреплённые не проверяем.
+  const [newPack, setNewPack] = useState("");
+  useEffect(() => {
+    setNewPack("");
+    if (inst.pack?.project_id && !inst.pack.pinned) importer.check(inst.id).then((v) => setNewPack(v?.version_number ?? "")).catch(() => {});
+  }, [inst.id, inst.pack?.project_id, inst.pack?.pinned]);
   useEffect(() => {
     snapshots.worlds(inst.id).then(setWorlds).catch(() => setWorlds([]));
     api.servers(inst.id).then(setServers).catch(() => setServers([]));
@@ -49,6 +60,8 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
   const warnings = r?.findings.filter((f) => f.severity === "warning") ?? [];
   const last = inst.last_launch;
   const worked = last?.outcome === "success";
+  const crashed = last?.outcome === "crashed" && blocking.length === 0;
+  const canBisect = !bisecting && (r?.total ?? 0) > 1;
   const journal = doctor?.journal ?? [];
   const changes = (worked ? journal.filter((j) => j.at > last.at) : journal).slice().sort((a, b) => b.at - a.at);
   const world = [...worlds].sort((a, b) => b.last_played - a.last_played)[0];
@@ -67,7 +80,7 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
             <p>{tc(blocking[0].detail)}</p>
             {blocking.length > 1 && <p className="muted small">{t("И ещё замечаний, мешающих запуску: {0}", blocking.length - 1)}</p>}
             <div className="acts">
-              {fix && <button className="btn cta" disabled={active} onClick={() => play(undefined, false, fix)}>{t("Починить и играть")}</button>}
+              {fix && <button className="btn cta" disabled={active} onClick={() => play(undefined, false, fix)}><Icon name="wrench" size={16} /> {t("Починить и играть")}</button>}
               {inst.loader !== "vanilla" && <button className="btn" disabled={active} onClick={() => play(undefined, true)}>{t("Безопасный запуск")}</button>}
               <button className="btn" onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button>
             </div>
@@ -80,10 +93,23 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
             <div className="acts"><button className="btn" onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button></div>
           </section>
         )}
-        {r && r.findings.length === 0 && (
+        {crashed && !liveCrash && (
+          <section className="verdict err" aria-label={t("Вердикт Mod Doctor")}>
+            <h3>{t("Игра упала при последнем запуске")}</h3>
+            {last?.message && <p>{tc(last.message)}</p>}
+            <div className="acts">
+              {canBisect && <button className="btn" disabled={active} onClick={onBisect}>{t("Найти виновника краша…")}</button>}
+              <button className="btn" onClick={onLogs}>{t("Открыть лог")}</button>
+            </div>
+          </section>
+        )}
+        {crashed && liveCrash && canBisect && (
+          <div className="row"><button className="btn" disabled={active} onClick={onBisect}>{t("Найти виновника краша…")}</button></div>
+        )}
+        {r && r.findings.length === 0 && !crashed && (
           <section className="verdict ok" aria-label={t("Вердикт Mod Doctor")}>
             <h3>{t("Всё готово к запуску")}</h3>
-            <p>{inst.loader === "vanilla" ? t("Профиль без модов.") : t("Mod Doctor проверил моды: {0}, проблем нет.", r.total)}</p>
+            <p>{inst.loader === "vanilla" || r.total === 0 ? t("Профиль без модов.") : t("Mod Doctor проверил моды: {0}, проблем нет.", r.total)}</p>
           </section>
         )}
 
@@ -129,12 +155,12 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
             <div className="qs">
               {world && (
                 <button disabled={active} onClick={() => play({ kind: "singleplayer", target: world.folder })} aria-label={t("Играть в мир «{0}»", world.name)}>
-                  <span className="grow"><b>{t("Мир «{0}»", world.name)}</b><small>{world.last_played ? t("играли {0}", relTime(world.last_played)) : tc(world.game_mode)}</small></span>▶
+                  <span className="grow"><b>{t("Мир «{0}»", world.name)}</b><small>{world.last_played ? t("играли {0}", relTime(world.last_played)) : tc(world.game_mode)}</small></span><Icon name="play" size={16} />
                 </button>
               )}
               {server && (
                 <button disabled={active} onClick={() => play({ kind: "multiplayer", target: server.ip })} aria-label={t("Играть на сервере «{0}»", server.name)}>
-                  <span className="grow"><b>{server.name}</b><small className="mono">{address(server.ip, streamer)}</small></span>▶
+                  <span className="grow"><b>{server.name}</b><small className="mono">{address(server.ip, streamer)}</small></span><Icon name="play" size={16} />
                 </button>
               )}
             </div>
@@ -148,6 +174,13 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs }: {
             <dt>{t("Память")}</dt><dd>{mem ? (launch?.total_memory_mb ? t("{0} ГБ из {1} ГБ", gb(mem), gb(launch.total_memory_mb)) : t("{0} ГБ", gb(mem))) : "—"}</dd>
             <dt>{t("Снимков")}</dt><dd>{snaps.length ? t("{0}, последний {1}", snaps.length, relTime(Math.max(...snaps.map((s) => s.created_at)))) : "0"}</dd>
             <dt>{t("Миры")}</dt><dd>{worlds.length}</dd>
+            {inst.pack && <>
+              <dt>{t("Сборка")}</dt>
+              <dd>
+                {inst.pack.name} {inst.pack.version}
+                {newPack && <button className="btn link small upd" onClick={() => onGo("profile")}>{t("вышла {0}", newPack)}</button>}
+              </dd>
+            </>}
           </dl>
         </section>
       </div>

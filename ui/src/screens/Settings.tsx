@@ -80,12 +80,12 @@ export function Settings({ info, theme, onTheme, onAppearance }: { info: AppInfo
         </div>
         <div className="setting">
           <div className="lbl">{t("Сообщать о новой версии Axel'")}<span className="hint">{t("проверка на GitHub при запуске; скачивание — только по вашему нажатию")}</span></div>
-          <label className="row"><input type="checkbox" checked={s.check_launcher_updates} onChange={(e) => setS({ ...s, check_launcher_updates: e.target.checked })} /> {t("включено")}</label>
+          <label className="row"><input type="checkbox" checked={s.check_launcher_updates} onChange={(e) => setS({ ...s, check_launcher_updates: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">
           <div className="lbl">{t("Режим стримера")}<span className="hint">{t("скрывать ник, пути и адреса серверов на экране, в логах и в отчётах")}</span></div>
-          <label className="row"><input type="checkbox" checked={s.streamer_mode} onChange={(e) => setS({ ...s, streamer_mode: e.target.checked })} /> {t("включён")}</label>
+          <label className="row"><input type="checkbox" checked={s.streamer_mode} onChange={(e) => setS({ ...s, streamer_mode: e.target.checked })} /></label>
           <span />
         </div>
           </>}
@@ -119,7 +119,7 @@ export function Settings({ info, theme, onTheme, onAppearance }: { info: AppInfo
         </div>
         <div className="setting">
           <div className="lbl">{t("Компактный режим")}<span className="hint">{t("меньше отступов — больше строк на экране")}</span></div>
-          <label className="row"><input type="checkbox" checked={s.compact} onChange={(e) => { const n = { ...s, compact: e.target.checked }; setS(n); onAppearance(n); }} /> {t("включён")}</label>
+          <label className="row"><input type="checkbox" checked={s.compact} onChange={(e) => { const n = { ...s, compact: e.target.checked }; setS(n); onAppearance(n); }} /></label>
           <span />
         </div>
           </>}
@@ -138,12 +138,12 @@ export function Settings({ info, theme, onTheme, onAppearance }: { info: AppInfo
             <h4 className="subhead">{t("Бэкапы миров")}</h4>
         <div className="setting">
           <div className="lbl">{t("Бэкап мира перед рискованным запуском")}<span className="hint">{t("если моды менялись после прошлой игры")}</span></div>
-          <label className="row"><input type="checkbox" checked={s.backup_before_risky_launch} onChange={(e) => setS({ ...s, backup_before_risky_launch: e.target.checked })} /> {t("включён")}</label>
+          <label className="row"><input type="checkbox" checked={s.backup_before_risky_launch} onChange={(e) => setS({ ...s, backup_before_risky_launch: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">
           <div className="lbl">{t("Бэкап мира после выхода из игры")}<span className="hint">{t("последний мир, в который играли")}</span></div>
-          <label className="row"><input type="checkbox" checked={s.backup_after_exit} onChange={(e) => setS({ ...s, backup_after_exit: e.target.checked })} /> {t("включён")}</label>
+          <label className="row"><input type="checkbox" checked={s.backup_after_exit} onChange={(e) => setS({ ...s, backup_after_exit: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">

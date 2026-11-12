@@ -53,7 +53,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .bar { height: 6px; background: var(--line); border-radius: 4px; overflow: hidden; width: 120px; flex: none; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .2s; }
 .bar.wide { width: 100%; }
-.content { flex: 1; overflow: auto; padding: 24px 28px; }
+.content { flex: 1; overflow: auto; scrollbar-gutter: stable; padding: 24px 28px; }
 .devbar { background: rgba(232,176,74,.14); color: var(--warn); border-bottom: 1px solid rgba(232,176,74,.4); padding: 6px 20px; font-size: 12.5px; }
 
 h2 { font-size: 18px; margin: 0 0 4px; }
@@ -73,7 +73,6 @@ h2 { font-size: 18px; margin: 0 0 4px; }
 .reset { font-size: 12px; color: var(--blue); background: none; border: 0; padding: 0; }
 
 /* Главная: герой */
-@media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } }
 .chip { font-size: 12px; padding: 2px 9px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); }
 .play { display: flex; align-items: stretch; position: relative; }
 .play .go { background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 700; font-size: 16px; padding: 12px 34px; border-radius: 9px 0 0 9px; letter-spacing: .3px; min-width: 170px; }
@@ -120,7 +119,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .field { border: 1px solid var(--line); background: var(--panel2); border-radius: 7px; padding: 7px 10px; color: var(--text); width: 100%; }
 .field.auto { width: auto; }
 .field.mono { font: 12.5px var(--mono); }
-select.field { padding: 6px 8px; }
+select.field { appearance: none; -webkit-appearance: none; padding: 7px 30px 7px 10px; background: var(--panel2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a2b5ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 9.5 12 15l5.5-5.5'/%3E%3C/svg%3E") no-repeat right 8px center / 16px; }
+select.field.mini { padding: 3px 24px 3px 6px; background-position: right 4px center; background-size: 14px; }
 
 /* Логи */
 .logbox { background: #0a0d10; color: #c9d3dc; border: 1px solid var(--line); border-radius: var(--radius); font: 12px/1.6 var(--mono); padding: 10px 12px; height: 420px; overflow: auto; white-space: pre-wrap; word-break: break-word; user-select: text; }
@@ -146,10 +146,6 @@ select.field { padding: 6px 8px; }
 .form { display: grid; gap: 12px; }
 .form label { display: grid; gap: 4px; font-size: 13px; }
 .form label > span { color: var(--muted); font-size: 12px; }
-.vlist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 7px; }
-.vlist button { display: flex; justify-content: space-between; width: 100%; border: 0; background: none; padding: 6px 10px; text-align: left; }
-.vlist button:hover { background: var(--panel2); }
-.vlist button.on { background: var(--panel2); box-shadow: inset 3px 0 0 var(--accent); }
 .empty { text-align: center; padding: 36px 16px; display: grid; gap: 10px; justify-items: center; }
 .empty p { margin: 0; color: var(--muted); max-width: 440px; }
 .spinner { width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; vertical-align: -2px; }
@@ -220,15 +216,9 @@ details.card[open] summary { margin-bottom: 8px; }
 .field.mini { padding: 3px 6px; font-size: 12px; }
 
 /* Вкладка «Конфиги» */
-.cfg { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 14px; align-items: start; }
-.cfglist .field { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
-.cfgscroll { max-height: 520px; overflow: auto; padding: 6px; }
-.cfgitem { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 6px 8px; color: var(--text); cursor: pointer; font-size: 12.5px; }
 .cfgitem:hover { background: var(--panel2); }
-.cfgitem.on { background: var(--panel2); outline: 1px solid var(--accent); }
-.cfgitem .badge { margin-top: 2px; }
 .hitline { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.cfgtext { min-height: 420px; resize: vertical; white-space: pre; tab-size: 2; }
+.cfgtext { min-height: 240px; resize: vertical; white-space: pre; tab-size: 2; }
 .cfghist { margin-top: 10px; }
 .cfghist .row { justify-content: space-between; padding: 4px 0; }
 .cfgdiff { max-height: 420px; overflow: auto; white-space: pre; font: 12px var(--mono); }
@@ -241,9 +231,6 @@ main.content:focus { outline: none; }
 kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; color: var(--muted); }
 .btn.search { color: var(--muted); }
 /* Уведомления */
-.note { display: grid; gap: 2px; padding: 8px; border-radius: 6px; background: var(--panel2); border-left: 3px solid var(--muted); }
-.note.warn { border-left-color: var(--warn); }
-.note.err { border-left-color: var(--err); }
 /* Компактный режим */
 [data-density="compact"] .card { padding: 10px; }
 [data-density="compact"] .setting { padding: 6px 0; }
@@ -349,7 +336,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .ov { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 .ov h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
 .ov p { margin: 0; }
-.verdict { border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 8px; }
+.verdict { border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--radius); padding: 16px; display: grid; gap: 8px; }
 .verdict h3 { margin: 0; }
 .verdict.err { background: var(--err-bg); border-color: var(--err-line); border-left-color: var(--err); }
 .verdict.warn { background: var(--warn-bg); border-left-color: var(--warn); }
@@ -387,7 +374,60 @@ details.adv summary::-webkit-details-marker { display: none; }
 .psec.danger { border-color: var(--err-line); }
 .psec.danger h3 { color: var(--err); }
 
+/* Иконки в кнопках: по центру строки, с ровным зазором до текста */
+.ico { display: inline-block; vertical-align: -3px; flex: none; }
+.btn .ico, .go .ico { margin-right: 2px; }
+.btn.square .ico, .more .ico { margin: 0; vertical-align: middle; }
+.dialog-x .ico { transform: rotate(45deg); vertical-align: middle; }
+.play .go kbd { margin-left: 8px; background: rgba(0,0,0,.14); border-color: rgba(0,0,0,.2); color: inherit; font-size: 11px; }
+
+.bisectbar { margin: 0 0 12px; }
+.searchbox { position: relative; display: inline-flex; align-items: center; width: 240px; }
+.searchbox .ico { position: absolute; left: 10px; color: var(--muted); pointer-events: none; }
+.searchbox .field { width: 100%; padding-left: 34px; padding-right: 30px; }
+.searchbox kbd { position: absolute; right: 8px; margin: 0; }
+.modbar .seg.subtabs { margin-bottom: 0; }
+.kv dd .upd { display: block; margin-left: auto; color: var(--warn); }
+
+/* «Ресурсы и конфиги» (макет 04): две карточки, строки с переключателями */
+.sechead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.sechead p { margin: 2px 0 0; }
+.rlist { display: grid; }
+.rrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.rrow .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.rrow .ctl { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.rrow .sicon { width: 34px; height: 34px; border-radius: 7px; flex: none; }
+.rdetails { border-top: 1px solid var(--line); padding-top: 10px; }
+.rdetails summary { cursor: pointer; }
+.rdetails-head { margin: 10px 0; }
+.panel p { margin: 0; }
+.cfgscroll { max-height: 300px; overflow: auto; }
+.cfgitem { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 10px; color: inherit; }
+.cfgitem .mono { overflow-wrap: anywhere; font-size: 13px; }
+.cfgitem.on { background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
+.cfgitem.hit2 { flex-direction: column; align-items: flex-start; gap: 2px; }
+
 /* Общие экраны (макеты 06–09) */
+/* Галочки настроек — переключателями, как на макете 08 */
+.setting label.row input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; margin: 0; border-radius: 10px; background: var(--line-strong); position: relative; flex: none; cursor: pointer; transition: background .15s; }
+.setting label.row input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; }
+.setting label.row input[type=checkbox]:checked { background: var(--accent); }
+.setting label.row input[type=checkbox]:checked::after { left: 17px; }
+.setting .seg { width: fit-content; }
+.panel .form { gap: 0; }
+.panel .form > div:last-child { margin-top: 14px; }
+.state { white-space: nowrap; }
+.frow { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 14px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+.form label.frow { display: grid; gap: 8px 14px; font-size: inherit; }
+.form label.frow > span.lbl { color: var(--text); font-size: inherit; }
+.lbl { font-weight: 500; }
+.lbl .hint { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.stack.tight { gap: 8px; }
+.loaderseg { display: inline-flex; width: fit-content; margin-bottom: 0; }
+.dropzone { display: grid; gap: 6px; justify-items: center; text-align: center; padding: 22px 16px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--panel); }
+.dropzone .row { margin-top: 8px; }
+.dropzone.on { border-color: var(--accent); background: var(--ok-bg); }
+.foundico { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent); background: var(--panel2); }
 .settings { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 18px; align-items: start; max-width: 1100px; }
 .secnav { display: grid; gap: 2px; position: sticky; top: 0; }
 .secnav button { text-align: left; border: 0; background: none; color: var(--muted); padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 500; }
@@ -435,5 +475,5 @@ details.adv summary::-webkit-details-marker { display: none; }
 .modcard .alert { margin: 0; }
 .modcard .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 
-@media (max-width: 1100px) { .logsgrid { grid-template-columns: minmax(0, 1fr); } .settings { grid-template-columns: minmax(0, 1fr); } .secnav { display: flex; flex-wrap: wrap; position: static; } .snaps li { grid-template-columns: minmax(0, 1fr); } .snaps .acts { grid-column: 1; } .modsgrid, .split2, .ov { grid-template-columns: minmax(0, 1fr); } .hide-narrow { display: none; } }
+@media (max-width: 1100px) { .modtable th:nth-child(4), .modtable td:nth-child(4) { display: none; } .logsgrid { grid-template-columns: minmax(0, 1fr); } .settings { grid-template-columns: minmax(0, 1fr); } .secnav { display: flex; flex-wrap: wrap; position: static; } .snaps li { grid-template-columns: minmax(0, 1fr); } .snaps .acts { grid-column: 1; } .modsgrid, .split2, .ov { grid-template-columns: minmax(0, 1fr); } }
 

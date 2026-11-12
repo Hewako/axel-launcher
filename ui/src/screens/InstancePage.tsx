@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, errText, loaderName, mods as modsApi, modsLabel, sizeText, snapshots, type DoctorReport, type Hooks, type JournalEntry, sourceName, type AccountRef, type Instance, type LaunchOverrides, type Resolved, type Source } from "../api";
+import { api, errText, loaderName, mods as modsApi, modsLabel, sizeText, snapshots, type Bisect, type DoctorReport, type Hooks, type JournalEntry, sourceName, type AccountRef, type Instance, type LaunchOverrides, type Resolved, type Source } from "../api";
 import { isActive, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
 import { LaunchProgress, PlayButton, ProfileIcon, StatusBadge } from "../ui/common";
@@ -13,6 +13,7 @@ import { ConfigsTab } from "./ConfigsTab";
 import { OptionsTab } from "./OptionsTab";
 import { DepsTab } from "./DepsTab";
 import { Overview } from "./Overview";
+import { Icon } from "../ui/icons";
 import { nick, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
 
@@ -163,7 +164,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
               <input type="range" min={1024} max={ceiling} step={512} value={Math.min(max.value, ceiling)} aria-label={t("Память, МБ")}
                 onChange={(e) => setDraft({ ...draft, max_memory_mb: Number(e.target.value), min_memory_mb: undefined })} />
               {inst.pack_settings.max_memory_mb ? <span className="muted small">{t(" Сборка рекомендует {0} МБ.", inst.pack_settings.max_memory_mb).trim()}</span> : null}
-              {advice.map((a) => <span key={a} className="small" style={{ color: "var(--warn)" }}>⚠ {tc(a)}</span>)}
+              {advice.map((a) => <span key={a} className="small" style={{ color: "var(--warn)" }}><Icon name="warn" size={14} /> {tc(a)}</span>)}
             </div>
             <SourceTag source={max.source} onReset={() => setDraft({ ...draft, max_memory_mb: undefined, min_memory_mb: undefined })} />
           </div>
@@ -270,7 +271,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   );
 }
 
-export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs }: {
+export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onDoctor }: {
   inst: Instance;
   mods?: number;
   instances: Instance[];
@@ -281,6 +282,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   onChanged: (i: Instance) => void;
   onTrashed: () => void;
   onLogs: () => void;
+  onDoctor: (id: string, r: DoctorReport) => void;
 }) {
   const dialog = useDialog();
   const [[main, sub], setPlace] = useState<[Main, Sub | undefined]>(() => place(initialTab ?? "overview"));
@@ -295,7 +297,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   useEffect(() => { if (initialTab) setPlace(place(initialTab)); }, [initialTab]);
   // Mod Doctor для «Обзора», счётчика на «Моды» и главной кнопки; перечитываем после смены вкладки и запуска.
   const [doctor, setDoctor] = useState<{ report: DoctorReport; journal: JournalEntry[] } | null>(null);
-  useEffect(() => { modsApi.view(inst.id).then(setDoctor).catch(() => setDoctor(null)); }, [inst.id, main, reload, state?.phase]);
+  useEffect(() => { modsApi.view(inst.id).then((d) => { setDoctor(d); onDoctor(inst.id, d.report); }).catch(() => setDoctor(null)); }, [inst.id, main, reload, state?.phase]);
   const blocking = doctor?.report.findings.filter((f) => f.severity === "blocking") ?? [];
   // «Починить и играть» — только если каждое блокирующее замечание чинится выключением мода (как в Mod Doctor).
   const fix = blocking.length > 0 && blocking.every((f) => f.fixes.some((x) => x.kind !== "install")) ? async () => {
@@ -307,6 +309,29 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
     }
   } : undefined;
   const issues = doctor?.report.findings.length ?? 0;
+  // Поиск виновника краша идёт несколько запусков: полоса видна на любой вкладке.
+  const [bisect, setBisect] = useState<Bisect | null>(null);
+  useEffect(() => { modsApi.bisectStatus(inst.id).then(setBisect).catch(() => setBisect(null)); }, [inst.id, reload, state?.phase]);
+  const bisectStep = async (action: "start" | "answer" | "cancel", crashed?: boolean) => {
+    if (action === "start" && !(await dialog.confirm({
+      title: t("Найти мод, из-за которого падает игра?"),
+      body: t("Лаунчер будет по очереди выключать половину модов (вместе с теми, кому они нужны). После каждого шага запустите игру и ответьте, повторился ли краш. Обычно хватает 3–6 запусков. Перед началом сохраняется снимок."),
+      confirm: t("Начать"),
+    }))) return;
+    try {
+      const r = await modsApi.bisectStep(inst.id, action, crashed);
+      if (r?.kind === "found") {
+        const off = await dialog.confirm({
+          title: t("Вероятный виновник: {0}", r.file),
+          body: t("Все моды снова включены. Выключить этот мод? Его можно будет включить обратно в любой момент."),
+          confirm: t("Выключить"),
+          cancel: t("Оставить"),
+        });
+        if (off) await modsApi.toggle(inst.id, r.file, false);
+      }
+    } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
+    setReload((n) => n + 1);
+  };
   const tabs: [Main, React.ReactNode][] = MAIN.map(([m, l]) => [m, m === "mods" && issues > 0
     ? <>{l} <span className={`count ${blocking.length ? "err" : "warn"}`} aria-label={t("замечаний: {0}", issues)}>{issues}</span></> : l]);
   // Меню «Ещё» закрывается кликом мимо него.
@@ -345,6 +370,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
     }
   };
 
+  const modTabs = <TabStrip className="seg subtabs" label={t("Разделы модов")} items={SUBS.mods} value={subOf("mods")} onPick={(s) => setPlace(["mods", s])} />;
   return (
     <>
       <div className="phead">
@@ -354,9 +380,9 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
           <p className="sub">Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}{modCount !== undefined && inst.loader !== "vanilla" ? `, ${modsLabel(modCount)}` : ""}{disk !== null ? `, ${t("{0} на диске", sizeText(disk))}` : ""} · <StatusBadge inst={inst} state={state} /></p>
         </div>
         <div className="phead-acts">
-          <button className="btn square" aria-label={t("Папка")} title={t("Папка")} onClick={() => api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e)))}>⌂</button>
+          <button className="btn square" aria-label={t("Папка")} title={t("Папка")} onClick={() => api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e)))}><Icon name="folder" /></button>
           <div className="menuwrap">
-            <button className="btn square" aria-label={t("Ещё")} aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)}>⋯</button>
+            <button className="btn square" aria-label={t("Ещё")} aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)}><Icon name="more" /></button>
             {more && (
               <div className="menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") setMore(false); }}>
                 <button role="menuitem" onClick={() => ask("clone")}>{t("Сделать копию профиля…")}</button>
@@ -368,6 +394,17 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
           <PlayButton inst={inst} state={state} compact fix={fix} />
         </div>
       </div>
+      {bisect && (
+        <div className="alert warn bisectbar">
+          <div className="h">{t("Поиск виновника краша · шаг {0}", bisect.round)}</div>
+          <span>{t("Выключено модов: {0}. Подозреваемых осталось: {1}. Запустите игру и ответьте:", bisect.disabled.length, bisect.suspects.length)}</span>
+          <div className="row">
+            <button className="btn" disabled={isActive(state)} onClick={() => bisectStep("answer", true)}>{t("Игра снова упала")}</button>
+            <button className="btn" disabled={isActive(state)} onClick={() => bisectStep("answer", false)}>{t("Игра работает")}</button>
+            <button className="btn link small" disabled={isActive(state)} onClick={() => bisectStep("cancel")}>{t("Прекратить поиск")}</button>
+          </div>
+        </div>
+      )}
       <div className="tabsrow">
         <TabStrip className="mtabs" label={t("Вкладки профиля")} items={tabs} value={main} onPick={(m) => setPlace([m, undefined])} />
       </div>
@@ -376,13 +413,13 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
         <div className="stack">
           {state?.phase === "failed" && state.error && <div className="alert err" style={{ whiteSpace: "pre-line" }}><div className="h">{t("Запуск не удался")}</div><span>{state.error}</span></div>}
           {state?.phase === "done" && state.exit?.analysis && <CrashCard inst={inst} a={state.exit.analysis} code={state.exit.code} onOpenTab={go} />}
-          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fix} onGo={go} onLogs={onLogs} />
+          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fix} onGo={go} onLogs={onLogs} liveCrash={!!(state?.phase === "done" && state.exit?.analysis)} bisecting={!!bisect} onBisect={() => bisectStep("start")} />
         </div>
       )}
       {main === "mods" && (
         <>
-          <TabStrip className="seg subtabs" label={t("Разделы модов")} items={SUBS.mods} value={subOf("mods")} onPick={(s) => setPlace(["mods", s])} />
-          {subOf("mods") === "mods" && <ModsTab key={`${inst.id}-${reload}`} inst={inst} running={isActive(state)} />}
+          {subOf("mods") !== "mods" && modTabs}
+          {subOf("mods") === "mods" && <ModsTab key={`${inst.id}-${reload}`} inst={inst} running={isActive(state)} tabs={modTabs} bisecting={!!bisect} onBisect={() => bisectStep("start")} />}
           {subOf("mods") === "resources" && (
             <div className="split2">
               <ResourcesTab key={`r-${inst.id}`} inst={inst} running={isActive(state)} />

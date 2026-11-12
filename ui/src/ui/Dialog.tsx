@@ -1,6 +1,7 @@
 // Собственные диалоги вместо confirm()/alert(): с фокусом, Esc и понятными кнопками.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { t } from "../i18n";
+import { Icon } from "./icons";
 
 interface ConfirmOptions {
   title: string;
@@ -54,7 +55,7 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
         <h3>{title}</h3>
         {children}
         {/* В конце, чтобы автофокус и Tab сначала шли по содержимому окна. */}
-        <button className="iconbtn dialog-x" aria-label={t("Закрыть окно")} title={t("Закрыть окно")} onClick={onClose}>×</button>
+        <button className="iconbtn dialog-x" aria-label={t("Закрыть окно")} title={t("Закрыть окно")} onClick={onClose}><Icon name="plus" size={18} /></button>
       </div>
     </div>
   );

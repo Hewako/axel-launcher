@@ -1,6 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useCallback, useEffect, useState } from "react";
-import { api, mb, statusOf, type AccountRef, type AppInfo, type GlobalSettings, type Instance } from "./api";
+import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance } from "./api";
 import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
 import { CreateInstance } from "./screens/CreateInstance";
@@ -10,7 +11,8 @@ import { Logs } from "./screens/Logs";
 import { Settings } from "./screens/Settings";
 import { FirstRun } from "./screens/FirstRun";
 import { Avatar } from "./ui/Avatar";
-import { ProfileIcon } from "./ui/common";
+import { PauseButton, ProfileIcon, progressOf } from "./ui/common";
+import { Icon } from "./ui/icons";
 import { DialogProvider } from "./ui/Dialog";
 import { nick, path, setStreamer, useStreamer } from "./streamer";
 import { markRead, pushNote, useNotes } from "./notify";
@@ -87,6 +89,31 @@ function Shell() {
   const [firstRun, setFirstRun] = useState(false);
   const [release, setRelease] = useState<{ version: string; url: string } | null>(null);
   const notes = useNotes();
+  // Сборку можно бросить в любое место окна: откроется «Новый профиль» с импортом (моды ловит ModsTab).
+  const [dragging, setDragging] = useState(false);
+  const [dropped, setDropped] = useState<{ path: string; n: number } | null>(null);
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let alive = true;
+    let webview: ReturnType<typeof getCurrentWebview>;
+    try { webview = getCurrentWebview(); } catch { return; } // в предпросмотре без Tauri окна нет
+    webview.onDragDropEvent((e) => {
+      if (e.payload.type === "over" || e.payload.type === "enter") setDragging(true);
+      else if (e.payload.type === "leave") setDragging(false);
+      else if (e.payload.type === "drop") {
+        setDragging(false);
+        const pack = e.payload.paths.find(isPackPath);
+        if (pack) { setScreen("new"); setDropped({ path: pack, n: Date.now() }); }
+      }
+    }).then((u) => { if (alive) off = u; else u(); }).catch(() => {});
+    return () => { alive = false; off?.(); };
+  }, []);
+  // Вердикт Mod Doctor по профилям для точек на рельсе.
+  const [doctors, setDoctors] = useState<Record<string, { blocked: number; warnings: number }>>({});
+  const noteDoctor = useCallback((id: string, r: DoctorReport) => {
+    const count = (s: string) => r.findings.filter((f) => f.severity === s).length;
+    setDoctors((d) => ({ ...d, [id]: { blocked: count("blocking"), warnings: count("warning") } }));
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -132,6 +159,19 @@ function Shell() {
     api.globalSettings().then((g) => api.saveGlobalSettings({ ...g, theme: t })).catch(() => {});
   };
 
+  // Проверяем профили по очереди: у больших сборок чтение модов занимает заметное время.
+  const instanceIds = instances.filter((i) => i.loader !== "vanilla" && !i.archived).map((i) => i.id).join("\n");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      for (const id of instanceIds.split("\n").filter(Boolean)) {
+        if (!alive) return;
+        await mods.view(id).then((v) => noteDoctor(id, v.report)).catch(() => {});
+      }
+    })();
+    return () => { alive = false; };
+  }, [instanceIds, noteDoctor]);
+
   const selected = instances.find((i) => i.id === selectedId);
   // states — одна и та же Map, которая меняется на месте: считаем на каждой отрисовке, без useMemo.
   let downloading: { name: string; s: NonNullable<ReturnType<typeof states.get>> } | null = null;
@@ -165,7 +205,12 @@ function Shell() {
   const status = (i: Instance) => {
     const st = states.get(i.id);
     const s = statusOf(i, isActive(st) ? st!.phase : undefined);
-    return { ...s, cls: i.last_launch || isActive(st) ? s.cls || "idle" : "idle" };
+    if (isActive(st)) return s;
+    const d = doctors[i.id];
+    if (d?.blocked) return { text: t("мешает запуску: {0}", d.blocked), cls: "err" as const };
+    if (s.cls === "err") return s;
+    if (d?.warnings) return { text: t("есть замечания: {0}", d.warnings), cls: "warn" as const };
+    return { ...s, cls: i.last_launch ? s.cls || ("idle" as const) : ("idle" as const) };
   };
   const selStatus = selected ? status(selected) : null;
 
@@ -195,9 +240,9 @@ function Shell() {
         <div className="rail-tools">
           <button className={`rail-btn ${screen === "logs" ? "on" : ""}`} aria-label={t("Логи и краши{0}", notes.unread ? t(": новых {0}", notes.unread) : "")} title={t("Логи и краши")}
             onClick={() => { markRead(); setScreen("logs"); }}>
-            <Icon d={BELL} />{notes.unread > 0 && <span className="adot" aria-hidden />}
+            <Icon name="bell" size={20} />{notes.unread > 0 && <span className="adot" aria-hidden />}
           </button>
-          <button className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon d={GEAR} /></button>
+          <button className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /></button>
           <button className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
             <Avatar account={ms} />
           </button>
@@ -227,7 +272,7 @@ function Shell() {
             <InstancePage key={selected.id} inst={selected} mods={modsCount[selected.id]} instances={instances} state={states.get(selected.id)} accounts={accounts} initialTab={profileTab}
               onCloned={async (i) => { await refresh(); open(i.id, "profile"); }}
               onChanged={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))}
-              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} />
+              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onDoctor={noteDoctor} />
           ) : (
             <div className="card empty">
               <p>{t("Профилей нет.")}</p>
@@ -243,8 +288,8 @@ function Shell() {
               <h2>{t("Новый профиль")}</h2>
               <p className="sub">{t("Создать с нуля или импортировать готовую сборку.")}</p>
               <div className="split2">
-                <CreateInstance embedded onClose={() => setScreen("profile")} onCreated={(i) => refresh().then(() => open(i.id))} />
-                <ImportDialog embedded onClose={() => setScreen("profile")} onDone={(i) => refresh().then(() => open(i.id))} />
+                <CreateInstance onCreated={(i) => refresh().then(() => open(i.id))} />
+                <ImportDialog dragging={dragging} dropped={dropped} onDone={(i) => refresh().then(() => open(i.id))} />
               </div>
             </>
           )}
@@ -262,6 +307,7 @@ function Shell() {
               <>↓ {downloading.name}: {t(downloading.s.stageLabel)} · {downloading.s.progress!.files_done}/{downloading.s.progress!.files_total} · {mb(downloading.s.progress!.bytes_done)} {t("МБ")}</>
             ) : runningCount > 0 ? t("Запущено профилей: {0}", runningCount)
               : selected && selStatus ? t("Профиль «{0}»: {1}", selected.name, selStatus.text) : ""}
+            <PauseButton downloading={progressOf(downloading?.s).downloading} />
           </span>
         </footer>
       </div>
@@ -277,13 +323,6 @@ function Shell() {
     </div>
   );
 }
-
-/** Значки рельсы — контуром, одним размером и цветом текста (эмодзи и символы шрифта выглядели вразнобой). */
-const Icon = ({ d }: { d: string }) => (
-  <svg className="ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" aria-hidden><path d={d} /></svg>
-);
-const BELL = "M6 17V11a6 6 0 0 1 12 0v6l1.6 1.8H4.4Z M10 21a2.2 2.2 0 0 0 4 0";
-const GEAR = "M19.06 10.57 L21.52 10.76 L21.52 13.24 L19.06 13.43 L18.00 15.98 L19.61 17.85 L17.85 19.61 L15.98 18.00 L13.43 19.06 L13.24 21.52 L10.76 21.52 L10.57 19.06 L8.02 18.00 L6.15 19.61 L4.39 17.85 L6.00 15.98 L4.94 13.43 L2.48 13.24 L2.48 10.76 L4.94 10.57 L6.00 8.02 L4.39 6.15 L6.15 4.39 L8.02 6.00 L10.57 4.94 L10.76 2.48 L13.24 2.48 L13.43 4.94 L15.98 6.00 L17.85 4.39 L19.61 6.15 L18.00 8.02 Z M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0Z";
 
 export default function App() {
   return (
