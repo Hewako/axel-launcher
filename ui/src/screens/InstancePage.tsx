@@ -448,7 +448,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
               <ConfigsTab key={`c-${inst.id}`} inst={inst} running={isActive(state)} />
             </div>
           )}
-          {subOf("mods") === "deps" && <DepsTab key={inst.id} inst={inst} />}
+          {subOf("mods") === "deps" && <DepsTab key={inst.id} inst={inst} running={isActive(state)} onChanged={() => setReload((n) => n + 1)} />}
         </>
       )}
       {main === "rollback" && <SnapshotsTab inst={inst} running={isActive(state)} journal={doctor?.journal ?? []} onRestored={() => setReload((n) => n + 1)} />}

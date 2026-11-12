@@ -150,7 +150,7 @@ export function CatalogDialog({ inst, initial, onClose, onPlan, kinds = ["mod", 
   );
 }
 
-function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; files: ModFile[]; onToggle: (file: string, enabled: boolean) => void; onSearch: (q: string) => void }) {
+export function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; files: ModFile[]; onToggle: (file: string, enabled: boolean) => void; onSearch: (q: string) => void }) {
   const name = (file: string) => files.find((x) => x.file_name === file)?.mods[0]?.name ?? file;
   return (
     <div className={`alert ${f.severity === "blocking" ? "err" : "warn"}`}>

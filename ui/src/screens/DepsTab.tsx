@@ -1,8 +1,21 @@
 // Вкладка «Зависимости»: граф связей между модами профиля — кто кому нужен, что рекомендовано,
 // что конфликтует (по метаданным модов и находкам Mod Doctor). Моды без связей скрыты.
-import { useEffect, useMemo, useState } from "react";
-import { errText, mods, type DoctorReport, type JournalEntry, type ModFile, type Instance } from "../api";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { errText, mods, type DoctorReport, type JournalEntry, type ModFile, type Instance, type Plan } from "../api";
+import { useDialog } from "../ui/Dialog";
+import { CatalogDialog, FindingCard, PlanDialog } from "./ModsTab";
 import { t, tc } from "../i18n";
+
+type Pt = { x: number; y: number };
+// Положение узлов, которое игрок задал перетаскиванием, — своё у каждого профиля.
+// shortcut: хранится в localStorage окна (теряется при очистке данных WebView); перенести в профиль, если попросят синхронизацию.
+const posKey = (id: string) => `axel.deps.pos.${id}`;
+function loadPos(id: string): Record<string, Pt> {
+  try { return JSON.parse(localStorage.getItem(posKey(id)) ?? "{}"); } catch { return {}; }
+}
+function savePos(id: string, p: Record<string, Pt>) {
+  try { if (Object.keys(p).length) localStorage.setItem(posKey(id), JSON.stringify(p)); else localStorage.removeItem(posKey(id)); } catch { /* без хранилища положение просто не запомнится */ }
+}
 
 /** Загрузчик и игра — не моды профиля, в связях их не показываем. */
 const BUILTIN = new Set(["minecraft", "java", "fabricloader", "quilt_loader", "neoforge", "forge", "fml"]);
@@ -73,71 +86,151 @@ function layout(nodes: Node[], edges: Edge[], w: number, h: number): Map<string,
   return pos;
 }
 
-export function DepsTab({ inst }: { inst: Instance }) {
+export function DepsTab({ inst, running, onChanged }: { inst: Instance; running: boolean; onChanged: () => void }) {
+  const dialog = useDialog();
   const [data, setData] = useState<{ files: ModFile[]; report: DoctorReport; journal: JournalEntry[] } | null>(null);
   const [error, setError] = useState("");
   const [view, setView] = useState<View>("all");
   const [sel, setSel] = useState<string | null>(null);
-  useEffect(() => { mods.view(inst.id).then(setData).catch((e) => setError(errText(e))); }, [inst.id]);
+  const [catalog, setCatalog] = useState<string | null>(null);
+  const [plan, setPlan] = useState<{ title: string; plan: Plan } | null>(null);
+  const [moved, setMoved] = useState<Record<string, Pt>>(() => loadPos(inst.id));
+  const svg = useRef<SVGSVGElement>(null);
+  const drag = useRef<{ id: string; dx: number; dy: number; start: Pt; moved: boolean } | null>(null);
+  const load = useCallback(() => { mods.view(inst.id).then(setData).catch((e) => setError(errText(e))); }, [inst.id]);
+  useEffect(load, [load]);
   const g = useMemo(() => (data ? buildGraph(data.files, data.report, data.journal) : null), [data]);
   const W = 900, H = 520;
-  const pos = useMemo(() => (g ? layout(g.nodes, g.edges, W, H) : new Map()), [g]);
+  const auto = useMemo(() => (g ? layout(g.nodes, g.edges, W, H) : new Map<string, Pt>()), [g]);
+  const at = (id: string): Pt | undefined => moved[id] ?? auto.get(id);
+  const clamp = (p: Pt): Pt => ({ x: Math.min(W - 90, Math.max(14, p.x)), y: Math.min(H - 14, Math.max(14, p.y)) });
+  const place = (id: string, p: Pt, persist: boolean) => setMoved((m) => { const next = { ...m, [id]: clamp(p) }; if (persist) savePos(inst.id, next); return next; });
+
+  // Перетаскивание: координаты мыши переводятся в координаты рисунка (он масштабируется по ширине окна).
+  const toSvg = (e: React.PointerEvent) => {
+    const m = svg.current?.getScreenCTM();
+    if (!m) return { x: 0, y: 0 };
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  };
+  const down = (e: React.PointerEvent, id: string) => {
+    const p = toSvg(e), cur = at(id)!;
+    drag.current = { id, dx: cur.x - p.x, dy: cur.y - p.y, start: p, moved: false };
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  };
+  const move = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const p = toSvg(e);
+    if (!d.moved && Math.hypot(p.x - d.start.x, p.y - d.start.y) < 4) return;
+    d.moved = true;
+    place(d.id, { x: p.x + d.dx, y: p.y + d.dy }, false);
+  };
+  const up = (id: string) => {
+    const d = drag.current;
+    drag.current = null;
+    if (d?.moved) setMoved((m) => { savePos(inst.id, m); return m; });
+    else setSel(sel === id ? null : id);
+  };
+  const resetPos = () => { savePos(inst.id, {}); setMoved({}); };
+  const toggle = async (file: string, enabled: boolean) => {
+    try { await mods.toggle(inst.id, file, enabled); load(); onChanged(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
+  };
 
   if (error) return <div className="alert err"><span>{error}</span></div>;
-  if (!g) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
+  if (!g || !data) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
   if (g.nodes.length === 0) return <div className="card empty"><p>{t("Связей между модами нет: каждый работает сам по себе.")}</p></div>;
 
   const near = new Set(sel ? [sel, ...g.edges.filter((e) => e.from === sel || e.to === sel).flatMap((e) => [e.from, e.to])] : []);
   const edges = g.edges.filter((e) => view === "all" || (view === "problems" ? e.kind === "bad" : !sel || near.has(e.from) && near.has(e.to) && (e.from === sel || e.to === sel)));
   const shown = new Set(view === "all" ? g.nodes.map((n) => n.id) : edges.flatMap((e) => [e.from, e.to]).concat(sel ? [sel] : []));
   const node = g.nodes.find((n) => n.id === sel);
+  const file = data.files.find((f) => f.file_name === sel);
   const nameOf = (id: string) => g.nodes.find((n) => n.id === id)?.name ?? id;
+  const conflicts = g.edges.filter((e) => e.kind === "bad").length;
+  const missingCount = [...g.missing.values()].reduce((n, l) => n + l.length, 0);
+  const warnings = data.report.findings.filter((f) => f.severity !== "blocking").length;
+  const findingsOf = (id: string) => data.report.findings.filter((f) => f.files.includes(id));
 
   return (
     <>
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 10 }}>
         <div className="seg" role="group" aria-label={t("Какие связи показывать")}>
           {([["all", t("Все связи")], ["around", t("Вокруг выбранного")], ["problems", t("Только проблемы")]] as const).map(([v, l]) => (
-            <button key={v} className={view === v ? "on" : ""} onClick={() => setView(v)}>{l}</button>
+            <button key={v} className={view === v ? "on" : ""} aria-pressed={view === v} onClick={() => setView(v)}>{l}</button>
           ))}
         </div>
-        <span className="muted small">{t("моды без связей скрыты ({0}) · клик по узлу — подробности", g.hidden)}</span>
+        <span className="muted small">{t("моды без связей скрыты ({0}) · узлы можно перетаскивать", g.hidden)}
+          {Object.keys(moved).length > 0 && <> · <button className="btn link small" onClick={resetPos}>{t("Разложить заново")}</button></>}
+        </span>
       </div>
-      <div className="card graph">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("Граф зависимостей модов")}>
-          {edges.map((e, i) => {
-            const a = pos.get(e.from), b = pos.get(e.to);
-            if (!a || !b) return null;
-            return (
-              <g key={i}>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`edge ${e.kind}`} />
-                {e.kind === "bad" && <text x={(a.x + b.x) / 2 + 6} y={(a.y + b.y) / 2} className="edge-label">× {t("конфликт")}</text>}
-              </g>
-            );
-          })}
-          {g.nodes.filter((n) => shown.has(n.id)).map((n) => {
-            const p = pos.get(n.id)!;
-            const bad = g.edges.some((e) => e.kind === "bad" && (e.from === n.id || e.to === n.id));
-            return (
-              <g key={n.id} className={`node ${n.lib ? "lib" : ""} ${bad ? "bad" : ""} ${sel === n.id ? "on" : ""}`} role="button" tabIndex={0} aria-label={n.name}
-                onClick={() => setSel(sel === n.id ? null : n.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(sel === n.id ? null : n.id); } }}>
-                <circle cx={p.x} cy={p.y} r={n.lib ? 6 : 10} />
-                <text x={p.x + 14} y={p.y + 4}>{n.name}</text>
-              </g>
-            );
-          })}
-        </svg>
-        {node && (
-          <div className="graph-info" aria-live="polite">
-            <b>{node.name}</b>
-            {g.edges.filter((e) => e.kind === "bad" && (e.from === node.id || e.to === node.id)).map((e, i) => (
-              <span key={i} className="small" style={{ color: "var(--err)" }}>{e.why ?? t("Конфликт с {0}", nameOf(e.from === node.id ? e.to : e.from))}</span>
-            ))}
-            {g.edges.some((e) => e.from === node.id && e.kind !== "bad") && <span className="small">{t("нужны:")} {g.edges.filter((e) => e.from === node.id && e.kind !== "bad").map((e) => nameOf(e.to)).join(", ")}</span>}
-            {g.edges.some((e) => e.to === node.id && e.kind !== "bad") && <span className="small muted">{t("нужен для:")} {g.edges.filter((e) => e.to === node.id && e.kind !== "bad").map((e) => nameOf(e.from)).join(", ")}</span>}
-            {(g.missing.get(node.id) ?? []).length > 0 && <span className="small" style={{ color: "var(--err)" }}>{t("нет в профиле")}: {g.missing.get(node.id)!.join(", ")}</span>}
-          </div>
-        )}
+      <div className="modsgrid">
+        <div className="card graph">
+          <svg ref={svg} viewBox={`0 0 ${W} ${H}`} role="group" aria-label={t("Граф зависимостей модов")} onPointerMove={move}>
+            {edges.map((e, i) => {
+              const a = at(e.from), b = at(e.to);
+              if (!a || !b) return null;
+              return (
+                <g key={i}>
+                  <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`edge ${e.kind}`} />
+                  {e.kind === "bad" && <text x={(a.x + b.x) / 2 + 6} y={(a.y + b.y) / 2} className="edge-label">× {t("конфликт")}</text>}
+                </g>
+              );
+            })}
+            {g.nodes.filter((n) => shown.has(n.id)).map((n) => {
+              const p = at(n.id)!;
+              const bad = g.edges.some((e) => e.kind === "bad" && (e.from === n.id || e.to === n.id));
+              return (
+                <g key={n.id} className={`node ${n.lib ? "lib" : ""} ${bad ? "bad" : ""} ${sel === n.id ? "on" : ""}`} role="button" tabIndex={0}
+                  aria-label={`${n.name}${bad ? `, ${t("конфликт")}` : ""}`} aria-pressed={sel === n.id} aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+                  onPointerDown={(e) => down(e, n.id)} onPointerUp={() => up(n.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(sel === n.id ? null : n.id); return; }
+                    // Стрелки двигают узел — перетаскивание без мыши (WCAG 2.5.7).
+                    const step = e.shiftKey ? 40 : 10;
+                    const d = { ArrowUp: [0, -step], ArrowDown: [0, step], ArrowLeft: [-step, 0], ArrowRight: [step, 0] }[e.key];
+                    if (d) { e.preventDefault(); place(n.id, { x: p.x + d[0], y: p.y + d[1] }, true); }
+                  }}>
+                  <circle cx={p.x} cy={p.y} r={n.lib ? 6 : 10} />
+                  <text x={p.x + 14} y={p.y + 4}>{n.name}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <aside className="card modcard" aria-label={t("Сведения о связях")} aria-live="polite">
+          {!node ? (
+            <>
+              <h3>{t("Сводка")}</h3>
+              <dl className="kv">
+                <dt>{t("Обязательные зависимости")}</dt><dd>{missingCount ? <span style={{ color: "var(--err)" }}>{t("не хватает: {0}", missingCount)}</span> : t("все на месте")}</dd>
+                <dt>{t("Конфликтов")}</dt><dd>{conflicts}</dd>
+                <dt>{t("Предупреждений")}</dt><dd>{warnings}</dd>
+                <dt>{t("Модов со связями")}</dt><dd>{g.nodes.length}</dd>
+              </dl>
+              <p className="muted small">{t("Нажмите на мод в графе — здесь появятся его связи и что можно сделать. Узел можно перетащить мышью или стрелками, положение запомнится.")}</p>
+            </>
+          ) : (
+            <>
+              <h3>{node.name}</h3>
+              <p className="muted small">{node.id}</p>
+              {findingsOf(node.id).map((f, i) => <FindingCard key={i} f={f} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
+              <dl className="kv">
+                {g.edges.some((e) => e.from === node.id && e.kind !== "bad") && <><dt>{t("Нужны ему")}</dt><dd>{g.edges.filter((e) => e.from === node.id && e.kind !== "bad").map((e) => nameOf(e.to)).join(", ")}</dd></>}
+                {g.edges.some((e) => e.to === node.id && e.kind !== "bad") && <><dt>{t("Нужен для")}</dt><dd>{g.edges.filter((e) => e.to === node.id && e.kind !== "bad").map((e) => nameOf(e.from)).join(", ")}</dd></>}
+                {g.edges.filter((e) => e.kind === "bad" && (e.from === node.id || e.to === node.id)).map((e, i) => (
+                  <Fragment key={i}><dt>{t("Конфликт")}</dt><dd style={{ color: "var(--err)" }}>{e.why ?? t("Конфликт с {0}", nameOf(e.from === node.id ? e.to : e.from))}</dd></Fragment>
+                ))}
+                {(g.missing.get(node.id) ?? []).length > 0 && <><dt>{t("нет в профиле")}</dt><dd style={{ color: "var(--err)" }}>{g.missing.get(node.id)!.join(", ")}</dd></>}
+              </dl>
+              <div className="acts">
+                {file && <button className="btn" disabled={running} onClick={() => toggle(file.file_name, !file.enabled)}>{file.enabled ? t("Выключить") : t("Включить")}</button>}
+                {(g.missing.get(node.id) ?? []).map((id) => <button key={id} className="btn" disabled={running} onClick={() => setCatalog(id)}>{t("Найти «")}{id}{t("» в каталоге")}</button>)}
+                <button className="btn link" onClick={() => setSel(null)}>{t("К сводке")}</button>
+              </div>
+            </>
+          )}
+        </aside>
       </div>
       <p className="muted small legend">
         <span><i className="lg req" /> {t("требует")}</span>
@@ -145,6 +238,9 @@ export function DepsTab({ inst }: { inst: Instance }) {
         <span><i className="lg bad" /> {t("конфликт")}</span>
         <span>{t("серый узел — библиотека, поставлена как зависимость")}</span>
       </p>
+      {running && <p className="small" style={{ color: "var(--warn)" }}>{t("Игра запущена — менять моды можно после её закрытия.")}</p>}
+      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} kinds={["mod"]} onClose={() => setCatalog(null)} onPlan={(title, p) => { setCatalog(null); setPlan({ title, plan: p }); }} />}
+      {plan && <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, t("Перед: {0}", plan.title.toLowerCase())); setPlan(null); load(); onChanged(); }} />}
     </>
   );
 }

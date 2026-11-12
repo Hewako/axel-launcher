@@ -272,7 +272,8 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .edge.opt { stroke-dasharray: 2 4; }
 .edge.bad { stroke: var(--err); stroke-dasharray: 7 5; stroke-width: 2; }
 .edge-label { fill: var(--err); font-size: 13px; }
-.node { cursor: pointer; }
+.node { cursor: grab; touch-action: none; }
+.node:active { cursor: grabbing; }
 .node circle { fill: var(--panel2); stroke: var(--text); stroke-width: 1.6; }
 .node.lib circle { stroke: var(--muted); }
 .node.bad circle { stroke: var(--err); }
@@ -280,7 +281,6 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .node text { fill: var(--text); font-size: 14px; }
 .node.lib text { fill: var(--muted); }
 .node:focus-visible circle { stroke: var(--blue); stroke-width: 3; }
-.graph-info { position: absolute; top: 12px; right: 12px; width: min(340px, 45%); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 6px; }
 .legend { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
 .lg { display: inline-block; width: 26px; border-top: 2px solid var(--muted); vertical-align: middle; }
 .lg.opt { border-top-style: dotted; }
