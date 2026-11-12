@@ -210,9 +210,11 @@ function Shell() {
     if (d?.blocked) return { text: t("мешает запуску: {0}", d.blocked), cls: "err" as const };
     if (s.cls === "err") return s;
     if (d?.warnings) return { text: t("есть замечания: {0}", d.warnings), cls: "warn" as const };
-    return { ...s, cls: i.last_launch ? s.cls || ("idle" as const) : ("idle" as const) };
+    // Пустое кольцо — только «новый, ещё не запускался»; остановленная игра — обычный «готов».
+    return { ...s, cls: i.last_launch ? s.cls || ("ok" as const) : ("idle" as const) };
   };
   const selStatus = selected ? status(selected) : null;
+  const dlPct = progressOf(downloading?.s).pct;
 
   return (
     <div className="app">
@@ -254,10 +256,11 @@ function Shell() {
           <div className="devbar" role="status">{t("Сборка разработчика (dev-launch): разрешён запуск без входа для отладки на собственной копии игры. В релизе этого режима нет.")}</div>
         )}
         {release && (
-          <div className="devbar" role="status">
-            {t("Вышла новая версия Axel' {0}.", release.version)}{" "}
-            <button className="btn link small" onClick={() => api.openLink(release.url).catch(() => {})}>{t("Открыть страницу загрузки")}</button>
-            <button className="btn link small" onClick={() => setRelease(null)}>{t("Позже")}</button>
+          <div className="banner info" role="status">
+            <Icon name="info" size={16} />
+            <span className="grow"><b>{t("Вышла новая версия Axel' {0}.", release.version)}</b> {t("Её можно скачать на странице релизов.")}</span>
+            <button className="btn" onClick={() => api.openLink(release.url).catch(() => {})}>{t("Открыть страницу загрузки")}</button>
+            <button className="btn" onClick={() => setRelease(null)}>{t("Позже")}</button>
           </div>
         )}
 
@@ -302,10 +305,17 @@ function Shell() {
             {screen !== "profile" && <><kbd>Esc</kbd> {t("назад")}</>}
           </span>
           <span className="status" aria-live="polite">
-            {downloading ? (
-              <>↓ {downloading.name}: {t(downloading.s.stageLabel)} · {downloading.s.progress!.files_done}/{downloading.s.progress!.files_total} · {mb(downloading.s.progress!.bytes_done)} {t("МБ")}</>
-            ) : runningCount > 0 ? t("Запущено профилей: {0}", runningCount)
-              : selected && selStatus ? t("Профиль «{0}»: {1}", selected.name, selStatus.text) : ""}
+            {downloading && (
+              <span className="dl">
+                <Icon name="download" size={14} />
+                <span title={`${downloading.s.progress!.files_done}/${downloading.s.progress!.files_total} · ${mb(downloading.s.progress!.bytes_done)} ${t("МБ")}`}>{downloading.name}: {t(downloading.s.stageLabel)}</span>
+                <span className="dlbar" role="progressbar" aria-label={t("Загрузка: {0}", downloading.name)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(dlPct)}><i style={{ width: `${dlPct}%` }} /></span>
+                <span className="mono">{Math.round(dlPct)}%</span>
+              </span>
+            )}
+            {screen === "profile" && selected && selStatus ? t("Профиль «{0}»: {1}", selected.name, selStatus.text)
+              : runningCount > 0 ? t("Запущено профилей: {0}", runningCount)
+              : t("Профилей: {0}, требуют внимания: {1}", instances.filter((i) => !i.archived).length, instances.filter((i) => !i.archived && ["err", "warn"].includes(status(i).cls ?? "")).length)}
             <PauseButton downloading={progressOf(downloading?.s).downloading} />
           </span>
         </footer>

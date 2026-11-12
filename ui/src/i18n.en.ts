@@ -996,4 +996,7 @@ export const EN: Record<string, string> = {
   "мешает запуску: {0}": "blocks launch: {0}",
   "Разделы модов": "Mod sections",
   "Разделы игры": "Game sections",
+  "Её можно скачать на странице релизов.": "You can download it from the releases page.",
+  "Загрузка: {0}": "Downloading: {0}",
+  "Профилей: {0}, требуют внимания: {1}": "Profiles: {0}, need attention: {1}",
 };

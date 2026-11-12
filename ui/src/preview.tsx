@@ -83,6 +83,7 @@ mockIPC((cmd, args) => {
       };
     }
     case "list_versions": return { versions: [{ id: "26.3", type: "release", releaseTime: "2026-10-14T10:00:00+00:00" }, { id: "26.2", type: "release", releaseTime: "2026-07-01T10:00:00+00:00" }, { id: "1.21.11", type: "release", releaseTime: "2025-12-09T10:00:00+00:00" }], latest_release: "26.3", offline: false };
+    case "launcher_update": return params.has("update") ? { version: "0.2.0", url: "https://github.com/Hewako/quarry-launcher/releases", notes: "" } : null;
     case "version_info": return { java_major: 25, java_reason: "javaVersion.majorVersion = 25 в JSON версии" };
     case "loader_versions": return [{ version: "0.20.1", stable: false }, { version: "0.19.5", stable: true }];
     case "read_log_file": return ["[13:47:02] [main/INFO]: Loading Minecraft 1.21.11 with Quilt Loader 0.29.2", "[13:47:03] [main/WARN]: Mod distanthorizons recommends sodium >=0.7.3", "[13:47:04] [main/INFO]: Game directory: ‹HOME›/.quarry/instances/shaders/game", "[13:47:33] [Render thread/ERROR]: Mixin apply for mod indium failed", "java.lang.RuntimeException: boom", "\tat a.b(C.java:1)"];
