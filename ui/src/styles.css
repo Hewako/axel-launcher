@@ -374,6 +374,13 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .logtail { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; line-height: 1.6; overflow: hidden; }
 .logtail div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
 .logtail .w { color: var(--warn); } .logtail .e { color: var(--err); }
+.snaps li { cursor: pointer; }
+.snaps li.on { background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
+.facts { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 0; }
+.facts li { padding: 8px 0; border-top: 1px solid var(--line); }
+.facts li:first-child { border-top: 0; padding-top: 0; }
+.back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.back .ico { transform: rotate(90deg); }
 .cempty { display: grid; gap: 2px; justify-items: center; text-align: center; padding: 10px 0 4px; }
 .cempty span { color: var(--muted); }
 .verdict.ok { background: var(--ok-bg); border-left-color: var(--accent); }

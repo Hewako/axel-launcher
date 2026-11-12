@@ -2,17 +2,69 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { errText, relTime, sizeText, snapshots, type Instance, type JournalEntry, type SnapshotDiff, type SnapshotInfo, type WorldBackup, type WorldInfo } from "../api";
 import { useDialog } from "../ui/Dialog";
+import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
 
-function DiffView({ d }: { d: SnapshotDiff }) {
-  const empty = !d.added.length && !d.removed.length && !d.changed.length && !d.options.length;
-  if (empty) return <div className="diff"><span className="muted">{t("С тех пор ничего не изменилось.")}</span></div>;
+const isMod = (p: string) => p.startsWith("mods/");
+const fileOf = (p: string) => p.replace(/^(mods|config)\//, "");
+
+/** Строки «метка — файл» для одного раздела сравнения. */
+function DiffRows({ d, keep }: { d: SnapshotDiff; keep: (p: string) => boolean }) {
+  const rows: [string, string, string][] = [
+    ...d.changed.filter(keep).map((p) => ["info", t("изменён"), p] as [string, string, string]),
+    ...d.added.filter(keep).map((p) => ["ok", t("добавлен"), p] as [string, string, string]),
+    ...d.removed.filter(keep).map((p) => ["err", t("удалён"), p] as [string, string, string]),
+  ];
+  if (!rows.length) return <p className="muted small">{t("Без изменений.")}</p>;
   return (
-    <div className="diff">
-      {d.added.map((p) => <span key={p} className="add">+ {p} <span className="muted">{t("(появилось после снимка)")}</span></span>)}
-      {d.removed.map((p) => <span key={p} className="del">− {p} <span className="muted">{t("(было в снимке)")}</span></span>)}
-      {d.changed.map((p) => <span key={p} className="chg">~ {p}</span>)}
-      {d.options.map(([k, a, b]) => <span key={k} className="chg">~ options.txt: {k} {a || "—"} → {b}</span>)}
+    <ul className="changes">
+      {rows.map(([cls, label, p]) => (
+        <li key={p}><span className={`tag ${cls}`}>{label}</span><span className="grow mono">{fileOf(p)}</span>
+          <span className="muted small">{cls === "ok" ? t("нет в снимке") : cls === "err" ? t("есть только в снимке") : t("отличается от снимка")}</span></li>
+      ))}
+    </ul>
+  );
+}
+
+/** Макет 11: что в снимке и что сейчас. В снимок входят mods/, config/, options.txt (pack.lock сравнение не показывает). */
+function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
+  s: SnapshotInfo; d: SnapshotDiff; when: string; running: boolean; busy: boolean; onBack: () => void; onRestore: () => void; onPin: () => void;
+}) {
+  const modCount = [...d.added, ...d.removed, ...d.changed].filter(isMod).length;
+  const cfgCount = [...d.added, ...d.removed, ...d.changed].filter((p) => !isMod(p)).length;
+  return (
+    <div className="ov">
+      <section className="card">
+        <button className="btn link small back" onClick={onBack}><Icon name="chevron" size={14} /> {t("Все снимки")}</button>
+        <h3>{t("Снимок {0} и профиль сейчас", when)}</h3>
+        <p className="muted small">{tc(s.reason)}. {t("Что изменилось в профиле после этого снимка.")}</p>
+        <h4 className="subhead">{t("Моды")} <span className="muted">{t("отличий: {0}", modCount)}</span></h4>
+        <DiffRows d={d} keep={isMod} />
+        <h4 className="subhead">{t("Конфиги")} <span className="muted">{t("отличий: {0}", cfgCount)}</span></h4>
+        <DiffRows d={d} keep={(p) => !isMod(p)} />
+        <h4 className="subhead">options.txt</h4>
+        {d.options.length === 0 ? <p className="muted small">{t("Без изменений.")}</p> : (
+          <div className="diff">{d.options.map(([k, a, b]) => <span key={k}><span className="del">− {k}: {a || "—"}</span><br /><span className="add">+ {k}: {b}</span></span>)}</div>
+        )}
+      </section>
+      <div className="stack">
+        <section className="card">
+          <h3>{t("Вернуть к {0}", when)}</h3>
+          <ul className="facts">
+            <li>{t("Сначала сохраним новый снимок, потом вернём старый — откат можно отменить.")}</li>
+            <li>{t("Миры не затрагиваются.")}</li>
+          </ul>
+          <div className="acts">
+            <button className="btn pri" disabled={running || busy} onClick={onRestore}>{busy ? t("Откатываем…") : t("Откатить к этому снимку")}</button>
+            <button className="btn" onClick={onBack}>{t("Назад")}</button>
+          </div>
+        </section>
+        <section className="card">
+          <h3>{s.pinned ? t("Снимок закреплён") : t("Закрепить этот снимок")}</h3>
+          <p className="muted small">{t("Закреплённый снимок не удаляется при очистке старых.")}</p>
+          <button className="btn" onClick={onPin}>{s.pinned ? t("Открепить") : t("Закрепить")}</button>
+        </section>
+      </div>
     </div>
   );
 }
@@ -21,6 +73,9 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
   const dialog = useDialog();
   const [list, setList] = useState<SnapshotInfo[] | null>(null);
   const [diffs, setDiffs] = useState<Record<string, SnapshotDiff>>({});
+  // Открытое сравнение (макет 11) и снимок, о котором рассказывает правая карточка.
+  const [comparing, setComparing] = useState("");
+  const [picked, setPicked] = useState("");
   const [worlds, setWorlds] = useState<WorldInfo[]>([]);
   const [open, setOpen] = useState("");
   const [busy, setBusy] = useState("");
@@ -41,7 +96,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
       body: t("Моды, настройки модов и options.txt вернутся к состоянию снимка. Текущее состояние сначала сохранится отдельным снимком, так что откат тоже можно отменить. Миры не затрагиваются."),
       confirm: t("Откатить"),
     });
-    if (ok) await act(s.id, async () => { await snapshots.restore(inst.id, s.id); setDiffs({}); onRestored(); }, t("Откат не удался"));
+    if (ok) await act(s.id, async () => { await snapshots.restore(inst.id, s.id); setDiffs({}); setComparing(""); onRestored(); }, t("Откат не удался"));
   };
   const restoreWorld = async (w: WorldInfo, b: WorldBackup) => {
     const ok = await dialog.confirm({
@@ -59,6 +114,18 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
   const ok = inst.last_launch?.outcome === "success" ? inst.last_launch.at : undefined;
   const working = ok === undefined ? undefined : [...(list ?? [])].filter((s) => s.created_at >= ok).sort((a, b) => a.created_at - b.created_at)[0]?.id;
   const when = (at: number) => new Date(at * 1000).toLocaleString(undefined, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const diffOf = useCallback((id: string) => {
+    if (diffs[id]) return Promise.resolve(diffs[id]);
+    return snapshots.diff(inst.id, id).then((d) => { setDiffs((m) => ({ ...m, [id]: d })); return d; });
+  }, [diffs, inst.id]);
+  const focus = (list ?? []).find((s) => s.id === picked) ?? (list ?? []).find((s) => s.id === working) ?? list?.[0];
+  useEffect(() => { if (focus) diffOf(focus.id).catch(() => {}); }, [focus?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cmp = (list ?? []).find((s) => s.id === comparing);
+  if (cmp && diffs[cmp.id]) {
+    return <Compare s={cmp} d={diffs[cmp.id]} when={when(cmp.created_at)} running={running} busy={busy === cmp.id} onBack={() => setComparing("")}
+      onRestore={() => restore(cmp)} onPin={() => act(`pin${cmp.id}`, () => snapshots.pin(inst.id, cmp.id, !cmp.pinned), t("Не получилось"))} />;
+  }
+  const fd = focus ? diffs[focus.id] : undefined;
 
   return (
     <div className="ov">
@@ -75,7 +142,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
           ) : (
             <ul className="snaps">
               {list.map((s) => (
-                <li key={s.id}>
+                <li key={s.id} className={focus?.id === s.id ? "on" : ""} onClick={() => setPicked(s.id)}>
                   <span className="when muted">{when(s.created_at)}</span>
                   <div className="what">
                     <b>{tc(s.reason)}</b>
@@ -86,11 +153,10 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
                       {s.id === working ? t("С ним игра запускалась {0}", relTime(ok!)) : s.auto ? `${relTime(s.created_at)}` : t("Создан вручную")}
                       {" "}{t("· модов")} {s.mods}{t(", конфигов")} {s.configs}
                     </div>
-                    {diffs[s.id] && <DiffView d={diffs[s.id]} />}
                   </div>
                   <div className="acts">
-                    <button className="btn" onClick={() => snapshots.diff(inst.id, s.id).then((d) => setDiffs({ ...diffs, [s.id]: d })).catch((e) => dialog.alert(t("Не удалось сравнить"), errText(e)))}>{t("Сравнить с текущим")}</button>
-                    <button className={`btn ${s.id === working ? "cta" : ""}`} disabled={running || busy !== ""} onClick={() => restore(s)}>{busy === s.id ? t("Откатываем…") : t("Откатить к этому снимку")}</button>
+                    <button className="btn" onClick={(e) => { e.stopPropagation(); diffOf(s.id).then(() => setComparing(s.id)).catch((er) => dialog.alert(t("Не удалось сравнить"), errText(er))); }}>{t("Сравнить с текущим")}</button>
+                    <button className={`btn ${s.id === working ? "pri" : ""}`} disabled={running || busy !== ""} onClick={() => restore(s)}>{busy === s.id ? t("Откатываем…") : t("Откатить к этому снимку")}</button>
                     <button className="btn link small" onClick={() => act(`pin${s.id}`, () => snapshots.pin(inst.id, s.id, !s.pinned), t("Не получилось"))}>{s.pinned ? t("Открепить") : t("Закрепить")}</button>
                   </div>
                 </li>
@@ -98,6 +164,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
             </ul>
           )}
         </section>
+        <p className="muted small" style={{ margin: 0 }}>{t("Автоматических снимков хранится 10. Закреплённые и сделанные вручную не удаляются.")}</p>
         {journal.length > 0 && (
           <details className="card">
             <summary>{t("Журнал изменений (")}{journal.length})</summary>
@@ -113,6 +180,20 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
         )}
       </div>
 
+      <div className="stack">
+      {focus && (
+        <section className="card">
+          <h3>{t("Если вернуть снимок {0}", when(focus.created_at))}</h3>
+          <ul className="facts">
+            <li>{t("Вернутся моды, настройки модов и options.txt.")}</li>
+            {fd && <li>{fd.added.length + fd.removed.length + fd.changed.length + fd.options.length === 0 ? t("Профиль сейчас такой же, как в снимке.")
+              : t("Сейчас отличается: модов {0}, конфигов {1}, настроек игры {2}.", [...fd.added, ...fd.removed, ...fd.changed].filter(isMod).length, [...fd.added, ...fd.removed, ...fd.changed].filter((p) => !isMod(p)).length, fd.options.length)}</li>}
+            <li>{t("Перед возвратом Axel' сам сделает новый снимок, так что откат можно отменить.")}</li>
+            <li>{t("Миры не затрагиваются: их бэкапы ниже.")}</li>
+          </ul>
+          <button className="btn link" onClick={() => setComparing(focus.id)} disabled={!fd}>{t("Подробнее: сравнить")}</button>
+        </section>
+      )}
       <section className="card">
         <h3>{t("Миры и их бэкапы")}</h3>
         <p className="muted small" style={{ margin: "0 0 10px" }}>
@@ -153,6 +234,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }
