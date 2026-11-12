@@ -7,8 +7,8 @@ import { Icon } from "../ui/icons";
 import { address, nick, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
 
-/** Метка строки журнала: «Установлено» → зелёная, «Обновлено» → янтарная, «Удалено»/«Выключено» → красная. */
-const TONE: Record<string, string> = { "Установлено": "ok", "Добавлено": "ok", "Включено": "ok", "Обновлено": "warn", "Удалено": "err", "Выключено": "err" };
+/** Метка строки журнала: «Установлено» → зелёная, «Обновлено» → синяя, «Удалено»/«Выключено» → красная. */
+const TONE: Record<string, string> = { "Установлено": "ok", "Добавлено": "ok", "Включено": "ok", "Обновлено": "info", "Удалено": "err", "Выключено": "err" };
 
 export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liveCrash, bisecting, onBisect }: {
   inst: Instance;

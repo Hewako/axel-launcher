@@ -1,25 +1,30 @@
 /* Axel — оформление по варианту F (docs/INTERFACE_F.md). Тёмная мята по умолчанию, светлая выведена
    из тёмной теми же токенами — data-theme="light". Контраст текста ≥ 4.5:1 в обеих темах. */
 :root {
-  --bg: #0b1110; --panel: #121b19; --panel2: #1a2622; --line: #28382f; --line-strong: #34463c; --rail: #070c0b;
+  --bg: #0b1110; --panel: #121b19; --panel2: #1a2622; --line: #28382f; --rail: #070c0b;
+  /* Рамки управляющих элементов (кнопки, поля, чипы, выкл. переключатель): ≥ 3:1 на любой панели, WCAG 1.4.11. */
+  --ctl: #5f7568;
   --text: #eaf2ed; --muted: #a2b5ac;
   --accent: #52d6a0; --accent-ink: #04231a; --blue: #6bb6ff; --violet: #a78bfa;
-  --warn: #f2bd4e; --warn-ink: #2b1d00; --err: #ff8585;
+  --warn: #ff9d5c; --err: #ff8585;
+  /* Синий — «обновлён», «доступна новая версия», лента новой версии Axel'. */
+  --info: #7db4ff; --info-bg: #142131; --info-line: #2b4666;
   /* Главная кнопка: отдельный токен, чтобы пользовательский акцент её не перекрашивал. */
   --cta: #f2bd4e; --cta-ink: #2b1d00;
-  --err-bg: #2b1618; --err-line: #5a2a2d; --warn-bg: #292411; --ok-bg: #12261f;
+  --err-bg: #2b1618; --err-line: #5a2a2d; --warn-bg: #2d1d12; --warn-line: #6a4426; --ok-bg: #12261f;
   --radius: 12px; --radius-sm: 8px;
   --font: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   --mono: "IBM Plex Mono", "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
 [data-theme="light"] {
-  --bg: #f4f7f5; --panel: #ffffff; --panel2: #eaf1ed; --line: #d5e0da; --line-strong: #a9bbb1; --rail: #e4ece7;
-  --text: #13201b; --muted: #4f6158;
-  --accent: #127352; --accent-ink: #ffffff; --blue: #1f6db0; --violet: #6d4fd8;
-  --warn: #8a5a00; --warn-ink: #2b1d00; --err: #b3261e;
+  --bg: #f2f6f4; --panel: #ffffff; --panel2: #e8f0ec; --line: #cdd9d3; --rail: #e3ebe7; --ctl: #5f7a6d;
+  --text: #13201a; --muted: #44594f;
+  --accent: #0c7a54; --accent-ink: #ffffff; --blue: #1f6db0; --violet: #6d4fd8;
+  --warn: #a34a0a; --err: #b3261e;
+  --info: #1a56b4; --info-bg: #e8f0fc; --info-line: #b5c9ec;
   --cta: #f2bd4e; --cta-ink: #2b1d00;
-  --err-bg: #fdecec; --err-line: #f2c4c4; --warn-bg: #fff3d4; --ok-bg: #e1f3ea;
+  --err-bg: #fdecec; --err-line: #f2c4c4; --warn-bg: #fdf0e6; --warn-line: #ebc4a6; --ok-bg: #e1f3ea;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -42,7 +47,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .badge.ms { color: var(--blue); border-color: rgba(90,169,230,.35); }
 .badge.ely { color: var(--violet); border-color: rgba(167,139,250,.4); }
 .badge.ok { color: var(--accent); border-color: rgba(76,195,138,.35); }
-.badge.warn { color: var(--warn); border-color: rgba(232,176,74,.4); }
+.badge.warn { color: var(--warn); border-color: var(--warn-line); }
 .badge.err { color: var(--err); border-color: rgba(239,107,107,.4); }
 .badge.src { font-size: 10.5px; }
 
@@ -65,7 +70,7 @@ h2 { font-size: 18px; margin: 0 0 4px; }
 .mono { font-family: var(--mono); font-size: 12.5px; }
 .pagehead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 
-.btn { border: 1px solid var(--line-strong); background: var(--panel2); padding: 6px 12px; border-radius: var(--radius-sm); }
+.btn { border: 1px solid var(--ctl); background: var(--panel2); padding: 6px 12px; border-radius: var(--radius-sm); }
 .btn:hover:not(:disabled) { border-color: var(--muted); }
 .btn.pri { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
 .btn.danger { color: var(--err); border-color: rgba(239,107,107,.4); }
@@ -95,15 +100,15 @@ h2 { font-size: 18px; margin: 0 0 4px; }
 .pre em { font-style: normal; color: var(--muted); display: block; font-size: 12px; }
 
 
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg { display: inline-flex; border: 1px solid var(--ctl); border-radius: 7px; overflow: hidden; }
 .seg button { border: 0; background: var(--panel2); padding: 6px 12px; color: var(--muted); }
 .seg button.on { background: var(--line); color: var(--text); }
 
 /* Страница профиля */
 .alert { border: 1px solid; border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 6px; margin-bottom: 14px; }
 .alert.err { border-color: rgba(239,107,107,.45); background: rgba(239,107,107,.07); }
-.alert.warn { border-color: rgba(232,176,74,.45); background: rgba(232,176,74,.07); }
-.alert.info { border-color: rgba(90,169,230,.45); background: rgba(90,169,230,.07); }
+.alert.warn { border-color: var(--warn-line); background: var(--warn-bg); }
+.alert.info { border-color: var(--info-line); background: var(--info-bg); }
 .alert.ok { border-color: rgba(76,195,138,.45); background: rgba(76,195,138,.07); }
 .alert .h { font-weight: 600; display: flex; gap: 8px; align-items: center; }
 .alert .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
@@ -116,7 +121,7 @@ td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle;
 .setting .hint { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
 .setting .srcbox { display: flex; gap: 8px; align-items: center; justify-content: flex-end; min-width: 150px; }
 input[type="range"] { width: 100%; accent-color: var(--accent); }
-.field { border: 1px solid var(--line); background: var(--panel2); border-radius: 7px; padding: 7px 10px; color: var(--text); width: 100%; }
+.field { border: 1px solid var(--ctl); background: var(--panel2); border-radius: 7px; padding: 7px 10px; color: var(--text); width: 100%; }
 .field.auto { width: auto; }
 .field.mono { font: 12.5px var(--mono); }
 select.field { appearance: none; -webkit-appearance: none; padding: 7px 30px 7px 10px; background: var(--panel2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a2b5ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 9.5 12 15l5.5-5.5'/%3E%3C/svg%3E") no-repeat right 8px center / 16px; }
@@ -152,7 +157,7 @@ select.field.mini { padding: 3px 24px 3px 6px; background-position: right 4px ce
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Моды и Mod Doctor */
-.tog { width: 30px; height: 17px; border-radius: 10px; background: var(--line); position: relative; border: 0; padding: 0; flex: none; }
+.tog { width: 30px; height: 17px; border-radius: 10px; background: var(--ctl); position: relative; border: 0; padding: 0; flex: none; }
 .tog::after { content: ""; position: absolute; width: 13px; height: 13px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: .15s; }
 .tog.on { background: var(--accent); } .tog.on::after { left: 15px; }
 .modbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
@@ -212,7 +217,7 @@ details.card[open] summary { margin-bottom: 8px; }
 
 /* Наборы модов */
 .groupbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
-.chip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+.chip { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--ctl); background: var(--panel); border-radius: 999px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
 .field.mini { padding: 3px 6px; font-size: 12px; }
 
 /* Вкладка «Конфиги» */
@@ -289,7 +294,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .tile.on::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
 .tile.archived { opacity: .45; }
 .tile.archived:hover, .tile.archived.on { opacity: 1; }
-.tile.add { width: 44px; height: 40px; border: 1px dashed var(--line-strong); color: var(--muted); font-size: 20px; margin-top: 4px; }
+.tile.add { width: 44px; height: 40px; border: 1px dashed var(--ctl); color: var(--muted); font-size: 20px; margin-top: 4px; }
 .sdot { position: absolute; right: 5px; bottom: 4px; width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--rail); background: var(--muted); }
 .tile.on .sdot { border-color: var(--panel2); }
 .sdot.ok { background: var(--accent); } .sdot.err { background: var(--err); } .sdot.warn { background: var(--warn); } .sdot.idle { background: #6b7d74; }
@@ -311,7 +316,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .phead-acts { display: flex; align-items: center; gap: 8px; }
 .btn.square { width: 36px; height: 36px; padding: 0; display: grid; place-items: center; }
 .menuwrap { position: relative; }
-.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 220px; background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 4px; display: grid; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 220px; background: var(--panel); border: 1px solid var(--ctl); border-radius: var(--radius-sm); padding: 4px; display: grid; }
 .menu button { text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 6px; }
 .menu button:hover:not(:disabled) { background: var(--panel2); }
 .menu button.danger { color: var(--err); }
@@ -349,10 +354,11 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .tag.ok { background: var(--ok-bg); color: var(--accent); }
 .tag.warn { background: var(--warn-bg); color: var(--warn); }
 .tag.err { background: var(--err-bg); color: var(--err); }
+.tag.info { background: var(--info-bg); color: var(--info); }
 .ov .foot { margin-top: 10px; }
 .qs { display: grid; gap: 8px; }
 .qs button { display: flex; align-items: center; gap: 10px; text-align: left; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel2); color: var(--text); }
-.qs button:hover:not(:disabled) { border-color: var(--line-strong); }
+.qs button:hover:not(:disabled) { border-color: var(--ctl); }
 .qs b { display: block; font-weight: 500; }
 .qs small { display: block; color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; }
@@ -388,7 +394,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .searchbox .field { width: 100%; padding-left: 34px; padding-right: 64px; }
 .searchbox kbd { position: absolute; right: 8px; margin: 0; }
 .modbar .seg.subtabs { margin-bottom: 0; }
-.kv dd .upd { display: block; margin-left: auto; color: var(--warn); }
+.kv dd .upd { display: block; margin-left: auto; color: var(--info); }
 
 /* «Ресурсы и конфиги» (макет 04): две карточки, строки с переключателями */
 .sechead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -410,7 +416,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 
 /* Общие экраны (макеты 06–09) */
 /* Галочки настроек — переключателями, как на макете 08 */
-.setting label.row input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; margin: 0; border-radius: 10px; background: var(--line-strong); position: relative; flex: none; cursor: pointer; transition: background .15s; }
+.setting label.row input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; margin: 0; border-radius: 10px; background: var(--ctl); position: relative; flex: none; cursor: pointer; transition: background .15s; }
 .setting label.row input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; }
 .setting label.row input[type=checkbox]:checked { background: var(--accent); }
 .setting label.row input[type=checkbox]:checked::after { left: 17px; }
@@ -425,7 +431,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .lbl .hint { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
 .stack.tight { gap: 8px; }
 .loaderseg { display: inline-flex; width: fit-content; margin-bottom: 0; }
-.dropzone { display: grid; gap: 6px; justify-items: center; text-align: center; padding: 22px 16px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--panel); }
+.dropzone { display: grid; gap: 6px; justify-items: center; text-align: center; padding: 22px 16px; border: 1px dashed var(--ctl); border-radius: var(--radius); background: var(--panel); }
 .dropzone .row { margin-top: 8px; }
 .dropzone.on { border-color: var(--accent); background: var(--ok-bg); }
 .foundico { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent); background: var(--panel2); }
@@ -441,7 +447,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .runs h3 { margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
 .run { display: grid; gap: 1px; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); padding: 10px 10px 10px 14px; position: relative; border-radius: 0; }
 .run:last-child { border-bottom: 0; }
-.run::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 2px; background: var(--line-strong); }
+.run::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 2px; background: var(--ctl); }
 .run.ok::before { background: var(--accent); } .run.err::before { background: var(--err); } .run.warn::before { background: var(--warn); }
 .run:hover, .run.on { background: var(--panel2); }
 .logsgrid h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
@@ -467,7 +473,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .modtable tr.sel { background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
 .modtable tr.grp td { background: var(--bg); font-weight: 600; font-size: 12.5px; cursor: default; }
 .modtable .rowname { border: 0; background: none; padding: 0; color: inherit; text-align: left; font: inherit; }
-.modtable .upd, .modcard .upd { color: var(--warn); }
+.modtable .upd, .modcard .upd { color: var(--info); }
 .state { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .state.err { color: var(--err); } .state.warn { color: var(--warn); } .state.ok { color: var(--muted); font-weight: 400; }
 .modcard { display: grid; gap: 10px; position: sticky; top: 0; }
