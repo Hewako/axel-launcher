@@ -275,7 +275,7 @@ function Shell() {
             <InstancePage key={selected.id} inst={selected} mods={modsCount[selected.id]} instances={instances} state={states.get(selected.id)} accounts={accounts} initialTab={profileTab}
               onCloned={async (i) => { await refresh(); open(i.id, "profile"); }}
               onChanged={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))}
-              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onDoctor={noteDoctor} />
+              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onNew={() => setScreen("new")} onDoctor={noteDoctor} />
           ) : (
             <div className="card empty">
               <p>{t("Профилей нет.")}</p>
@@ -288,8 +288,14 @@ function Shell() {
           {screen === "accounts" && <Accounts info={info} accounts={accounts} defaultKey={defaultKey} onChanged={refreshAccounts} />}
           {screen === "new" && (
             <>
-              <h2>{t("Новый профиль")}</h2>
-              <p className="sub">{t("Создать с нуля или импортировать готовую сборку.")}</p>
+              <div className="shead">
+                <div>
+                  <h2>{t("Новый профиль")}</h2>
+                  <p className="sub">{t("Создать с нуля или импортировать готовую сборку.")}</p>
+                </div>
+                {/* Главная кнопка экрана — в шапке; отправляет форму «Создать с нуля». */}
+                <button type="submit" form="create-form" className="btn cta"><Icon name="plus" size={16} /> {t("Создать")}</button>
+              </div>
               <div className="split2">
                 <CreateInstance onCreated={(i) => refresh().then(() => open(i.id))} />
                 <ImportDialog dragging={dragging} dropped={dropped} onDone={(i) => refresh().then(() => open(i.id))} />

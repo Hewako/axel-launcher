@@ -248,7 +248,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
         </details>
 
         <div className="row">
-          <button className="btn cta" onClick={save} disabled={saving} aria-keyshortcuts="Control+S Meta+S">{saving ? t("Сохраняем…") : <>{t("Сохранить")}<kbd aria-hidden>{MOD} S</kbd></>}</button>
+          <button className="btn pri" onClick={save} disabled={saving} aria-keyshortcuts="Control+S Meta+S">{saving ? t("Сохраняем…") : <>{t("Сохранить")}<kbd aria-hidden>{MOD} S</kbd></>}</button>
           <button className="btn" disabled={saving} onClick={load}>{t("Отменить правки")}</button>
         </div>
       </div>
@@ -272,7 +272,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   );
 }
 
-export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onDoctor }: {
+export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor }: {
   inst: Instance;
   mods?: number;
   instances: Instance[];
@@ -283,6 +283,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   onChanged: (i: Instance) => void;
   onTrashed: () => void;
   onLogs: () => void;
+  onNew: () => void;
   onDoctor: (id: string, r: DoctorReport) => void;
 }) {
   const dialog = useDialog();
@@ -414,7 +415,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
         <div className="stack">
           {state?.phase === "failed" && state.error && <div className="alert err" style={{ whiteSpace: "pre-line" }}><div className="h">{t("Запуск не удался")}</div><span>{state.error}</span></div>}
           {state?.phase === "done" && state.exit?.analysis && <CrashCard inst={inst} a={state.exit.analysis} code={state.exit.code} onOpenTab={go} />}
-          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fix} onGo={go} onLogs={onLogs} liveCrash={!!(state?.phase === "done" && state.exit?.analysis)} bisecting={!!bisect} onBisect={() => bisectStep("start")} />
+          <Overview inst={inst} state={state} doctor={doctor} accounts={accounts} fix={fix} onGo={go} onLogs={onLogs} onNew={onNew} liveCrash={!!(state?.phase === "done" && state.exit?.analysis)} bisecting={!!bisect} onBisect={() => bisectStep("start")} />
         </div>
       )}
       {main === "mods" && (

@@ -1,6 +1,6 @@
 // Вкладка «Обзор» (вариант F, макет 01): вердикт Mod Doctor, что изменилось, последний запуск; справа быстрый старт и сводка.
 import { useEffect, useState } from "react";
-import { api, errText, importer, relTime, snapshots, statusOf, type AccountRef, type DoctorReport, type Instance, type JournalEntry, type QuickPlay, type ResolvedLaunch, type Server, type SnapshotInfo, type WorldInfo } from "../api";
+import { api, errText, importer, loaderName, relTime, snapshots, statusOf, type AccountRef, type DoctorReport, type Instance, type JournalEntry, type QuickPlay, type ResolvedLaunch, type Server, type SnapshotInfo, type WorldInfo } from "../api";
 import { isActive, launches, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
@@ -10,7 +10,7 @@ import { t, tc } from "../i18n";
 /** Метка строки журнала: «Установлено» → зелёная, «Обновлено» → синяя, «Удалено»/«Выключено» → красная. */
 const TONE: Record<string, string> = { "Установлено": "ok", "Добавлено": "ok", "Включено": "ok", "Обновлено": "info", "Удалено": "err", "Выключено": "err" };
 
-export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liveCrash, bisecting, onBisect }: {
+export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, onNew, liveCrash, bisecting, onBisect }: {
   inst: Instance;
   state?: LaunchState;
   doctor: { report: DoctorReport; journal: JournalEntry[] } | null;
@@ -19,6 +19,8 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
   fix?: () => Promise<void>;
   onGo: (tab: "mods" | "snapshots" | "profile") => void;
   onLogs: () => void;
+  /** Открыть «Новый профиль» (импорт сборки). */
+  onNew: () => void;
   /** Над «Обзором» уже показан разбор только что случившегося краша. */
   liveCrash: boolean;
   bisecting: boolean;
@@ -60,7 +62,9 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
   const warnings = r?.findings.filter((f) => f.severity === "warning") ?? [];
   const last = inst.last_launch;
   const worked = last?.outcome === "success";
-  const crashed = last?.outcome === "crashed" && blocking.length === 0;
+  // «Не запустился» — тоже неудачный запуск: зелёный «Всё готово» здесь вводил в заблуждение.
+  const crashed = (last?.outcome === "crashed" || last?.outcome === "failed_to_start") && blocking.length === 0;
+  const empty = inst.loader !== "vanilla" && r?.total === 0;
   const canBisect = !bisecting && (r?.total ?? 0) > 1;
   const journal = doctor?.journal ?? [];
   const changes = (worked ? journal.filter((j) => j.at > last.at) : journal).slice().sort((a, b) => b.at - a.at);
@@ -80,10 +84,12 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
             <p>{tc(blocking[0].detail)}</p>
             {blocking.length > 1 && <p className="muted small">{t("И ещё замечаний, мешающих запуску: {0}", blocking.length - 1)}</p>}
             <div className="acts">
-              {fix && <button className="btn cta" disabled={active} onClick={() => play(undefined, false, fix)}><Icon name="wrench" size={16} /> {t("Починить и играть")}</button>}
+              {fix && <button className="btn pri" disabled={active} onClick={() => play(undefined, false, fix)}><Icon name="wrench" size={16} /> {t("Починить и играть")}</button>}
               {inst.loader !== "vanilla" && <button className="btn" disabled={active} onClick={() => play(undefined, true)}>{t("Безопасный запуск")}</button>}
               <button className="btn" onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button>
             </div>
+            {fix && <p className="muted small">{t("«Починить и играть»: сохранит снимок, выключит мешающие моды и запустит игру. Вернуть можно из снимка.")}</p>}
+            {warnings.length > 0 && <p className="small"><b>{t("Ещё предупреждений, запуску не мешают: {0}.", warnings.length)}</b> {warnings.map((w) => tc(w.title)).join("; ")}</p>}
           </section>
         )}
         {r && blocking.length === 0 && warnings.length > 0 && (
@@ -95,7 +101,7 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
         )}
         {crashed && !liveCrash && (
           <section className="verdict err" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Игра упала при последнем запуске")}</h3>
+            <h3>{last?.outcome === "failed_to_start" ? t("Игра не запустилась в прошлый раз") : t("Игра упала при последнем запуске")}</h3>
             {last?.message && <p>{tc(last.message)}</p>}
             <div className="acts">
               {canBisect && <button className="btn" disabled={active} onClick={onBisect}>{t("Найти виновника краша…")}</button>}
@@ -106,17 +112,32 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
         {crashed && liveCrash && canBisect && (
           <div className="row"><button className="btn" disabled={active} onClick={onBisect}>{t("Найти виновника краша…")}</button></div>
         )}
-        {r && r.findings.length === 0 && !crashed && (
+        {r && empty && !crashed && (
+          <section className="verdict info" aria-label={t("Вердикт Mod Doctor")}>
+            <h3>{t("Профиль пока пустой")}</h3>
+            <p>{t("Minecraft {0} и {1} установлены, модов нет. Игра запустится без модов.", inst.game_version, loaderName[inst.loader])}</p>
+            <div className="acts">
+              <button className="btn pri" onClick={() => onGo("mods")}><Icon name="plus" size={16} /> {t("Найти моды")}</button>
+              <button className="btn" onClick={onNew}>{t("Импортировать сборку")}</button>
+            </div>
+          </section>
+        )}
+        {r && r.findings.length === 0 && !crashed && !empty && (
           <section className="verdict ok" aria-label={t("Вердикт Mod Doctor")}>
             <h3>{t("Всё готово к запуску")}</h3>
-            <p>{inst.loader === "vanilla" || r.total === 0 ? t("Профиль без модов.") : t("Mod Doctor проверил моды: {0}, проблем нет.", r.total)}</p>
+            <p>
+              {inst.loader === "vanilla" ? t("Профиль без модов.") : t("Замечаний нет: Mod Doctor проверил моды ({0}).", r.total)}
+              {worked ? ` ${t("Последний запуск {0} прошёл без ошибок.", relTime(last.at))}` : ""}
+            </p>
           </section>
         )}
 
-        {(changes.length > 0 || worked) && (
+        {inst.loader !== "vanilla" && (
           <section className="card">
-            <h3>{worked ? t("Что изменилось с последнего рабочего запуска") : t("Последние изменения модов")}</h3>
-            {changes.length === 0 && <p className="muted">{t("С тех пор ничего не менялось.")}</p>}
+            <h3>{worked || changes.length === 0 ? t("Что изменилось с последнего рабочего запуска") : t("Последние изменения модов")}</h3>
+            {changes.length === 0 && (worked
+              ? <div className="cempty"><b>{t("Ничего")}</b><span>{t("Моды такие же, как в последнем рабочем запуске.")}</span></div>
+              : <div className="cempty"><b>{t("Изменений пока нет")}</b><span>{t("Снимок сохранится сам перед первым изменением модов.")}</span></div>)}
             {changes.length > 0 && (
               <ul className="changes">
                 {changes.slice(0, 6).map((j, n) => (
@@ -144,11 +165,17 @@ export function Overview({ inst, state, doctor, accounts, fix, onGo, onLogs, liv
               {last.message ? ` ${tc(last.message)}` : ""}{" "}
               <button className="btn link" onClick={onLogs}>{t("Открыть лог")}</button>
             </p>
-          ) : <p className="muted">{t("Профиль ещё не запускали.")}</p>}
+          ) : <div className="cempty"><b>{t("Запусков ещё не было")}</b><span>{t("После первого запуска здесь появится результат.")}</span></div>}
         </section>
       </div>
 
       <div className="stack">
+        {!world && !server && (
+          <section className="card">
+            <h3>{t("Быстрый старт")}</h3>
+            <p className="muted">{t("Миров и серверов пока нет. Они появятся после первой игры.")}</p>
+          </section>
+        )}
         {(world || server) && (
           <section className="card">
             <h3>{t("Быстрый старт")}</h3>

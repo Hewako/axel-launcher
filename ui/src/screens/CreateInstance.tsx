@@ -2,7 +2,6 @@
 // Совместимость проверяется до создания (ядро ещё раз проверит перед скачиванием).
 import { useEffect, useMemo, useState } from "react";
 import { api, errText, loaderName, type Instance, type LoaderKind, type LoaderVersion, type VersionEntry } from "../api";
-import { Icon } from "../ui/icons";
 import { t } from "../i18n";
 
 // Forge — после v1.0 (план, Приложение А), поэтому в выборе его нет.
@@ -80,10 +79,10 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
         <h3>{t("Создать с нуля")}</h3>
         <p className="muted small">{t("Готово за полминуты. Настройки подберём сами.")}</p>
       </div>
-      <form className="form" onSubmit={(e) => { e.preventDefault(); if (canCreate) create(); }}>
+      <form id="create-form" className="form" onSubmit={(e) => { e.preventDefault(); if (canCreate) create(); }}>
         <label className="frow">
           <span className="lbl">{t("Название")}</span>
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Например: Технология+")} maxLength={64} />
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("Например: Технология+")} maxLength={64} required />
         </label>
         <div className="frow">
           <div className="lbl">
@@ -129,10 +128,8 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
             )}
           </label>
         )}
+        {busy && <p className="muted small" role="status"><span className="spinner" /> {t("Создаём…")}</p>}
         {error && <div className="alert err"><span>{error}</span></div>}
-        <div>
-          <button type="submit" className="btn cta" disabled={!canCreate}>{busy ? t("Создаём…") : <><Icon name="plus" size={16} /> {t("Создать")}</>}</button>
-        </div>
       </form>
     </section>
   );

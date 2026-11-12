@@ -76,7 +76,8 @@ h2 { font-size: 18px; margin: 0 0 4px; }
 
 .btn { border: 1px solid var(--ctl); background: var(--panel2); padding: 6px 12px; border-radius: var(--radius-sm); }
 .btn:hover:not(:disabled) { border-color: var(--muted); }
-.btn.pri { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+/* Главное действие внутри страницы — нейтральное: янтарь только у одной кнопки экрана (в шапке). */
+.btn.pri { background: color-mix(in srgb, var(--panel2) 88%, var(--text)); border-color: var(--muted); font-weight: 600; }
 .btn.danger { color: var(--err); border-color: rgba(239,107,107,.4); }
 .btn.link { background: none; border: 0; color: var(--blue); padding: 0; }
 .reset { font-size: 12px; color: var(--blue); background: none; border: 0; padding: 0; }
@@ -341,6 +342,8 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .seg.subtabs { margin-bottom: 16px; padding: 3px; border-radius: 10px; background: var(--panel); gap: 2px; }
 .seg.subtabs button { background: none; border-radius: 7px; padding: 6px 14px; border-bottom: 2px solid transparent; }
 .seg.subtabs button.on { background: var(--panel2); color: var(--text); border-bottom-color: var(--accent); }
+.shead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.shead .btn.cta { padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; }
 .split2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .stack { display: grid; gap: 14px; }
 /* Главная кнопка «Починить и играть» — янтарь (--cta), отдельно от акцента */
@@ -357,6 +360,9 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .verdict h3 { margin: 0; }
 .verdict.err { background: var(--err-bg); border-color: var(--err-line); border-left-color: var(--err); }
 .verdict.warn { background: var(--warn-bg); border-left-color: var(--warn); }
+.verdict.info { background: var(--panel); border-left-color: var(--muted); }
+.cempty { display: grid; gap: 2px; justify-items: center; text-align: center; padding: 10px 0 4px; }
+.cempty span { color: var(--muted); }
 .verdict.ok { background: var(--ok-bg); border-left-color: var(--accent); }
 .verdict .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .changes { list-style: none; margin: 0; padding: 0; }
