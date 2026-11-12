@@ -933,7 +933,6 @@ export const EN: Record<string, string> = {
   "Остальные: {0}": "Others: {0}",
   "Размер": "Size",
   "Фильтр модов": "Mod filter",
-  "никто не требует": "nothing requires it",
   "С ним игра запускалась {0}": "The game last ran with it {0}",
   "закреплён": "pinned",
   "последний рабочий": "last working",
@@ -1042,4 +1041,7 @@ export const EN: Record<string, string> = {
   "Сейчас": "Now",
   "Игра идёт": "Playing for",
   "до {0} ГБ": "up to {0} GB",
+  "Скрыть ошибку": "Hide error",
+  "Открыть ошибку": "Show error",
+  "Ошибка": "Error",
 };

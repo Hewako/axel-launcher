@@ -328,7 +328,8 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   } : undefined;
   // Починка закончилась вместе с запуском: игра вышла или не стартовала.
   useEffect(() => { if (state?.phase === "done" || state?.phase === "failed") setFixRun((r) => (r && r.step === 3 ? null : r)); }, [state?.phase]);
-  const issues = doctor?.report.findings.length ?? 0;
+  // Замечания для точки на «Моды» — как чип «Замечания» в таблице: находки Mod Doctor и моды с предупреждением или без метаданных.
+  const issues = Math.max(doctor?.report.findings.length ?? 0, doctor?.report.mods.filter((m) => m.state === "blocked" || m.state === "warning" || m.state === "unknown").length ?? 0);
   // Поиск виновника краша идёт несколько запусков: полоса видна на любой вкладке.
   const [bisect, setBisect] = useState<Bisect | null>(null);
   useEffect(() => { modsApi.bisectStatus(inst.id).then(setBisect).catch(() => setBisect(null)); }, [inst.id, reload, state?.phase]);
@@ -353,7 +354,8 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
     setReload((n) => n + 1);
   };
   const tabs: [Main, React.ReactNode][] = MAIN.map(([m, l]) => [m, m === "mods" && issues > 0
-    ? <>{l} <span className={`count ${blocking.length ? "err" : "warn"}`} aria-label={t("замечаний: {0}", issues)}>{issues}</span></> : l]);
+    // Точка вместо числа (решение владельца 12.11.2026): красная — мешает запуску, оранжевая — только замечания.
+    ? <>{l} <span className={`mdot ${blocking.length ? "err" : "warn"}`} role="img" aria-label={t("замечаний: {0}", issues) + (blocking.length ? `, ${t("мешает запуску: {0}", blocking.length)}` : "")} /></> : l]);
   // Меню «Ещё» закрывается кликом мимо него.
   useEffect(() => {
     if (!more) return;

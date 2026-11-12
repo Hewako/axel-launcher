@@ -1,7 +1,7 @@
 // Вкладка «Моды · Mod Doctor»: проверка сборки, список модов, каталог Modrinth, обновления.
 // Любое изменение модов — через предпросмотр и автоматический снимок.
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, errText, isPackPath, mods, sizeText, type CatalogSource, type Channel, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
@@ -201,6 +201,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
   const [grouping, setGrouping] = useState(false);
   const [chip, setChip] = useState<"all" | "issues" | "updates" | "off">("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const [openErr, setOpenErr] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
   // Ctrl F (⌘ F на Mac) — к поиску модов, из любого места вкладки, кроме диалога.
   useEffect(() => {
@@ -313,7 +314,12 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
   const issue = (f: ModFile) => { const s = stateOf(f)?.state; return s === "blocked" || s === "warning" || s === "unknown"; };
   const counts = { all: data.files.length, issues: data.files.filter(issue).length, updates: data.files.filter((f) => updateFor(f)).length, off: data.files.filter((f) => !f.enabled).length };
   const visible = shown.filter((f) => chip === "all" || (chip === "issues" ? issue(f) : chip === "updates" ? !!updateFor(f) : !f.enabled));
-  const rowsIssues = visible.filter(issue);
+  // Сначала то, что мешает запуску, потом предупреждения и неопознанные.
+  const rank = (f: ModFile) => ({ blocked: 0, warning: 1, unknown: 2 } as Record<string, number>)[stateOf(f)?.state ?? ""] ?? 3;
+  const rowsIssues = visible.filter(issue).sort((a, b) => rank(a) - rank(b));
+  // Столбец «Ошибка» есть, только когда в профиле есть замечания по модам.
+  const errCol = data.files.some(issue);
+  const cols = errCol ? 6 : 5;
   const rowsRest = visible.filter((f) => !issue(f));
   const sel = data.files.find((f) => f.file_name === selected) ?? rowsIssues[0] ?? visible[0];
   const CHIPS: [typeof chip, string, number][] = [["all", t("Все"), counts.all], ["issues", t("Замечания"), counts.issues], ["updates", t("Обновления"), counts.updates], ["off", t("Выключены"), counts.off]];
@@ -322,13 +328,29 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
     const m = f.mods[0];
     const u = updateFor(f);
     return (
-      <tr key={f.rel_path} className={`${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} onClick={() => setSelected(f.file_name)}>
-        <td><button className={`tog ${f.enabled ? "on" : ""}`} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${m?.name ?? f.file_name}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
+      <Fragment key={f.rel_path}>
+      <tr className={`${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} onClick={() => setSelected(f.file_name)}>
+        <td><button className={`tog ${f.enabled ? "on" : ""}`} role="switch" aria-checked={f.enabled} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${m?.name ?? f.file_name}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
         <td><button className="rowname" aria-pressed={sel?.file_name === f.file_name} onClick={() => setSelected(f.file_name)}><b>{m?.name ?? f.file_name}</b>{(st?.notes.length ?? 0) > 0 && <span className="muted"> {tc(st!.notes[0])}</span>}</button></td>
         <td className="mono">{m?.version ?? "?"}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")} aria-label={t("закреплена")}> <Icon name="lock" size={14} /></span>}</td>
         <td>{f.source ? sourceName[f.source.source] : t("вручную")}</td>
-        <td>{st && <span className={`state ${stateCls[st.state]}`}>{tc(st.state_label)}</span>}</td>
+        <td>{st && <span className={`state ${stateCls[st.state]}`}>{st.state === "blocked" ? <Icon name="error" size={14} /> : stateCls[st.state] === "warn" ? <Icon name="warn" size={14} /> : null} {tc(st.state_label)}</span>}</td>
+        {errCol && <td>{issue(f) && (
+          <button className="btn link small" aria-expanded={openErr === f.file_name} aria-controls={`err-${f.rel_path}`}
+            onClick={(e) => { e.stopPropagation(); setOpenErr(openErr === f.file_name ? null : f.file_name); }}>
+            {openErr === f.file_name ? t("Скрыть ошибку") : t("Открыть ошибку")}
+          </button>
+        )}</td>}
       </tr>
+      {errCol && openErr === f.file_name && (
+        <tr className="errrow" id={`err-${f.rel_path}`}>
+          <td colSpan={cols}>
+            {r.findings.filter((x) => x.files.includes(f.file_name)).map((x, i) => <FindingCard key={i} f={x} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
+            {!r.findings.some((x) => x.files.includes(f.file_name)) && st?.notes.map((n, i) => <p key={i} className="small">{tc(n)}</p>)}
+          </td>
+        </tr>
+      )}
+      </Fragment>
     );
   };
   // Карточка выбранного мода: почему мешает (с кнопками починки), сведения и действия.
@@ -345,7 +367,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
           <dt>{t("Источник")}</dt><dd>{f.source ? sourceName[f.source.source] : t("вручную")}</dd>
           <dt>{t("Сторона")}</dt><dd>{sideName[m?.side ?? "unknown"]}</dd>
           <dt>{t("Слой")}</dt><dd>{f.source?.layer === "base" ? t("сборка") : t("мои моды")}</dd>
-          <dt>{t("Нужен для")}</dt><dd>{needs.length ? needs.join(", ") : t("никто не требует")}</dd>
+          {needs.length > 0 && <><dt>{t("Нужен для")}</dt><dd>{needs.join(", ")}</dd></>}
           <dt>{t("Размер")}</dt><dd>{sizeText(f.size)}</dd>
           <dt>{t("Группа")}</dt>
           <dd>
@@ -363,7 +385,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
           </dd></>}
         </dl>
         <div className="acts">
-          <button className={`btn ${f.enabled ? "cta" : ""}`} disabled={running} onClick={() => toggle(f.file_name, !f.enabled)}>{f.enabled ? t("Выключить") : t("Включить")}</button>
+          <button className={`btn ${f.enabled ? "pri" : ""}`} disabled={running} onClick={() => toggle(f.file_name, !f.enabled)}>{f.enabled ? t("Выключить") : t("Включить")}</button>
           <button className="btn" disabled={running} onClick={() => remove(f)}>{t("Удалить")}</button>
           <button className="btn" disabled={running} onClick={() => pin(f)} title={t("Закреплённая версия не обновляется")}>{f.source?.pinned ? t("Открепить") : t("Закрепить")}</button>
           {f.source?.source === "modrinth" && f.source.project_id && <button className="btn" onClick={() => api.openLink(`https://modrinth.com/mod/${f.source!.project_id}`).catch((e) => dialog.alert(t("Не получилось"), errText(e)))}>{t("На Modrinth")}</button>}
@@ -423,13 +445,13 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
         <div className="modsgrid">
           <div className="card" style={{ padding: 0, overflow: "auto" }}>
             <table className="modtable">
-              <thead><tr><th style={{ width: 52 }} /><th>{t("Мод")}</th><th>{t("Версия")}</th><th>{t("Источник")}</th><th>{t("Состояние")}</th></tr></thead>
+              <thead><tr><th style={{ width: 52 }} /><th>{t("Мод")}</th><th>{t("Версия")}</th><th>{t("Источник")}</th><th>{t("Состояние")}</th>{errCol && <th>{t("Ошибка")}</th>}</tr></thead>
               <tbody>
-                {rowsIssues.length > 0 && <tr className="grp"><td colSpan={5}>{t("Замечания: {0}", rowsIssues.length)}</td></tr>}
+                {rowsIssues.length > 0 && <tr className="grp"><td colSpan={cols}>{t("Замечания: {0}", rowsIssues.length)}</td></tr>}
                 {rowsIssues.map(row)}
-                {rowsIssues.length > 0 && rowsRest.length > 0 && <tr className="grp"><td colSpan={5}>{t("Остальные: {0}", rowsRest.length)}</td></tr>}
+                {rowsIssues.length > 0 && rowsRest.length > 0 && <tr className="grp"><td colSpan={cols}>{t("Остальные: {0}", rowsRest.length)}</td></tr>}
                 {rowsRest.map(row)}
-                {visible.length === 0 && <tr><td colSpan={5} className="muted">{t("Ничего не нашлось.")}</td></tr>}
+                {visible.length === 0 && <tr><td colSpan={cols} className="muted">{t("Ничего не нашлось.")}</td></tr>}
               </tbody>
             </table>
           </div>
