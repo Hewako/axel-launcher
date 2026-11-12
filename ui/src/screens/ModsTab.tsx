@@ -6,7 +6,7 @@ import { api, errText, isPackPath, mods, sizeText, type CatalogSource, type Chan
 import { Modal, useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
-import { typing } from "./InstancePage";
+import { MOD, isMod } from "../keys";
 
 const stateCls: Record<ModState, string> = { ok: "ok", warning: "warn", blocked: "err", disabled: "", unknown: "warn" };
 const sideName: Record<string, string> = { client: t("клиент"), server: t("сервер"), both: t("обе"), unknown: "—" };
@@ -202,9 +202,9 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
   const [chip, setChip] = useState<"all" | "issues" | "updates" | "off">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const search = useRef<HTMLInputElement>(null);
-  // «/» — к поиску модов (как подсказано в поле).
+  // Ctrl F (⌘ F на Mac) — к поиску модов, из любого места вкладки, кроме диалога.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "/" && !typing(e)) { e.preventDefault(); search.current?.focus(); } };
+    const onKey = (e: KeyboardEvent) => { if (isMod(e) && e.code === "KeyF" && !document.querySelector("[role=dialog]")) { e.preventDefault(); search.current?.focus(); search.current?.select(); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -385,8 +385,8 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
         <span style={{ flex: 1 }} />
         <span className="searchbox">
           <Icon name="search" size={16} />
-          <input ref={search} className="field" placeholder={t("Найти мод…")} aria-label={t("Найти мод…")} aria-keyshortcuts="/" value={filter} onChange={(e) => setFilter(e.target.value)} />
-          <kbd aria-hidden>/</kbd>
+          <input ref={search} className="field" placeholder={t("Найти мод…")} aria-label={t("Найти мод…")} aria-keyshortcuts="Control+F Meta+F" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <kbd aria-hidden>{MOD} F</kbd>
         </span>
         <button className="btn" disabled={running} onClick={() => setCatalog("")}>{t("+ Добавить мод")}</button>
       </div>

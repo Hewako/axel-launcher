@@ -17,6 +17,7 @@ import { DialogProvider } from "./ui/Dialog";
 import { nick, path, setStreamer, useStreamer } from "./streamer";
 import { markRead, pushNote, useNotes } from "./notify";
 import { src, syncLang, t } from "./i18n";
+import { ALT, MOD, isMod } from "./keys";
 
 /** Профиль с вкладками или один из общих экранов, открытых с рельсы. */
 type Screen = "profile" | "logs" | "accounts" | "settings" | "new";
@@ -185,11 +186,10 @@ function Shell() {
   const msAll = accounts.filter((a) => a.provider === "microsoft");
   const ms = msAll.find((a) => `${a.provider}:${a.uuid}` === defaultKey) ?? msAll[0];
 
-  // Enter — главная кнопка в шапке профиля («Играть» или «Починить и играть»), только когда фокус не на кнопке, поле или в диалоге.
+  // Ctrl Enter (⌘ Enter на Mac) — главная кнопка в шапке профиля («Играть» или «Починить и играть»), но не из поля и не из диалога.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const free = document.activeElement === document.body || document.activeElement?.id === "main";
-      if (e.key !== "Enter" || typing(e) || !free || screen !== "profile" || !selectedId || isActive(states.get(selectedId))) return;
+      if (e.key !== "Enter" || !isMod(e) || typing(e) || screen !== "profile" || !selectedId || isActive(states.get(selectedId))) return;
       e.preventDefault();
       document.querySelector<HTMLButtonElement>(".phead .play .go")?.click();
     };
@@ -298,9 +298,8 @@ function Shell() {
 
         <footer className="bottombar">
           <span className="keys">
-            {screen === "profile" && selected && <><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> {t("вкладки")}</>}
+            {screen === "profile" && selected && <><kbd>{ALT} 1–4</kbd> {t("вкладки")}<kbd>{MOD} Enter</kbd> {t("играть")}</>}
             {screen !== "profile" && <><kbd>Esc</kbd> {t("назад")}</>}
-            {selected && <><kbd>Enter</kbd> {t("играть")}</>}
           </span>
           <span className="status" aria-live="polite">
             {downloading ? (

@@ -4,6 +4,7 @@ import { isActive, launches, type LaunchState } from "../launches";
 import { Modal, useDialog } from "./Dialog";
 import { t } from "../i18n";
 import { Icon } from "./icons";
+import { MOD } from "../keys";
 
 const ICONS = [
   "linear-gradient(#5d9e3a 0 30%,#7a5537 30% 100%)",
@@ -158,7 +159,7 @@ export function PlayButton({ inst, state, compact, fix }: { inst: Instance; stat
   }
   return (
     <div className={`play ${fix ? "fix" : ""}`} ref={ref}>
-      <button className="go" onClick={() => go(undefined, false, false, fix)} style={compact ? { padding: "8px 18px", minWidth: 0, fontSize: 14 } : undefined}><Icon name={fix ? "wrench" : "play"} size={16} /> {fix ? t("Починить и играть") : t("Играть")}{compact && <kbd>Enter</kbd>}</button>
+      <button className="go" aria-keyshortcuts={compact ? "Control+Enter Meta+Enter" : undefined} onClick={() => go(undefined, false, false, fix)} style={compact ? { padding: "8px 18px", minWidth: 0, fontSize: 14 } : undefined}><Icon name={fix ? "wrench" : "play"} size={16} /> {fix ? t("Починить и играть") : t("Играть")}{compact && <kbd>{MOD} Enter</kbd>}</button>
       <button className="more" aria-label={t("Другие варианты запуска")} aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="chevron" size={16} /></button>
       {menu && (
         <div className="menu" role="menu">

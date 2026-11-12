@@ -4,6 +4,7 @@ import { isActive, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
 import { LaunchProgress, PlayButton, ProfileIcon, StatusBadge } from "../ui/common";
 import { CrashCard } from "../ui/CrashCard";
+import { MOD } from "../keys";
 import { ModsTab } from "./ModsTab";
 import { SnapshotsTab } from "./SnapshotsTab";
 import { ProfileTab } from "./ProfileTab";
@@ -247,7 +248,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
         </details>
 
         <div className="row">
-          <button className="btn cta" onClick={save} disabled={saving} aria-keyshortcuts="Control+S Meta+S">{saving ? t("Сохраняем…") : t("Сохранить")}</button>
+          <button className="btn cta" onClick={save} disabled={saving} aria-keyshortcuts="Control+S Meta+S">{saving ? t("Сохраняем…") : <>{t("Сохранить")}<kbd aria-hidden>{MOD} S</kbd></>}</button>
           <button className="btn" disabled={saving} onClick={load}>{t("Отменить правки")}</button>
         </div>
       </div>
@@ -344,11 +345,11 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   // Запуск закончился ошибкой или крашем — разбор на «Обзоре».
   const failed = state?.phase === "failed" || (state?.phase === "done" && !!state.exit?.analysis);
   useEffect(() => { if (failed) setPlace(["overview", undefined]); }, [failed]);
-  // 1–4 — вкладки (подсказка в нижней панели).
+  // Alt 1–4 — вкладки (подсказка в нижней панели). Цифру берём по коду клавиши: на Mac ⌥1 печатает «¡».
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
-      const n = Number(e.key);
+      if (typing(e) || !e.altKey || e.ctrlKey || e.metaKey || !/^Digit\d$/.test(e.code)) return;
+      const n = Number(e.code.slice(5));
       if (n >= 1 && n <= MAIN.length) { e.preventDefault(); setPlace([MAIN[n - 1][0], undefined]); }
     };
     window.addEventListener("keydown", onKey);

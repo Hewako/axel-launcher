@@ -379,12 +379,13 @@ details.adv summary::-webkit-details-marker { display: none; }
 .btn .ico, .go .ico { margin-right: 2px; }
 .btn.square .ico, .more .ico { margin: 0; vertical-align: middle; }
 .dialog-x .ico { transform: rotate(45deg); vertical-align: middle; }
+.btn kbd { color: inherit; border-color: color-mix(in srgb, currentColor 45%, transparent); }
 .play .go kbd { margin-left: 8px; background: rgba(0,0,0,.14); border-color: rgba(0,0,0,.2); color: inherit; font-size: 11px; }
 
 .bisectbar { margin: 0 0 12px; }
 .searchbox { position: relative; display: inline-flex; align-items: center; width: 240px; }
 .searchbox .ico { position: absolute; left: 10px; color: var(--muted); pointer-events: none; }
-.searchbox .field { width: 100%; padding-left: 34px; padding-right: 30px; }
+.searchbox .field { width: 100%; padding-left: 34px; padding-right: 64px; }
 .searchbox kbd { position: absolute; right: 8px; margin: 0; }
 .modbar .seg.subtabs { margin-bottom: 0; }
 .kv dd .upd { display: block; margin-left: auto; color: var(--warn); }
