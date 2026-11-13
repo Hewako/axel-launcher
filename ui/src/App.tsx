@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance } from "./api";
 import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
+import { AllProfiles } from "./screens/AllProfiles";
 import { CreateInstance } from "./screens/CreateInstance";
 import { ImportDialog } from "./screens/Import";
 import { InstancePage, typing, type Tab } from "./screens/InstancePage";
@@ -20,7 +21,7 @@ import { src, syncLang, t } from "./i18n";
 import { ALT, MOD, isMod } from "./keys";
 
 /** Профиль с вкладками или один из общих экранов, открытых с рельсы. */
-type Screen = "profile" | "logs" | "accounts" | "settings" | "new";
+type Screen = "profile" | "all" | "logs" | "accounts" | "settings" | "new";
 
 function applyTheme(theme: string) {
   const dark = theme === "system" ? window.matchMedia("(prefers-color-scheme: dark)").matches : theme !== "light";
@@ -221,6 +222,8 @@ function Shell() {
       <a href="#main" className="skip">{t("Перейти к содержимому")}</a>
       <nav className="rail" aria-label={t("Профили и разделы")}>
         <div className="rail-logo" title={`Axel' ${info.version}`}><img src="/logo.png" alt="" width={34} height={34} /></div>
+        <button className={`rail-btn ${screen === "all" ? "on" : ""}`} aria-label={t("Все профили")} title={t("Все профили")} aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /></button>
+        <div className="rail-div" aria-hidden />
         <div className="rail-list">
           {rail.map((i, n) => {
             const s = status(i);
@@ -240,12 +243,12 @@ function Shell() {
           <button className={`tile add ${screen === "new" ? "on" : ""}`} aria-label={t("Новый профиль")} title={t("Новый профиль")} onClick={() => setScreen("new")}>+</button>
         </div>
         <div className="rail-tools">
-          <button className={`rail-btn ${screen === "logs" ? "on" : ""}`} aria-label={t("Логи и краши{0}", notes.unread ? t(": новых {0}", notes.unread) : "")} title={t("Логи и краши")}
+          <button aria-current={screen === "logs" ? "page" : undefined} className={`rail-btn ${screen === "logs" ? "on" : ""}`} aria-label={t("Логи и краши{0}", notes.unread ? t(": новых {0}", notes.unread) : "")} title={t("Логи и краши")}
             onClick={() => { markRead(); setScreen("logs"); }}>
             <Icon name="bell" size={20} />{notes.unread > 0 && <span className="adot" aria-hidden />}
           </button>
-          <button className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /></button>
-          <button className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
+          <button aria-current={screen === "settings" ? "page" : undefined} className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /></button>
+          <button aria-current={screen === "accounts" ? "page" : undefined} className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
             <Avatar account={ms} />
           </button>
         </div>
@@ -284,6 +287,7 @@ function Shell() {
               </div>
             </div>
           ))}
+          {screen === "all" && <AllProfiles instances={instances} mods={modsCount} states={states} status={status} onOpen={(id) => open(id)} onNew={() => setScreen("new")} />}
           {screen === "logs" && <Logs instances={instances} states={states} id={selectedId} onPick={setSelectedId} />}
           {screen === "accounts" && <Accounts info={info} accounts={accounts} defaultKey={defaultKey} onChanged={refreshAccounts} />}
           {screen === "new" && (
