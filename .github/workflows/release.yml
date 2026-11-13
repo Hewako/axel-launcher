@@ -29,7 +29,7 @@ jobs:
           - { name: Linux, os: ubuntu-22.04, args: "", target: "" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Системные библиотеки для Tauri и keyring (Linux)
         if: runner.os == 'Linux'
@@ -46,7 +46,7 @@ jobs:
         with:
           key: release-${{ matrix.os }}-${{ matrix.target }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: lts/*
           cache: npm
