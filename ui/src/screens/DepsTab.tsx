@@ -35,11 +35,20 @@ function buildGraph(files: ModFile[], report: DoctorReport, journal: JournalEntr
     for (const d of f.mods.flatMap((m) => m.dependencies)) {
       if (BUILTIN.has(d.id)) continue;
       const to = owner.get(d.id);
-      if (!to) { if (d.kind === "required") missing.set(f.file_name, [...(missing.get(f.file_name) ?? []), d.id]); continue; }
+      // Проблемы решает Mod Doctor: он учитывает версии и то, что даёт сам загрузчик (у Quilt — QSL).
+      // Граф только показывает его находки, иначе «не хватает» и «конфликт» расходились бы с «Модами».
+      if (!to) {
+        if (d.kind === "required" && report.findings.some((fd) => fd.files.includes(f.file_name) && fd.fixes.some((x) => x.kind === "install" && x.mod_id === d.id)))
+          missing.set(f.file_name, [...(missing.get(f.file_name) ?? []), d.id]);
+        continue;
+      }
       if (to === f.file_name) continue;
-      // Обязательная зависимость, по которой Mod Doctor нашёл блокирующую проблему, — конфликт.
-      const bad = report.findings.find((fd) => fd.severity === "blocking" && fd.files.includes(f.file_name) && fd.title.toLowerCase().includes(d.id));
-      const kind: Kind = d.kind === "breaks" || d.kind === "conflicts" || bad ? "bad" : d.kind === "required" ? "req" : "opt";
+      const declaredBad = d.kind === "breaks" || d.kind === "conflicts";
+      const bad = report.findings.find((fd) => (declaredBad ? fd.files.includes(f.file_name) && fd.files.includes(to)
+        : fd.severity === "blocking" && fd.files.includes(f.file_name) && fd.title.toLowerCase().includes(d.id)));
+      // Объявленная несовместимость с другими версиями — не конфликт этого профиля.
+      if (declaredBad && !bad) continue;
+      const kind: Kind = bad ? "bad" : d.kind === "required" ? "req" : "opt";
       edges.push({ from: f.file_name, to, kind, why: bad ? `${tc(bad.title)}. ${tc(bad.detail)}` : undefined });
     }
   }
