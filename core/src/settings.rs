@@ -179,6 +179,14 @@ pub fn jvm_arg_forbidden(a: &str) -> Option<&'static str> {
     }
 }
 
+/// Диапазон памяти, при котором `memory_advice` молчит: не меньше 2 ГБ и рекомендации сборки,
+/// не больше 16 ГБ и трёх четвертей ОЗУ. `None` — если такого диапазона нет (мало ОЗУ).
+pub fn memory_range(total_mb: Option<u64>, pack_mb: Option<u32>) -> Option<(u32, u32)> {
+    let lo = pack_mb.unwrap_or(0).max(2048);
+    let hi = total_mb.map_or(16_384, |t| (t * 3 / 4).min(16_384) as u32);
+    (lo <= hi).then_some((lo, hi))
+}
+
 /// Советы по памяти: доля от ОЗУ компьютера, рекомендация сборки, крайние значения.
 pub fn memory_advice(max_mb: u32, total_mb: Option<u64>, pack_mb: Option<u32>) -> Vec<String> {
     let mut out = Vec::new();
@@ -522,6 +530,26 @@ mod tests {
             };
             assert!(validate(&o).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn memory_range_matches_advice() {
+        for (total, pack) in [
+            (Some(16_384), None),
+            (Some(8192), Some(4096)),
+            (None, Some(6144)),
+            (Some(65_536), None),
+        ] {
+            let (lo, hi) = memory_range(total, pack).unwrap();
+            for mb in [lo, (lo + hi) / 2, hi] {
+                assert!(
+                    memory_advice(mb, total, pack).is_empty(),
+                    "{mb} МБ при {total:?}/{pack:?}"
+                );
+            }
+            assert!(!memory_advice(hi + 512, total, pack).is_empty());
+        }
+        assert_eq!(memory_range(Some(2048), None), None);
     }
 
     #[test]

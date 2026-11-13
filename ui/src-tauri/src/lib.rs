@@ -258,6 +258,8 @@ struct LaunchSettingsView {
     profile: LaunchOverrides,
     global: LaunchOverrides,
     total_memory_mb: Option<u64>,
+    /// Память без предупреждений (полоса на ползунке), МБ.
+    memory_range: Option<(u32, u32)>,
 }
 
 #[tauri::command]
@@ -271,6 +273,7 @@ fn launch_settings(state: State<AppState>, id: String) -> CmdResult<LaunchSettin
         profile: inst.settings,
         global: global.launch,
         total_memory_mb: total_memory_mb(),
+        memory_range: settings::memory_range(total_memory_mb(), inst.pack_settings.max_memory_mb),
     })
 }
 

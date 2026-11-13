@@ -95,7 +95,8 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
   );
 
   return (
-    <>
+    <div className="ov">
+      <div className="stack">
       {running && <div className="alert warn" style={{ marginBottom: 12 }}><span>{t("Игра запущена: при выходе она перезапишет настройки, поэтому сохранить можно после закрытия.")}</span></div>}
       {view.conflicts.length > 0 && (
         <div className="alert warn" style={{ marginBottom: 12 }}>
@@ -208,6 +209,13 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
           </div>
         </Modal>
       )}
-    </>
+      </div>
+      <aside className="stack">
+        <section className="card">
+          <h3>{t("Откуда берутся значения")}</h3>
+          <p className="muted">{t("Здесь только то, что игра хранит в options.txt этого профиля. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна — на вкладке «Запуск и память».")}</p>
+        </section>
+      </aside>
+    </div>
   );
 }

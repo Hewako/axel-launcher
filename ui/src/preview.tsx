@@ -79,7 +79,7 @@ mockIPC((cmd, args) => {
           min_memory_mb: { value: i.settings.max_memory_mb ?? 4096, source: "default" },
           java_path: { value: null, source: "default" }, jvm_args: { value: [], source: "default" }, resolution: { value: null, source: "default" },
         },
-        profile: i.settings, global: {}, total_memory_mb: 16384,
+        profile: i.settings, global: {}, total_memory_mb: 16384, memory_range: [2048, 12288],
       };
     }
     case "list_versions": return { versions: [{ id: "26.3", type: "release", releaseTime: "2026-10-14T10:00:00+00:00" }, { id: "26.2", type: "release", releaseTime: "2026-07-01T10:00:00+00:00" }, { id: "1.21.11", type: "release", releaseTime: "2025-12-09T10:00:00+00:00" }], latest_release: "26.3", offline: false };

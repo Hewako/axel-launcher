@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errText, loaderName, mods as modsApi, modsLabel, sizeText, snapshots, type Bisect, type DoctorReport, type Hooks, type JournalEntry, sourceName, type AccountRef, type Instance, type LaunchOverrides, type Resolved, type Source } from "../api";
 import { isActive, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
@@ -75,6 +75,36 @@ function SourceTag({ source, onReset }: { source: Source; onReset?: () => void }
   );
 }
 
+/** Ползунок памяти (макет 05): шкала, зелёная полоса «без предупреждений», клавиатура по WAI-ARIA slider. */
+function MemSlider({ value, max, band, onChange }: { value: number; max: number; band?: [number, number] | null; onChange: (mb: number) => void }) {
+  const MIN = 1024, STEP = 512;
+  const track = useRef<HTMLDivElement>(null);
+  const pct = (mb: number) => ((Math.min(max, Math.max(MIN, mb)) - MIN) / (max - MIN)) * 100;
+  const snap = (mb: number) => Math.min(max, Math.max(MIN, Math.round(mb / STEP) * STEP));
+  const fromX = (x: number) => {
+    const r = track.current!.getBoundingClientRect();
+    return snap(MIN + ((x - r.left) / r.width) * (max - MIN));
+  };
+  const gb = (mb: number) => `${(mb / 1024).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${t("ГБ")}`;
+  const ticks = [1, 2, 4, 8, 16, 32].map((g) => g * 1024).filter((mb) => mb < max * 0.9); // у правого края — подпись максимума
+  return (
+    <div className="mem" onPointerDown={(e) => { if (!track.current) return; (e.target as Element).setPointerCapture?.(e.pointerId); onChange(fromX(e.clientX)); }}
+      onPointerMove={(e) => { if (e.buttons === 1) onChange(fromX(e.clientX)); }}>
+      <div className="memtrack" ref={track}>
+        {band && <span className="memband" style={{ left: `${pct(band[0])}%`, width: `${pct(band[1]) - pct(band[0])}%` }} />}
+        <span className="memfill" style={{ width: `${pct(value)}%` }} />
+        <span className="memthumb" style={{ left: `${pct(value)}%` }} role="slider" tabIndex={0} aria-label={t("Память для игры")}
+          aria-valuemin={MIN} aria-valuemax={max} aria-valuenow={value} aria-valuetext={gb(value)}
+          onKeyDown={(e) => {
+            const next = { ArrowRight: value + STEP, ArrowUp: value + STEP, ArrowLeft: value - STEP, ArrowDown: value - STEP, PageUp: value + 2048, PageDown: value - 2048, Home: MIN, End: max }[e.key];
+            if (next !== undefined) { e.preventDefault(); onChange(snap(next)); }
+          }} />
+      </div>
+      <div className="memticks" aria-hidden>{ticks.map((mb) => <span key={mb} style={{ left: `${pct(mb)}%` }}>{mb / 1024}</span>)}<span style={{ left: "100%" }}>{gb(max)}</span></div>
+    </div>
+  );
+}
+
 function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: AccountRef[]; onChanged: (i: Instance) => void }) {
   const dialog = useDialog();
   const streamer = useStreamer();
@@ -98,6 +128,14 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   };
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState("");
+  // Java: «Авто» по версии игры, найденные на компьютере, или свой путь.
+  const [javaMajor, setJavaMajor] = useState(0);
+  const [javas, setJavas] = useState<{ path: string; major: number; version: string; arch: string }[]>([]);
+  const [customJava, setCustomJava] = useState(false);
+  useEffect(() => {
+    api.versionInfo(inst.game_version).then((v) => setJavaMajor(v.java_major)).catch(() => {});
+    api.firstRunInfo().then((i) => { setJavas(i.javas); const p = inst.settings.java_path; setCustomJava(!!p && !i.javas.some((j) => j.path === p)); }).catch(() => {});
+  }, [inst.game_version, inst.settings.java_path]);
 
   const load = useCallback(() => {
     api.launchSettings(inst.id).then((d) => {
@@ -162,11 +200,10 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <div className="lbl">{t("Память")}<span className="hint">{t("Xms = Xmx: память не перевыделяется посреди игры.")}</span></div>
             <div>
               <div className="row" style={{ justifyContent: "space-between" }}>
-                <b className="big">{(max.value / 1024).toFixed(1).replace(".0", "")} {t("ГБ")}</b>
-                {total ? <span className="muted small">{t(" из {0} ГБ ОЗУ", Math.round(total / 1024)).trim()}</span> : null}
+                <span className="memval"><b>{(max.value / 1024).toFixed(1).replace(".0", "")} {t("ГБ")}</b>{total ? <span className="muted"> {t(" из {0} ГБ ОЗУ", Math.round(total / 1024)).trim()}</span> : null}</span>
+                {data.memory_range && <span className="muted small">{t("Без предупреждений: {0}–{1} ГБ (зелёная полоса)", Math.round(data.memory_range[0] / 1024), Math.round(data.memory_range[1] / 1024))}</span>}
               </div>
-              <input type="range" min={1024} max={ceiling} step={512} value={Math.min(max.value, ceiling)} aria-label={t("Память, МБ")}
-                onChange={(e) => setDraft({ ...draft, max_memory_mb: Number(e.target.value), min_memory_mb: undefined })} />
+              <MemSlider value={Math.min(max.value, ceiling)} max={ceiling} band={data.memory_range} onChange={(mb) => setDraft({ ...draft, max_memory_mb: mb, min_memory_mb: undefined })} />
               {inst.pack_settings.max_memory_mb ? <span className="muted small">{t(" Сборка рекомендует {0} МБ.", inst.pack_settings.max_memory_mb).trim()}</span> : null}
               {advice.map((a) => <span key={a} className="small" style={{ color: "var(--warn)" }}><Icon name="warn" size={14} /> {tc(a)}</span>)}
             </div>
@@ -174,8 +211,15 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
           </div>
           <div className="setting">
             <div className="lbl">Java<span className="hint">{t("по умолчанию — по javaVersion из JSON версии")}</span></div>
-            <input className="field mono" placeholder={t("Авто: лаунчер подберёт или скачает нужную")} value={draft.java_path ?? ""}
-              onChange={(e) => setDraft({ ...draft, java_path: e.target.value || undefined })} />
+            <div className="stack tight">
+              <select className="field" aria-label="Java" value={customJava ? "custom" : draft.java_path ?? ""}
+                onChange={(e) => { const v = e.target.value; setCustomJava(v === "custom"); if (v !== "custom") setDraft({ ...draft, java_path: v || undefined }); }}>
+                <option value="">{javaMajor ? t("Авто: Java {0}", javaMajor) : t("Авто: лаунчер подберёт или скачает нужную")}</option>
+                {javas.map((j) => <option key={j.path} value={j.path}>Java {j.major} · {j.version} · {j.arch}{javaMajor && j.major !== javaMajor ? ` ${t("(не та версия)")}` : ""}</option>)}
+                <option value="custom">{t("Указать путь…")}</option>
+              </select>
+              {customJava && <input className="field mono" placeholder="/path/to/java" aria-label={t("Путь к Java")} value={draft.java_path ?? ""} onChange={(e) => setDraft({ ...draft, java_path: e.target.value || undefined })} />}
+            </div>
             <SourceTag source={javaEff.source} onReset={() => setDraft({ ...draft, java_path: undefined })} />
           </div>
           <div className="setting">

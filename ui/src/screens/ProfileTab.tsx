@@ -1,7 +1,7 @@
 // Вкладка «Профиль»: оформление, место на диске, копия профиля и перенос настроек из другого.
 import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
-import { api, errText, importer, metaOf, type Channel, sizeText, SHARABLE, type PackUpdatePlan, type CloneParts, type DiffRow, type Instance, type ProfileDiff, type ProfileMeta } from "../api";
+import { api, errText, importer, loaderName, metaOf, snapshots, type Channel, sizeText, SHARABLE, type PackUpdatePlan, type CloneParts, type DiffRow, type Instance, type ProfileDiff, type ProfileMeta } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
 import { path, useStreamer } from "../streamer";
 import { t, tc } from "../i18n";
@@ -193,6 +193,8 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
   const groups = [...new Set(instances.map((i) => i.group).filter(Boolean))] as string[];
 
   useEffect(() => { api.diskUsage(inst.id).then(setUsage).catch(() => setUsage(null)); }, [inst.id]);
+  const [snapCount, setSnapCount] = useState<number | null>(null);
+  useEffect(() => { snapshots.list(inst.id).then((l) => setSnapCount(l.length)).catch(() => setSnapCount(null)); }, [inst.id]);
 
   const save = async (patch: Partial<ProfileMeta> = {}, newName = name) => {
     const next = { ...meta, ...patch };
@@ -226,7 +228,17 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
   };
 
   return (
-    <div className="stack" style={{ maxWidth: 900 }}>
+    <div className="ov">
+    <div className="stack">
+      <section className="card psec" aria-labelledby="ps-about">
+        <h3 id="ps-about">{t("О профиле «{0}»", inst.name)}</h3>
+        <dl className="kv">
+          <dt>{t("Создан")}</dt><dd>{inst.created_at ? new Date(inst.created_at * 1000).toLocaleDateString() : "—"}{inst.pack ? `, ${t("сборка {0}", inst.pack.name)}` : ""}</dd>
+          <dt>{t("Игра и загрузчик")}</dt><dd>Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}</dd>
+          <dt>{t("Размер на диске")}</dt><dd>{usage ? sizeText(usage.total) : "—"}</dd>
+          <dt>{t("Снимков")}</dt><dd>{snapCount ?? "—"}</dd>
+        </dl>
+      </section>
       <section className="card psec" aria-labelledby="ps-profile">
         <h3 id="ps-profile">{t("Профиль")}</h3>
         <div className="setting">
@@ -362,6 +374,13 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       {modal === "compare" && <CompareDialog inst={inst} instances={instances} onClose={() => setModal("")} />}
       {modal === "clone" && <CloneDialog inst={inst} onClose={() => setModal("")} onDone={(i) => { setModal(""); onCloned(i); }} />}
       {modal === "copy" && <CopyFromDialog inst={inst} instances={instances} onClose={() => setModal("")} />}
+    </div>
+    <aside className="stack">
+      <section className="card">
+        <h3>{t("Что входит в экспорт")}</h3>
+        <p className="muted">{t("Моды (ссылками на Modrinth, остальные — файлами) и настройки модов из папки config. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
+      </section>
+    </aside>
     </div>
   );
 }

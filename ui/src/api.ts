@@ -209,7 +209,7 @@ export const api = {
   pauseDownloads: (paused: boolean) => invoke<void>("downloads_pause", { paused }),
   memoryAdvice: (maxMb: number, packMb?: number) => invoke<string[]>("memory_advice", { maxMb, packMb: packMb ?? null }),
   launchSettings: (id: string) =>
-    invoke<{ resolved: ResolvedLaunch; profile: LaunchOverrides; global: LaunchOverrides; total_memory_mb?: number }>("launch_settings", { id }),
+    invoke<{ resolved: ResolvedLaunch; profile: LaunchOverrides; global: LaunchOverrides; total_memory_mb?: number; memory_range?: [number, number] | null }>("launch_settings", { id }),
   globalSettings: () => invoke<GlobalSettings>("global_settings"),
   saveGlobalSettings: (settings: GlobalSettings) => invoke<void>("save_global_settings", { settings }),
   listVersions: (snapshots: boolean, old: boolean) =>
