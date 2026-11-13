@@ -321,7 +321,7 @@ function Shell() {
 
         <footer className="bottombar">
           <span className="keys">
-            {screen === "profile" && selected && <><kbd>{ALT} 1–4</kbd> {t("вкладки")}<kbd>{MOD} Enter</kbd> {t("играть")}</>}
+            {screen === "profile" && selected && <span className="hint-wide"><kbd>{ALT} 1–4</kbd> {t("вкладки")}<kbd>{MOD} Enter</kbd> {t("играть")}</span>}
             {screen !== "profile" && <><kbd>Esc</kbd> {t("назад")}</>}
           </span>
           <span className="status" aria-live="polite">

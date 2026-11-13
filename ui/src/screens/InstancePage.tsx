@@ -446,11 +446,12 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
           <p className="sub">Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}{modCount !== undefined && inst.loader !== "vanilla" ? `, ${modsLabel(modCount)}` : ""}{disk !== null ? `, ${t("{0} на диске", sizeText(disk))}` : ""} · <StatusBadge inst={inst} state={state} /></p>
         </div>
         <div className="phead-acts">
-          <button className="btn square" aria-label={t("Папка")} title={t("Папка")} onClick={() => api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e)))}><Icon name="folder" /></button>
+          <button className="btn square wide-only" aria-label={t("Папка")} title={t("Папка")} onClick={() => api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e)))}><Icon name="folder" /></button>
           <div className="menuwrap">
             <button className="btn square" aria-label={t("Ещё")} aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)}><Icon name="more" /></button>
             {more && (
               <div className="menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") setMore(false); }}>
+                <button role="menuitem" className="narrow-only" onClick={() => { setMore(false); api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e))); }}>{t("Папка")}</button>
                 <button role="menuitem" onClick={() => ask("clone")}>{t("Сделать копию профиля…")}</button>
                 <button role="menuitem" onClick={() => ask("export")}>{t("Экспорт в .mrpack…")}</button>
                 <button role="menuitem" className="danger" disabled={isActive(state)} onClick={() => { setMore(false); trash(); }}>{t("В корзину")}</button>
