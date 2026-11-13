@@ -9,7 +9,8 @@ const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "neoforge"];
 
 export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void }) {
   const [name, setName] = useState("");
-  const [snapshots, setSnapshots] = useState(false);
+  // Какие версии показывать (макет 09): релизы всегда, плюс снапшоты или старые alpha/beta.
+  const [kinds, setKinds] = useState<"release" | "snapshot" | "old">("release");
   const [query, setQuery] = useState("");
   const [versions, setVersions] = useState<VersionEntry[] | null>(null);
   const [latest, setLatest] = useState("");
@@ -24,7 +25,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
 
   useEffect(() => {
     setVersions(null);
-    api.listVersions(snapshots, false)
+    api.listVersions(kinds === "snapshot", kinds === "old")
       .then((r) => {
         setVersions(r.versions);
         setOffline(r.offline);
@@ -32,7 +33,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
         setVersion((v) => v || r.latest_release);
       })
       .catch((e) => setError(errText(e)));
-  }, [snapshots]);
+  }, [kinds]);
 
   useEffect(() => {
     if (!version) return;
@@ -95,13 +96,16 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
                 {shown.map((v) => <option key={v.id} value={v.id}>{v.id}{v.type !== "release" ? ` · ${v.type}` : ""} · {v.releaseTime.slice(0, 10)}</option>)}
               </select>
             )}
-            <div className="row" style={{ flexWrap: "nowrap" }}>
-              <input className="field" style={{ flex: 1, minWidth: 0 }} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Найти версию…")} aria-label={t("Поиск версии")} />
-              <label className="row small" style={{ display: "flex", flexWrap: "nowrap" }}>
-                <input type="checkbox" checked={snapshots} onChange={(e) => setSnapshots(e.target.checked)} /> {t("снапшоты")}
-              </label>
-            </div>
+            <input className="field" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Найти версию…")} aria-label={t("Поиск версии")} />
             {java && <span className="muted small">{version}: {java}</span>}
+          </div>
+        </div>
+        <div className="stack tight">
+          <span className="lbl" id="kinds-label">{t("Какие версии показывать")}</span>
+          <div className="seg subtabs loaderseg" role="radiogroup" aria-labelledby="kinds-label">
+            {([["release", t("Релизы")], ["snapshot", t("Снапшоты")], ["old", t("Старые")]] as const).map(([k, l]) => (
+              <button type="button" key={k} role="radio" aria-checked={kinds === k} className={kinds === k ? "on" : ""} onClick={() => setKinds(k)}>{l}</button>
+            ))}
           </div>
         </div>
         <div className="stack tight">

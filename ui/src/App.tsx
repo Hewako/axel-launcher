@@ -302,7 +302,17 @@ function Shell() {
               </div>
               <div className="split2">
                 <CreateInstance onCreated={(i) => refresh().then(() => open(i.id))} />
-                <ImportDialog dragging={dragging} dropped={dropped} onDone={(i) => refresh().then(() => open(i.id))} />
+                <div className="stack">
+                  <ImportDialog dragging={dragging} dropped={dropped} onDone={(i) => refresh().then(() => open(i.id))} />
+                  <section className="card">
+                    <h3>{t("Что появится")}</h3>
+                    <ul className="facts">
+                      <li>{t("Папка профиля — сразу. Файлы игры скачаются при первом запуске.")}</li>
+                      <li>{t("Java подберётся по версии игры, при необходимости скачается.")}</li>
+                      <li>{t("Первый снимок сохранится сам перед первым изменением модов.")}</li>
+                    </ul>
+                  </section>
+                </div>
               </div>
             </>
           )}
