@@ -289,7 +289,7 @@ function Shell() {
           ))}
           {screen === "all" && <AllProfiles instances={instances} mods={modsCount} states={states} status={status} onOpen={(id) => open(id)} onNew={() => setScreen("new")} />}
           {screen === "logs" && <Logs instances={instances} states={states} id={selectedId} onPick={setSelectedId} />}
-          {screen === "accounts" && <Accounts info={info} accounts={accounts} defaultKey={defaultKey} onChanged={refreshAccounts} />}
+          {screen === "accounts" && <Accounts info={info} accounts={accounts} defaultKey={defaultKey} onChanged={refreshAccounts} instances={instances} onInstance={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))} />}
           {screen === "new" && (
             <>
               <div className="shead">

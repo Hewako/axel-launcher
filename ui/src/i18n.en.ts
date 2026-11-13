@@ -134,7 +134,6 @@ export const EN: Record<string, string> = {
   "Всё": "Everything",
   "Вход": "Sign-in",
   "Вход Microsoft не настроен в этой сборке": "Microsoft sign-in is not configured in this build",
-  "Вход открывается в системном браузере. Пароль в лаунчер не вводится.": "Sign-in opens in the system browser. The password is never entered in the launcher.",
   "Вход через Ely.by": "Ely.by sign-in",
   "Вход через Ely.by не удался": "Ely.by sign-in failed",
   "Вход через Microsoft": "Microsoft sign-in",
@@ -1132,4 +1131,9 @@ export const EN: Record<string, string> = {
   "Папка профиля — сразу. Файлы игры скачаются при первом запуске.": "The profile folder right away. Game files download on the first launch.",
   "Java подберётся по версии игры, при необходимости скачается.": "Java is picked for the game version and downloaded if needed.",
   "Первый снимок сохранится сам перед первым изменением модов.": "The first snapshot is saved automatically before the first mod change.",
+  "Добавить аккаунт": "Add account",
+  "Вход по коду: откроется страница Microsoft в системном браузере, там вводится код. Пароль в лаунчер не вводится. Проверим, что игра куплена.": "Sign in with a code: a Microsoft page opens in your browser, enter the code there. Your password is never typed into the launcher. We check that you own the game.",
+  "Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется. Нужен Microsoft-аккаунт с купленной игрой.": "Ely.by login and password, two-factor sign-in supported; the password isn’t saved. Requires a Microsoft account that owns the game.",
+  "Какой профиль под каким аккаунтом": "Which profile uses which account",
+  "Аккаунт профиля «{0}»": "Account for “{0}”",
 };

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { accountKey, api, errText, type AccountRef, type AppInfo, type DeviceCode } from "../api";
+import { accountKey, api, errText, type AccountRef, type AppInfo, type DeviceCode, type Instance } from "../api";
+import { Icon } from "../ui/icons";
 import { Avatar } from "../ui/Avatar";
 import { Modal, useDialog } from "../ui/Dialog";
 import { nick, useStreamer } from "../streamer";
@@ -92,7 +93,7 @@ function ElyLogin({ onClose, onDone }: { onClose: () => void; onDone: (a: Accoun
   );
 }
 
-export function Accounts({ info, accounts, defaultKey, onChanged }: { info: AppInfo; accounts: AccountRef[]; defaultKey?: string; onChanged: () => void }) {
+export function Accounts({ info, accounts, defaultKey, onChanged, instances, onInstance }: { info: AppInfo; accounts: AccountRef[]; defaultKey?: string; onChanged: () => void; instances: Instance[]; onInstance: (i: Instance) => void }) {
   const streamer = useStreamer();
   const [skin, setSkin] = useState<Record<string, string | null>>({});
   const showSkin = (key: string) => {
@@ -136,9 +137,15 @@ export function Accounts({ info, accounts, defaultKey, onChanged }: { info: AppI
 
   return (
     <>
-      <h2>{t("Аккаунты и скины")}</h2>
-      <p className="sub">{t("Провайдеры не смешиваются: у каждого аккаунта свой UUID и токены. Токены лежат только в хранилище секретов ОС.")}</p>
+      <div className="shead">
+        <div>
+          <h2>{t("Аккаунты и скины")}</h2>
+          <p className="sub">{t("Провайдеры не смешиваются: у каждого аккаунта свой UUID и токены. Токены лежат только в хранилище секретов ОС.")}</p>
+        </div>
+        <button className="btn cta" disabled={!info.microsoft_configured} onClick={() => setMsLogin(true)}><Icon name="plus" size={16} /> {t("Добавить аккаунт")}</button>
+      </div>
       <div className="ov">
+      <div className="stack">
       <section className="card">
       <h3>{t("Аккаунты")}</h3>
       {accounts.length === 0 && (
@@ -175,11 +182,21 @@ export function Accounts({ info, accounts, defaultKey, onChanged }: { info: AppI
           <button className="btn" onClick={() => remove(a)}>{t("Выйти")}</button>
         </div>
       ))}
-      <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn cta" disabled={!info.microsoft_configured} onClick={() => setMsLogin(true)}>{t("Войти через Microsoft")}</button>
-        <button className="btn" disabled={!verified} onClick={() => setElyPassword(true)}>{t("Войти через Ely.by")}</button>
-        {verified && <button className="btn link small" disabled={elyBusy} onClick={ely}>{elyBusy ? t("Ждём браузер…") : t("или через браузер (OAuth)")}</button>}
-      </div>
+      </section>
+      <section className="card" aria-labelledby="acc-add">
+        <h3 id="acc-add">{t("Добавить аккаунт")}</h3>
+        <div className="acc">
+          <span className="foundico" aria-hidden><Icon name="user" size={16} /></span>
+          <div className="grow"><b>Microsoft</b><p className="muted small" style={{ margin: 0 }}>{t("Вход по коду: откроется страница Microsoft в системном браузере, там вводится код. Пароль в лаунчер не вводится. Проверим, что игра куплена.")}</p></div>
+          <button className="btn" disabled={!info.microsoft_configured} onClick={() => setMsLogin(true)}>{t("Войти через Microsoft")}</button>
+        </div>
+        <div className="acc">
+          <span className="foundico" aria-hidden><Icon name="link" size={16} /></span>
+          <div className="grow"><b>Ely.by</b><p className="muted small" style={{ margin: 0 }}>{t("Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется. Нужен Microsoft-аккаунт с купленной игрой.")}</p>
+            {verified && <button className="btn link small" disabled={elyBusy} onClick={ely}>{elyBusy ? t("Ждём браузер…") : t("или через браузер (OAuth)")}</button>}
+          </div>
+          <button className="btn" disabled={!verified} onClick={() => setElyPassword(true)}>{t("Войти через Ely.by")}</button>
+        </div>
       {!info.microsoft_configured && (
         <div className="alert warn" style={{ marginTop: 14 }}>
           <div className="h">{t("Вход Microsoft не настроен в этой сборке")}</div>
@@ -187,8 +204,29 @@ export function Accounts({ info, accounts, defaultKey, onChanged }: { info: AppI
         </div>
       )}
       {!verified && <p className="muted small">{t("Ely.by станет доступен после входа в Microsoft-аккаунт с купленной игрой.")}</p>}
-      <p className="muted small">{t("Вход открывается в системном браузере. Пароль в лаунчер не вводится.")}</p>
       </section>
+      {accounts.length > 0 && instances.some((i) => !i.archived) && (
+        <section className="card" aria-labelledby="acc-map">
+          <h3 id="acc-map">{t("Какой профиль под каким аккаунтом")}</h3>
+          {instances.filter((i) => !i.archived).map((i) => {
+            const own = accounts.filter((a) => (i.auth_mode === "ely_by" ? a.provider === "elyby" : a.provider === "microsoft"));
+            return (
+              <div className="setting" key={i.id}>
+                <div className="lbl">{i.name}<span className="hint">{i.auth_mode === "ely_by" ? "Ely.by" : "Microsoft"}</span></div>
+                <select className="field" aria-label={t("Аккаунт профиля «{0}»", i.name)} value={i.account ?? ""} onChange={async (e) => {
+                  try { onInstance(await api.updateInstance(i.id, { account: e.target.value || null })); }
+                  catch (err) { await dialog.alert(t("Не удалось сменить аккаунт"), errText(err)); }
+                }}>
+                  <option value="">{t("По умолчанию")}</option>
+                  {own.map((a) => <option key={accountKey(a)} value={accountKey(a)}>{nick(a.name, streamer)}</option>)}
+                </select>
+                <span />
+              </div>
+            );
+          })}
+        </section>
+      )}
+      </div>
       {selAcc && (
         <section className="card skincard" aria-label={t("Скин")}>
           <h3>{t("Скин")} {nick(selAcc.name, streamer)}</h3>
