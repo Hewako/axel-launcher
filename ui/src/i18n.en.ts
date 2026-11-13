@@ -1090,4 +1090,6 @@ export const EN: Record<string, string> = {
   "Размер на диске": "Size on disk",
   "Что входит в экспорт": "What the export includes",
   "Моды (ссылками на Modrinth, остальные — файлами) и настройки модов из папки config. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.": "Mods (as Modrinth links, the rest as files) and mod settings from the config folder. Game settings, worlds and sign-in data are not included. A report with mod licenses is saved next to the file.",
+  "Моды (только при том же загрузчике; уже имеющиеся не заменяются)": "Mods (same loader only; mods you already have aren’t replaced)",
+  "Настройки запуска (память, окно, аргументы; Java — при той же версии игры)": "Launch settings (memory, window, arguments; Java only for the same game version)",
 };

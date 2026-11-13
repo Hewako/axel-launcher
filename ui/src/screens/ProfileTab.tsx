@@ -90,7 +90,7 @@ function CompareDialog({ inst, instances, onClose }: { inst: Instance; instances
   );
 }
 
-function CopyFromDialog({ inst, instances, onClose }: { inst: Instance; instances: Instance[]; onClose: () => void }) {
+function CopyFromDialog({ inst, instances, onClose, onChanged }: { inst: Instance; instances: Instance[]; onClose: () => void; onChanged: (i: Instance) => void }) {
   const dialog = useDialog();
   const others = instances.filter((i) => i.id !== inst.id);
   const [from, setFrom] = useState(others[0]?.id ?? "");
@@ -100,6 +100,8 @@ function CopyFromDialog({ inst, instances, onClose }: { inst: Instance; instance
     setBusy(true);
     try {
       await api.copyBetween(from, inst.id, items);
+      // Настройки запуска лежат в самом профиле — берём его свежую копию.
+      if (items.includes("launch")) { const fresh = (await api.listInstances()).instances.find((i) => i.id === inst.id); if (fresh) onChanged(fresh); }
       onClose();
       await dialog.alert(t("Перенесено"), t("Перед переносом сохранён снимок — вернуть как было можно на вкладке «Откат»."));
     } catch (e) { await dialog.alert(t("Не перенесено"), errText(e)); } finally { setBusy(false); }
@@ -110,7 +112,7 @@ function CopyFromDialog({ inst, instances, onClose }: { inst: Instance; instance
         <>
           <label className="small muted" htmlFor="copy-from">{t("Из профиля")}</label>
           <select id="copy-from" className="field" style={{ width: "100%" }} value={from} onChange={(e) => setFrom(e.target.value)}>
-            {others.map((i) => <option key={i.id} value={i.id}>{i.name} · {i.game_version}</option>)}
+            {others.map((i) => <option key={i.id} value={i.id}>{i.name} · {i.game_version} · {loaderName[i.loader]}</option>)}
           </select>
           <p className="small muted">{t("Файлы с такими же именами заменятся. Ресурспаки, шейдеры и настройки модов добавятся к уже имеющимся.")}</p>
           {SHARABLE.map(([k, label]) => (
@@ -373,7 +375,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       )}
       {modal === "compare" && <CompareDialog inst={inst} instances={instances} onClose={() => setModal("")} />}
       {modal === "clone" && <CloneDialog inst={inst} onClose={() => setModal("")} onDone={(i) => { setModal(""); onCloned(i); }} />}
-      {modal === "copy" && <CopyFromDialog inst={inst} instances={instances} onClose={() => setModal("")} />}
+      {modal === "copy" && <CopyFromDialog inst={inst} instances={instances} onClose={() => setModal("")} onChanged={onChanged} />}
     </div>
     <aside className="stack">
       <section className="card">

@@ -58,6 +58,8 @@ export interface CloneParts { mods: boolean; configs: boolean; resources: boolea
 export const metaOf = (i: Instance): ProfileMeta => ({ group: i.group, description: i.description, color: i.color, favorite: !!i.favorite, archived: !!i.archived });
 /** Что можно перенести между профилями (совпадает с ядром, instance::ops::SHARABLE). */
 export const SHARABLE: [string, string][] = [
+  ["mods", t("Моды (только при том же загрузчике; уже имеющиеся не заменяются)")],
+  ["launch", t("Настройки запуска (память, окно, аргументы; Java — при той же версии игры)")],
   ["options.txt", t("Настройки игры (управление, графика, звук)")],
   ["servers.dat", t("Список серверов")],
   ["resourcepacks", t("Ресурспаки")],

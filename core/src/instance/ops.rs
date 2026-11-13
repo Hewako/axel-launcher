@@ -136,7 +136,15 @@ pub fn disk_usage(store: &InstanceStore, id: &str) -> Result<DiskUsage> {
 }
 
 /// Что можно перенести из одного профиля в другой.
-pub const SHARABLE: [(&str, &str); 7] = [
+pub const SHARABLE: [(&str, &str); 9] = [
+    (
+        "mods",
+        "Моды (только при том же загрузчике; уже имеющиеся не заменяются)",
+    ),
+    (
+        "launch",
+        "Настройки запуска (память, окно, аргументы; Java — при той же версии игры)",
+    ),
     ("options.txt", "Настройки игры (управление, графика, звук)"),
     ("servers.dat", "Список серверов"),
     ("resourcepacks", "Ресурспаки"),
@@ -159,7 +167,17 @@ pub fn copy_between(store: &InstanceStore, from: &str, to: &str, items: &[String
             return Err(Error::invalid(format!("Нельзя перенести {item}")));
         }
     }
-    let name = store.get(from)?.name;
+    let source = store.get(from)?;
+    let mut target = store.get(to)?;
+    // Моды загрузчика, отличного от нашего, не запустятся — переносить их бессмысленно.
+    if items.iter().any(|i| i == "mods") && source.loader != target.loader {
+        return Err(Error::invalid(format!(
+            "Моды из профиля с {} не подойдут к профилю с {}",
+            source.loader.display(),
+            target.loader.display()
+        )));
+    }
+    let name = source.name.clone();
     crate::snapshot::create(
         &store.dir(to)?,
         &dst,
@@ -169,11 +187,58 @@ pub fn copy_between(store: &InstanceStore, from: &str, to: &str, items: &[String
     for item in items {
         if item == "saves" {
             copy_worlds(&src.join("saves"), &dst.join("saves"), &name)?;
+        } else if item == "mods" {
+            copy_mods(store, from, to, &src, &dst)?;
+        } else if item == "launch" {
+            let java = target.settings.java_path.clone();
+            target.settings = source.settings.clone();
+            // Java выбирается строго по версии игры: чужой путь подходит только той же версии.
+            if source.game_version != target.game_version {
+                target.settings.java_path = java;
+            }
+            store.save(&target)?;
         } else {
             copy_item(&src.join(item), &dst.join(item))?;
         }
     }
     Ok(())
+}
+
+/// Добавить моды из другого профиля: файлы с уже имеющимися именами не трогаем, сведения
+/// об источнике (pack.lock) переносим вместе с файлом — обновления продолжат работать.
+fn copy_mods(store: &InstanceStore, from: &str, to: &str, src: &Path, dst: &Path) -> Result<()> {
+    use crate::mods::lock::{Layer, PackLock};
+    let from_lock = PackLock::load(&store.dir(from)?)?;
+    let mut to_lock = PackLock::load(&store.dir(to)?)?;
+    let Ok(rd) = std::fs::read_dir(src.join("mods")) else {
+        return Ok(());
+    };
+    for e in rd.flatten() {
+        let path = e.path();
+        if !path.is_file() {
+            continue;
+        }
+        let file = e.file_name().to_string_lossy().into_owned();
+        let target = dst.join("mods").join(&file);
+        let base = file.trim_end_matches(".disabled");
+        if target.exists()
+            || dst.join("mods").join(base).exists()
+            || dst.join("mods").join(format!("{base}.disabled")).exists()
+        {
+            continue;
+        }
+        copy_item(&path, &target)?;
+        if let Some(entry) = from_lock
+            .files
+            .iter()
+            .find(|x| x.path == format!("mods/{base}"))
+        {
+            let mut entry = entry.clone();
+            entry.layer = Layer::User;
+            to_lock.upsert(entry);
+        }
+    }
+    to_lock.save(&store.dir(to)?)
 }
 
 /// Скопировать миры: мир с уже занятым именем получает приписку «(из <профиль>)».
@@ -317,7 +382,73 @@ mod tests {
 
         copy_between(&store, &a.id, &b.id, &["options.txt".into()]).unwrap();
         assert!(gb.join("options.txt").is_file());
-        assert!(copy_between(&store, &a.id, &b.id, &["mods".into()]).is_err());
+        // Моды — только между профилями с одним загрузчиком.
+        let v = store
+            .create("Ваниль", "26.3", LoaderKind::Vanilla, None)
+            .unwrap();
+        assert!(copy_between(&store, &a.id, &v.id, &["mods".into()]).is_err());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn copy_mods_and_launch_settings_between_profiles() {
+        use crate::mods::lock::{Layer, LockEntry, PackLock, Source};
+        let root = std::env::temp_dir().join(format!("quarry-copy-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let store = InstanceStore::new(DataDir::open(&root).unwrap());
+        let mut a = store
+            .create("Старый", "1.21.11", LoaderKind::Fabric, None)
+            .unwrap();
+        a.settings.max_memory_mb = Some(6144);
+        a.settings.java_path = Some("/opt/java21/bin/java".into());
+        store.save(&a).unwrap();
+        let mut b = store
+            .create("Новый", "26.3", LoaderKind::Fabric, None)
+            .unwrap();
+        b.settings.java_path = Some("/opt/java25/bin/java".into());
+        store.save(&b).unwrap();
+        let (ga, gb) = (
+            store.game_dir(&a.id).unwrap(),
+            store.game_dir(&b.id).unwrap(),
+        );
+        std::fs::create_dir_all(ga.join("mods")).unwrap();
+        std::fs::create_dir_all(gb.join("mods")).unwrap();
+        std::fs::write(ga.join("mods/sodium.jar"), b"new").unwrap();
+        std::fs::write(ga.join("mods/iris.jar.disabled"), b"i").unwrap();
+        std::fs::write(gb.join("mods/sodium.jar"), b"mine").unwrap();
+        let mut lock = PackLock::default();
+        lock.upsert(LockEntry {
+            path: "mods/iris.jar".into(),
+            sha1: "1".into(),
+            sha512: None,
+            source: Source::Modrinth,
+            project_id: Some("YL57xq9U".into()),
+            version_id: None,
+            version_number: None,
+            title: None,
+            layer: Layer::Base,
+            installed_at: 0,
+            pinned: false,
+        });
+        lock.save(&store.dir(&a.id).unwrap()).unwrap();
+
+        copy_between(&store, &a.id, &b.id, &["mods".into(), "launch".into()]).unwrap();
+        // Свой мод с тем же именем не заменён, новый — добавлен вместе со сведениями об источнике.
+        assert_eq!(std::fs::read(gb.join("mods/sodium.jar")).unwrap(), b"mine");
+        assert!(gb.join("mods/iris.jar.disabled").is_file());
+        let lb = PackLock::load(&store.dir(&b.id).unwrap()).unwrap();
+        let e = lb.files.iter().find(|e| e.path == "mods/iris.jar").unwrap();
+        assert_eq!(
+            (e.project_id.as_deref(), e.layer),
+            (Some("YL57xq9U"), Layer::User)
+        );
+        // Память перенесена, Java — нет: версии игры разные.
+        let b = store.get(&b.id).unwrap();
+        assert_eq!(b.settings.max_memory_mb, Some(6144));
+        assert_eq!(
+            b.settings.java_path.as_deref(),
+            Some(Path::new("/opt/java25/bin/java"))
+        );
         std::fs::remove_dir_all(&root).unwrap();
     }
 

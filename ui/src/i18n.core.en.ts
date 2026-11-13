@@ -465,4 +465,7 @@ export const CORE_EN: Record<string, string> = {
   "Загрузчик": "Loader",
   "Неверный ID проекта CurseForge": "Invalid CurseForge project ID",
   "Автор «{0}» запретил скачивание в сторонних лаунчерах — скачайте файл вручную на сайте CurseForge": "The author of “{0}” does not allow downloads in third-party launchers — download the file manually on the CurseForge website",
+  "Моды (только при том же загрузчике; уже имеющиеся не заменяются)": "Mods (same loader only; mods you already have aren’t replaced)",
+  "Настройки запуска (память, окно, аргументы; Java — при той же версии игры)": "Launch settings (memory, window, arguments; Java only for the same game version)",
+  "Моды из профиля с {0} не подойдут к профилю с {1}": "Mods from a {0} profile won’t work in a {1} profile",
 };
