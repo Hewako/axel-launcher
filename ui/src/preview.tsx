@@ -83,6 +83,14 @@ mockIPC((cmd, args) => {
       };
     }
     case "list_versions": return { versions: [{ id: "26.3", type: "release", releaseTime: "2026-10-14T10:00:00+00:00" }, { id: "26.2", type: "release", releaseTime: "2026-07-01T10:00:00+00:00" }, { id: "1.21.11", type: "release", releaseTime: "2025-12-09T10:00:00+00:00" }], latest_release: "26.3", offline: false };
+    case "launch_history": {
+      if (params.has("nolaunch")) return [];
+      const now = Math.floor(Date.now() / 1000);
+      const runs = instances.filter((i) => i.last_launch).map((i) => ({ id: i.id, ...i.last_launch! }));
+      runs.push({ id: instances[0].id, at: now - 26 * 3600, outcome: "success", duration_secs: 8040, peak_ram_mb: 5222, log_file: "game-1.log" } as never);
+      runs.push({ id: instances[0].id, at: now - 30 * 3600, outcome: "crashed", duration_secs: 11, message: "Indium несовместим с новой версией Sodium", log_file: "game-0.log" } as never);
+      return runs.sort((x, y) => y.at - x.at);
+    }
     case "launcher_update": return params.has("update") ? { version: "0.2.0", url: "https://github.com/Hewako/quarry-launcher/releases", notes: "" } : null;
     case "version_info": return { java_major: 25, java_reason: "javaVersion.majorVersion = 25 в JSON версии" };
     case "loader_versions": return [{ version: "0.20.1", stable: false }, { version: "0.19.5", stable: true }];

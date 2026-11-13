@@ -62,6 +62,35 @@ struct InstanceList {
     mods: std::collections::BTreeMap<String, usize>,
 }
 
+#[derive(Serialize)]
+struct LaunchRun {
+    id: String,
+    #[serde(flatten)]
+    run: quarry_core::instance::LastLaunch,
+}
+
+/// Журнал запусков всех профилей (новые первыми) — для экрана «Логи и краши».
+#[tauri::command]
+fn launch_history(state: State<AppState>) -> CmdResult<Vec<LaunchRun>> {
+    let store = InstanceStore::new(state.data.clone());
+    let (instances, _) = store.list().map_err(err)?;
+    let mut runs: Vec<LaunchRun> = instances
+        .iter()
+        .flat_map(|i| {
+            store
+                .launches(&i.id)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|run| LaunchRun {
+                    id: i.id.clone(),
+                    run,
+                })
+        })
+        .collect();
+    runs.sort_by_key(|r| std::cmp::Reverse(r.run.at));
+    Ok(runs)
+}
+
 #[tauri::command]
 fn list_instances(state: State<AppState>) -> CmdResult<InstanceList> {
     let store = InstanceStore::new(state.data.clone());
@@ -1892,6 +1921,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_info,
             list_instances,
+            launch_history,
             create_instance,
             trash_instance,
             update_instance,

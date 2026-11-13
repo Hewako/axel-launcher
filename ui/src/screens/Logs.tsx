@@ -1,82 +1,117 @@
 import { save } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
-import { api, diagnostics, duration, errText, relTime, sizeText, statusOf, type Instance } from "../api";
+import { api, diagnostics, duration, errText, relTime, sizeText, type Instance, type LastLaunch, type LaunchRun } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
 import type { LaunchState } from "../launches";
 import { LogView } from "../ui/LogView";
 import { CrashCard } from "../ui/CrashCard";
+import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
 
-/** Логи и краши (макет 06): слева последние запуски всех профилей, справа разбор и лог выбранного. */
+/** Итог запуска словами: «Падение через 11 с», «Без ошибок, 48 мин». */
+function runTitle(r: LastLaunch): string {
+  switch (r.outcome) {
+    case "success": return r.duration_secs ? t("Без ошибок, {0}", duration(r.duration_secs)) : t("Без ошибок");
+    case "crashed": return t("Падение через {0}", duration(r.duration_secs));
+    case "killed": return r.duration_secs ? t("Остановлен через {0}", duration(r.duration_secs)) : t("Остановлен");
+    case "failed_to_start": return t("Не запустился");
+  }
+}
+const toneOf = (r: LastLaunch) => (r.outcome === "success" ? "ok" : r.outcome === "killed" ? "warn" : "err");
+const baseName = (p?: string) => p?.split(/[\\/]/).pop();
+const when = (at: number) => new Date(at * 1000).toLocaleString(undefined, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+/** Логи и краши (макеты 06, 16): журнал запусков всех профилей с фильтром по профилю, справа разбор и лог выбранного. */
 export function Logs({ instances, states, id, onPick }: { instances: Instance[]; states: Map<string, LaunchState>; id?: string; onPick: (id: string) => void }) {
-  const inst = instances.find((i) => i.id === id) ?? instances[0];
-  const state = inst ? states.get(inst.id) : undefined;
+  const dialog = useDialog();
+  const [history, setHistory] = useState<LaunchRun[] | null>(null);
+  // Фильтр по профилю: по умолчанию — выбранный профиль (решение владельца 22.10.2026), «» — все.
+  const [filter, setFilter] = useState(id ?? "");
+  const [sel, setSel] = useState("");
   const [file, setFile] = useState<string[] | null>(null);
   const [err, setErr] = useState("");
-  const live = !!state && state.logs.length > 0;
-  const dialog = useDialog();
   const [crashes, setCrashes] = useState<{ file: string; when: string; size: number; description: string }[]>([]);
   const [shown, setShown] = useState<{ title: string; text: string } | null>(null);
   const [report, setReport] = useState<{ name: string; content: string }[] | null>(null);
   const [part, setPart] = useState(0);
-  useEffect(() => { if (inst) diagnostics.crashReports(inst.id).then(setCrashes).catch(() => setCrashes([])); }, [inst?.id, state?.phase]);
+  const phases = [...states.values()].map((s) => s.phase).join();
+  useEffect(() => { api.launchHistory().then(setHistory).catch(() => setHistory([])); }, [phases]);
 
+  const nameOf = (pid: string) => instances.find((i) => i.id === pid)?.name ?? pid;
+  const runs = (history ?? []).filter((r) => !filter || r.id === filter);
+  const key = (r: LaunchRun) => `${r.id}:${r.at}`;
+  const run = runs.find((r) => key(r) === sel) ?? runs[0];
+  const inst = instances.find((i) => i.id === (run?.id ?? filter)) ?? instances.find((i) => i.id === id);
+  const state = inst ? states.get(inst.id) : undefined;
+  // Свежий запуск этого профиля ещё идёт или только что закончился — лог берём из памяти.
+  const live = !!state && state.logs.length > 0 && (!run || state.startedAt / 1000 >= run.at - 1);
+  const exit = live ? state?.exit : undefined;
+  useEffect(() => { if (inst) diagnostics.crashReports(inst.id).then(setCrashes).catch(() => setCrashes([])); }, [inst?.id, state?.phase]);
   useEffect(() => {
-    setFile(null);
-    setErr("");
-    if (!inst || live) return;
-    api.readLog(inst.id).then(setFile).catch((e) => setErr(errText(e)));
-  }, [inst?.id, live]);
+    setFile(null); setErr("");
+    if (!run || live) return;
+    const name = baseName(run.log_file);
+    if (!name) { setErr(run.outcome === "failed_to_start" ? t("У этого запуска нет лога: игра не стартовала.") : t("Лог этого запуска не сохранён.")); return; }
+    api.readLogFile(run.id, name).then(setFile).catch(() => setErr(t("Лог этого запуска уже удалён: хранятся последние 20.")));
+  }, [run?.id, run?.at, live]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openReport = () => { if (inst) diagnostics.reportPreview(inst.id).then((r) => { setReport(r); setPart(0); }).catch((e) => dialog.alert(t("Отчёт не собран"), errText(e))); };
-  if (!inst) return <p className="muted">{t("Профилей нет — логов тоже.")}</p>;
-  const last = inst.last_launch;
-  const exit = state?.exit;
-  const crashed = exit ? exit.crashed : last?.outcome === "crashed";
-  // Слева — последние запуски всех профилей (новые сверху); выбранный профиль — справа подробно.
-  const runs = instances.filter((i) => i.last_launch || i.id === inst.id).sort((a, b) => (b.last_launch?.at ?? 0) - (a.last_launch?.at ?? 0));
-  const tone = (i: Instance) => { const o = i.last_launch?.outcome; return o === "success" ? "ok" : o === "crashed" || o === "failed_to_start" ? "err" : o === "killed" ? "warn" : ""; };
+  const latestBad = history?.[0] && history[0].outcome !== "success" && history[0].outcome !== "killed";
+
   return (
     <>
       <h2>{t("Логи и краши")}</h2>
-      <p className="sub">
-        {last ? <>{t("Профиль «")}{inst.name}{t("» · запуск")} {relTime(last.at)}{last.duration_secs ? ` · ${duration(last.duration_secs)}` : ""}
-          {last.prepare_secs !== undefined ? t(" · подготовка {0}", duration(last.prepare_secs)) : ""}{last.peak_ram_mb ? t(" · память до {0} ГБ", (last.peak_ram_mb / 1024).toFixed(1)) : ""}{last.cpu_percent ? t(" · процессор в среднем {0} %", last.cpu_percent) : ""}</> : <>{t("Профиль «")}{inst.name}{t("» ещё не запускался")}</>}
-      </p>
+      <p className="sub">{history && history.length === 0 ? t("Запусков пока нет") : `${t("Запуски всех профилей.")}${latestBad ? ` ${t("Последний закончился ошибкой.")}` : ""}`}</p>
+      {history && history.length === 0 ? (
+        <div className="logsgrid">
+          <div className="card cempty"><b>{t("Запусков ещё не было")}</b><span>{t("Когда вы запустите игру, она появится здесь.")}</span></div>
+          <div className="card cempty" style={{ padding: "40px 16px" }}><Icon name="file" size={18} /><b>{t("Лог первого запуска появится здесь")}</b><span>{t("Если игра упадёт, Axel' покажет вероятную причину и предложит починить профиль.")}</span></div>
+        </div>
+      ) : (
       <div className="logsgrid">
-        <nav className="card runs" aria-label={t("Последние запуски профилей")}>
-          <h3 className="muted small">{t("Последние запуски профилей")}</h3>
-          {runs.map((i) => (
-            <button key={i.id} className={`run ${tone(i)} ${i.id === inst.id ? "on" : ""}`} aria-current={i.id === inst.id ? "true" : undefined} onClick={() => onPick(i.id)}>
-              <span className="muted small">{i.last_launch ? relTime(i.last_launch.at) : t("ещё не запускался")}</span>
-              <b>{i.name}</b>
-              <span className="muted small">{statusOf(i, states.get(i.id)?.phase).text}{i.last_launch?.duration_secs ? ` · ${duration(i.last_launch.duration_secs)}` : ""}</span>
+        <nav className="card runs" aria-label={t("Запуски")}>
+          <select className="field" aria-label={t("Чьи запуски показывать")} value={filter} onChange={(e) => { setFilter(e.target.value); setSel(""); if (e.target.value) onPick(e.target.value); }}>
+            <option value="">{t("Все профили")}</option>
+            {instances.map((i) => <option key={i.id} value={i.id}>{t("Запуски профиля «{0}»", i.name)}</option>)}
+          </select>
+          {history === null && <p className="muted small"><span className="spinner" /> {t("Загружаем…")}</p>}
+          {history !== null && runs.length === 0 && <p className="muted small">{t("Этот профиль ещё не запускали.")}</p>}
+          {runs.map((r) => (
+            <button key={key(r)} className={`run ${toneOf(r)} ${run && key(r) === key(run) ? "on" : ""}`} aria-current={run && key(r) === key(run) ? "true" : undefined} onClick={() => setSel(key(r))}>
+              <span className="muted small">{relTime(r.at)}</span>
+              <b>{runTitle(r)}</b>
+              <span className="muted small">{[!filter && nameOf(r.id), r.outcome !== "success" && r.message ? tc(r.message) : r.peak_ram_mb ? t("Пик памяти {0} ГБ", (r.peak_ram_mb / 1024).toFixed(1)) : ""].filter(Boolean).join(" · ")}</span>
             </button>
           ))}
         </nav>
         <div className="stack">
-          {exit?.analysis && <CrashCard inst={inst} a={exit.analysis} code={exit.code} onReport={openReport} />}
-          {crashed && !exit?.analysis && (
+          {exit?.analysis && inst && <CrashCard inst={inst} a={exit.analysis} code={exit.code} onReport={openReport} />}
+          {run && !exit?.analysis && run.outcome === "crashed" && (
             <div className="alert err">
-              <div className="h">{t("Игра упала")}{exit?.code != null ? t(" с кодом {0}", exit.code) : last?.exit_code != null ? t(" с кодом {0}", last.exit_code) : ""}</div>
-              {last?.message && <span>{tc(last.message)}</span>}
+              <div className="h">{t("Игра упала")}{run.exit_code != null ? t(" с кодом {0}", run.exit_code) : ""}</div>
+              {run.message && <span>{tc(run.message)}</span>}
               <span className="small">{t("Подробный разбор виден сразу после краша. Здесь — сохранённый лог: посмотрите вкладку «Ошибки», обычно причина в первой строке «Caused by».")}</span>
-              {exit?.crash_report && <span className="small mono" style={{ userSelect: "text" }}>Crash report: {exit.crash_report}</span>}
             </div>
           )}
-          {last?.outcome === "failed_to_start" && !live && (
-            <div className="alert err"><div className="h">{t("Запуск не начался")}</div><span style={{ userSelect: "text" }}>{tc(last.message)}</span></div>
+          {run?.outcome === "failed_to_start" && !live && (
+            <div className="alert err"><div className="h">{t("Запуск не начался")}</div><span style={{ userSelect: "text" }}>{tc(run.message)}</span></div>
           )}
           <section className="card">
-            <h3>{t("Лог запуска")}{last ? `, ${relTime(last.at)}` : ""}</h3>
-            {live ? <LogView lines={state.logs} /> : file ? <LogView lines={file} follow={false} /> : <p className="muted">{err || <><span className="spinner" /> {t("Загружаем лог…")}</>}</p>}
-            <div className="row" style={{ marginTop: 10 }}>
-              <button className="btn" onClick={openReport}>{t("Отчёт для поддержки…")}</button>
-              <button className="btn" onClick={() => api.openFolder(inst.id, "logs")}>{t("Папка логов игры")}</button>
-              <button className="btn" onClick={() => api.openFolder(inst.id, "crash-reports")}>{t("Открыть crash-reports")}</button>
-            </div>
+            <h3>{t("Лог запуска")}{run ? `, ${when(run.at)}` : ""}{inst && !filter ? ` · ${inst.name}` : ""}</h3>
+            {live && state ? <LogView lines={state.logs} /> : file ? <LogView lines={file} follow={false} /> : <p className="muted">{err || <><span className="spinner" /> {t("Загружаем лог…")}</>}</p>}
+            {run && (run.prepare_secs !== undefined || run.cpu_percent) ? (
+              <p className="muted small">{run.prepare_secs !== undefined ? t("Подготовка {0}", duration(run.prepare_secs)) : ""}{run.cpu_percent ? t(" · процессор в среднем {0} %", run.cpu_percent) : ""}</p>
+            ) : null}
+            {inst && (
+              <div className="row" style={{ marginTop: 10 }}>
+                <button className="btn" onClick={openReport}>{t("Отчёт для поддержки…")}</button>
+                <button className="btn" onClick={() => api.openFolder(inst.id, "logs")}>{t("Папка логов игры")}</button>
+                <button className="btn" onClick={() => api.openFolder(inst.id, "crash-reports")}>{t("Открыть crash-reports")}</button>
+              </div>
+            )}
+            <p className="muted small">{t("В отчёте скрыты токены, путь к домашней папке и IP-адреса (в режиме стримера — и ник).")}</p>
           </section>
-        {crashes.length > 0 && (
+        {inst && crashes.length > 0 && (
           <>
             <h4 className="subhead">{t("Отчёты о крашах ·")} {crashes.length}</h4>
             <div className="card" style={{ padding: 0 }}>
@@ -97,13 +132,14 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
         )}
         </div>
       </div>
+      )}
       {shown && (
         <Modal title={t("Отчёт о краше · {0}", shown.title)} onClose={() => setShown(null)} wide>
           <pre className="cfgdiff" style={{ userSelect: "text" }}>{shown.text}</pre>
           <div className="acts"><button className="btn pri" onClick={() => setShown(null)}>{t("Закрыть")}</button></div>
         </Modal>
       )}
-      {report && (
+      {report && inst && (
         <Modal title={t("Отчёт для поддержки")} onClose={() => setReport(null)} wide>
           <p className="small muted" style={{ marginTop: 0 }}>{t("Вот что попадёт в архив — проверьте перед отправкой. Токены, путь к домашней папке и IP-адреса уже скрыты")}{" "}{t("(в режиме стримера — и ник).")}</p>
           <div className="seg" role="tablist" style={{ flexWrap: "wrap" }}>
@@ -113,6 +149,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
           <div className="acts">
             <button className="btn" onClick={() => setReport(null)}>{t("Закрыть")}</button>
             <button className="btn pri" onClick={async () => {
+              if (!inst) return;
               const path = await save({ title: t("Сохранить отчёт"), defaultPath: `quarry-report-${inst.id}.zip`, filters: [{ name: "ZIP", extensions: ["zip"] }] }).catch(() => null);
               if (!path) return;
               try { await diagnostics.reportSave(inst.id, path); setReport(null); await dialog.alert(t("Отчёт сохранён"), t("Приложите этот архив к вопросу в поддержку или в issue на GitHub.")); }

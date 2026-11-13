@@ -18,6 +18,9 @@ export interface LaunchOverrides {
   env?: Record<string, string>;
 }
 
+/** Запуск из журнала: профиль + итог. */
+export type LaunchRun = LastLaunch & { id: string };
+
 export interface LastLaunch {
   prepare_secs?: number;
   peak_ram_mb?: number;
@@ -225,6 +228,9 @@ export const api = {
   previewCommand: (id: string) => invoke<string>("preview_command", { id }),
   openFolder: (id: string, sub?: string) => invoke<void>("open_instance_folder", { id, sub: sub ?? null }),
   readLog: (id: string) => invoke<string[]>("read_log_file", { id, file: null }),
+  /** Лог конкретного запуска — по имени файла из истории. */
+  readLogFile: (id: string, file: string) => invoke<string[]>("read_log_file", { id, file }),
+  launchHistory: () => invoke<LaunchRun[]>("launch_history"),
   listAccounts: () => invoke<AccountRef[]>("list_accounts"),
   removeAccount: (key: string) => invoke<void>("remove_account", { key }),
   accountAvatar: (key: string) => invoke<string | null>("account_avatar", { key }),

@@ -7,6 +7,7 @@ use crate::settings::LaunchOverrides;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+pub mod history;
 pub mod ops;
 use std::time::{SystemTime, UNIX_EPOCH};
 

@@ -380,6 +380,7 @@ pub async fn launch(
             cpu_percent: None,
         },
     };
+    let _ = store.record_launch(instance_id, &last);
     if let Ok(mut fresh) = store.get(instance_id) {
         fresh.last_launch = Some(last);
         if fresh.loader_version.is_none() {
@@ -691,7 +692,7 @@ async fn run(
         .with_secret(&auth.access_token)
         .with_nick(global.streamer_mode.then_some(auth.name.as_str()));
     let logs_dir = store.logs_dir(&inst.id)?;
-    rotate_logs(&logs_dir, 20);
+    rotate_logs(&logs_dir, crate::instance::history::KEEP);
     let log_file = logs_dir.join(format!("game-{}.log", now()));
     let preview = masker.mask(&cmd.preview(&auth));
     let line_cb = emit.clone();
