@@ -22,8 +22,9 @@
 
 - [ ] Тег `vX.Y.Z-rc.N` → черновик релиза помечен pre-release (лаунчеры игроков его не видят).
 - [ ] Собрались все четыре задания: macOS Apple Silicon, macOS Intel, Windows, Linux.
-- [ ] macOS: `syspolicy_check distribution "Axel Launcher.app"` → только «Adhoc Signed App», без
-      «Codesign Error» (иначе скачанное из браузера приложение macOS назовёт повреждённым).
+- [ ] macOS: `syspolicy_check distribution "Axel Launcher.app"` → только «Adhoc Signed App» и
+      «Notary Ticket Missing» (оба — следствие выпуска без сертификата Apple), без «Codesign Error»
+      (иначе скачанное из браузера приложение macOS назовёт повреждённым).
 - [ ] macOS: приложение из `.dmg` запускается, открывается главная.
 - [ ] Linux: зависимости `.deb` покрывают всё, что нужно программе
       (`llvm-objdump -p usr/bin/quarry-ui | grep NEEDED` против `Depends`).
