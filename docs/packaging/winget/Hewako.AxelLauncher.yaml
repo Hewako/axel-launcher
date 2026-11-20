@@ -1,0 +1,9 @@
+# Заготовка манифеста winget (каталог microsoft/winget-pkgs), формат 1.6.0.
+# Перед отправкой: заменить VERSION и SHA256 (сумма из SHA256SUMS.txt релиза), проверить
+# `winget validate --manifest <папка>` и `winget install --manifest <папка>` на Windows.
+# В winget-pkgs три файла кладутся в manifests/h/Hewako/AxelLauncher/<версия>/.
+PackageIdentifier: Hewako.AxelLauncher
+PackageVersion: VERSION
+DefaultLocale: ru-RU
+ManifestType: version
+ManifestVersion: 1.6.0

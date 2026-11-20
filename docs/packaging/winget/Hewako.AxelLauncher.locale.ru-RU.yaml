@@ -1,0 +1,17 @@
+PackageIdentifier: Hewako.AxelLauncher
+PackageVersion: VERSION
+PackageLocale: ru-RU
+Publisher: Hewako
+PublisherUrl: https://github.com/Hewako
+PackageName: Axel Launcher
+PackageUrl: https://github.com/Hewako/quarry-launcher
+License: GPL-3.0
+LicenseUrl: https://github.com/Hewako/quarry-launcher/blob/main/LICENSE
+ShortDescription: Открытый лаунчер Minecraft Java Edition для нескольких профилей и модпаков
+Tags:
+  - minecraft
+  - launcher
+  - modpack
+ReleaseNotesUrl: https://github.com/Hewako/quarry-launcher/blob/main/CHANGELOG.md
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
