@@ -7,13 +7,32 @@
 подробный журнал работы — [docs/PROGRESS.md](docs/PROGRESS.md).
 Как описывать изменения — [docs/COMMITS.md](docs/COMMITS.md).
 
+## Скачать
+
+| Система | Файл |
+|---|---|
+| Windows 10 и 11 | [Axel-Launcher-Windows.exe](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows.exe) — установщик · [без установки (.zip)](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows-portable.zip) |
+| macOS 11 и новее, любой Mac | [Axel-Launcher-macOS.dmg](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg) |
+| Ubuntu, Debian, Mint | [Axel-Launcher-Linux.deb](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.deb) |
+| Fedora, openSUSE | [Axel-Launcher-Linux.rpm](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.rpm) |
+| Другой Linux | [Axel-Launcher-Linux.AppImage](https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.AppImage) |
+
+Ссылки всегда ведут на последнюю вышедшую версию. Все версии и пробные сборки —
+на [странице релизов](https://github.com/Hewako/quarry-launcher/releases).
+
 ## Установка
 
-Скачайте установщик для своей системы со [страницы релизов](https://github.com/Hewako/quarry-launcher/releases).
 Установщики не подписаны сертификатом разработчика, поэтому при первом запуске система
 предупредит об этом — это ожидаемо.
 
-**macOS** (Apple Silicon — файл `aarch64.dmg`, Intel — `x64.dmg`):
+**Windows 10/11.** Запустите `Axel-Launcher-Windows.exe`. Если появится «Система Windows
+защитила ваш компьютер», нажмите «Подробнее» → «Выполнить в любом случае». Пароль
+администратора не нужен: программа ставится в папку пользователя, ярлыки — на рабочий стол и
+в «Пуск». Если в системе нет WebView2, установщик скачает его сам (нужен интернет).
+Без установки: распакуйте `…-portable.zip` и запустите `Axel Launcher.exe` (на Windows 10 может
+понадобиться WebView2 — ссылка в `README-portable.txt` внутри архива).
+
+**macOS** (один файл для Apple Silicon и Intel):
 1. Откройте `.dmg` и перетащите Axel Launcher в «Программы».
 2. Запустите Axel'. macOS скажет, что не может проверить приложение, — нажмите «Готово».
 3. Откройте «Системные настройки → Конфиденциальность и безопасность», внизу найдите
@@ -21,17 +40,29 @@
    Дальше Axel' открывается как обычно. На macOS 14 и старше хватит правого клика по
    приложению → «Открыть».
 
-**Windows 10/11** (`x64-setup.exe` или `.msi`): если появится окно «Система Windows защитила
-ваш компьютер», нажмите «Подробнее» → «Выполнить в любом случае». Если в системе нет
-WebView2, установщик скачает его сам (нужен интернет).
-
 **Linux** (x86-64, glibc 2.35+ — Ubuntu 22.04, Debian 12, Fedora 38 и новее):
-- Ubuntu и Debian: `sudo apt install ./<файл>.deb` (файл `…_amd64.deb` из релиза)
-- Fedora: `sudo dnf install ./<файл>.rpm` (файл `…x86_64.rpm` из релиза)
-- другие: `chmod +x <файл>.AppImage` (файл `…_amd64.AppImage`) и запустите его.
+- Ubuntu и Debian: `sudo apt install ./Axel-Launcher-Linux.deb`
+- Fedora: `sudo dnf install ./Axel-Launcher-Linux.rpm`
+- другие: `chmod +x Axel-Launcher-Linux.AppImage` и запустите его. На Ubuntu 22.04 и новее
+  AppImage нужна библиотека FUSE 2: `sudo apt install libfuse2` (на Ubuntu 24.04 —
+  `libfuse2t64`).
 
 Для входа нужно системное хранилище паролей (GNOME Keyring или KWallet): токены хранятся
 только там, в файлы Axel' их не пишет.
+
+**Обновление.** Когда выходит новая версия, Axel' показывает это сверху и в «Настройки → О Axel'»;
+кнопка «Скачать» скачивает установщик для вашей системы. Поставьте его поверх — удалять старую
+версию не нужно.
+
+**Где данные и удаление.** Миры, профили и настройки лежат в папке `.quarry` в домашней папке
+(`%USERPROFILE%\.quarry` на Windows). Обновление и удаление программы их не трогают; чтобы
+убрать всё, удалите и эту папку. Удалить программу: Windows — «Параметры → Приложения»; macOS —
+перетащить из «Программ» в Корзину; Linux — `sudo apt remove axel-launcher`,
+`sudo dnf remove axel-launcher` или просто удалить AppImage.
+
+**Проверить, что файл не подменён.** В каждом релизе есть `SHA256SUMS.txt`. На macOS и Linux:
+`shasum -a 256 -c SHA256SUMS.txt --ignore-missing` в папке со скачанным файлом; на Windows —
+`Get-FileHash <файл>` в PowerShell и сравните со строкой в `SHA256SUMS.txt`.
 
 ## Известные ограничения
 
@@ -103,4 +134,4 @@ Axel' не собирает статистику и ничего не отпра
 
 ## Релизы
 
-Установщики для macOS, Windows и Linux собираются в GitHub Actions по тегу `v*` (черновик релиза, без сертификата разработчика; на macOS — ad-hoc подпись, см. «Установка»). Лаунчер сам сообщает о новой версии и открывает страницу релиза — автообновления нет.
+Установщики для macOS, Windows и Linux собираются в GitHub Actions по тегу `v*` (черновик релиза, без сертификата разработчика; на macOS — ad-hoc подпись, см. «Установка»). Лаунчер сам сообщает о новой версии и даёт скачать установщик для своей системы — автообновления нет. Имена файлов постоянные (без номера версии), рядом — `SHA256SUMS.txt`.
