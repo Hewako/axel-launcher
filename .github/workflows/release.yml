@@ -1,6 +1,8 @@
-# Установщики по тегу (например v0.1.0): macOS (Apple Silicon и Intel), Windows, Linux.
-# Без подписи и нотаризации (решение владельца) — релиз создаётся черновиком, владелец
-# проверяет и публикует его сам. Ключи CurseForge и Microsoft — из секретов репозитория.
+# Установщики по тегу (например v0.1.0): один .dmg для любых Mac, установщик и портативный zip
+# для Windows, .deb/.rpm/AppImage для Linux. Имена файлов без версии — на них ведут постоянные
+# ссылки «Скачать» (releases/latest/download/<файл>). Без подписи и нотаризации (решение
+# владельца) — релиз создаётся черновиком, владелец проверяет и публикует его сам. Ключи
+# CurseForge и Microsoft — из секретов репозитория. План: docs/plans/installer-dev.md.
 name: Release
 
 on:
@@ -23,10 +25,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: macOS Apple Silicon, os: macos-latest, args: "--target aarch64-apple-darwin", target: aarch64-apple-darwin }
-          - { name: macOS Intel, os: macos-latest, args: "--target x86_64-apple-darwin", target: x86_64-apple-darwin }
-          - { name: Windows, os: windows-latest, args: "", target: "" }
-          - { name: Linux, os: ubuntu-22.04, args: "", target: "" }
+          # Универсальное приложение (Apple Silicon + Intel): игроку не нужно знать свой процессор.
+          - { name: macOS, os: macos-latest, args: "--target universal-apple-darwin", targets: "aarch64-apple-darwin,x86_64-apple-darwin", asset: "Axel-Launcher-macOS[ext]" }
+          - { name: Windows, os: windows-latest, args: "", targets: "", asset: "Axel-Launcher-Windows[ext]" }
+          - { name: Linux, os: ubuntu-22.04, args: "", targets: "", asset: "Axel-Launcher-Linux[ext]" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -39,12 +41,12 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.targets }}
 
       # Свой ключ: иначе релиз на ubuntu-22.04 берёт кеш CI с ubuntu-24.04 (новая glibc) и не компонуется.
       - uses: Swatinem/rust-cache@v2
         with:
-          key: release-${{ matrix.os }}-${{ matrix.target }}
+          key: release-${{ matrix.os }}-${{ matrix.targets }}
 
       - uses: actions/setup-node@v5
         with:
@@ -56,7 +58,23 @@ jobs:
         working-directory: ui
         run: npm ci
 
+      # Описание релиза — из файлов рядом (таблица «какой файл скачать», шаги при предупреждении
+      # системы, английский блок); у пробных сборок сверху добавляется заметка для тестировщиков.
+      - name: Текст релиза
+        id: notes
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          {
+            echo 'body<<AXEL_RELEASE_BODY_EOF'
+            if [[ "$TAG" == *-* ]]; then cat .github/release/body-rc.md; echo; fi
+            cat .github/release/body.md
+            echo 'AXEL_RELEASE_BODY_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Сборка и черновик релиза
+        id: tauri
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -67,12 +85,81 @@ jobs:
           args: ${{ matrix.args }}
           tagName: ${{ github.ref_name }}
           releaseName: Axel' ${{ github.ref_name }}
-          releaseBody: |
-            Что нового — в [CHANGELOG.md](https://github.com/Hewako/quarry-launcher/blob/main/CHANGELOG.md).
-
-            Установщики не подписаны сертификатом разработчика: при первом запуске система предупредит об этом.
-            macOS 15 и новее: запустите Axel', затем «Системные настройки → Конфиденциальность и безопасность → Всё равно открыть».
-            Windows: «Подробнее» → «Выполнить в любом случае». Подробно — [Установка](https://github.com/Hewako/quarry-launcher#установка).
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           # v0.1.0-rc.1, v0.2.0-beta — пробные: лаунчеры игроков не предлагают их как обновление.
           prerelease: ${{ contains(github.ref_name, '-') }}
+          assetNamePattern: ${{ matrix.asset }}
+          # Автообновления нет (решение владельца) — файл для него не нужен.
+          includeUpdaterJson: false
+
+      # Портативная версия для Windows: тот же лаунчер без установки, в zip. WebView2 она сама не
+      # ставит — об этом README-portable.txt внутри (в Windows 11 он уже есть).
+      - name: Портативный zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ steps.tauri.outputs.releaseId }}
+          REPO: ${{ github.repository }}
+        run: |
+          $dir = "portable/Axel Launcher"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Copy-Item "target/release/quarry-ui.exe" "$dir/Axel Launcher.exe"
+          Copy-Item "ui/src-tauri/THIRD-PARTY-NOTICES.txt" $dir
+          Copy-Item ".github/release/README-portable.txt" $dir
+          Compress-Archive -Path $dir -DestinationPath "Axel-Launcher-Windows-portable.zip" -Force
+          gh api --method POST -H "Content-Type: application/zip" `
+            "https://uploads.github.com/repos/$env:REPO/releases/$env:RELEASE_ID/assets?name=Axel-Launcher-Windows-portable.zip" `
+            --input "Axel-Launcher-Windows-portable.zip" --silent
+
+  # Когда все сборки готовы: убрать лишнее, проверить набор файлов, выложить контрольные суммы.
+  finalize:
+    name: Проверка файлов и суммы
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.ref_name }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Черновик релиза
+        id: rel
+        run: |
+          id=$(gh api "repos/$REPO/releases?per_page=50" --jq ".[] | select(.tag_name == env.TAG) | .id" | head -1)
+          test -n "$id" || { echo "Черновик для $TAG не найден"; exit 1; }
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      # Архивы .app.tar.gz и подписи нужны только автообновлению, которого нет.
+      - name: Убрать лишние файлы
+        env:
+          RELEASE_ID: ${{ steps.rel.outputs.id }}
+        run: |
+          gh api "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" --jq '.[] | select(.name | test("\\.tar\\.gz$|\\.sig$|^latest\\.json$|^SHA256SUMS\\.txt$")) | .id' |
+            while read -r asset; do gh api --method DELETE "repos/$REPO/releases/assets/$asset"; done
+
+      # Ровно эти файлы — иначе красная сборка: ссылки «Скачать» в README ведут на эти имена.
+      - name: Проверить набор файлов
+        env:
+          RELEASE_ID: ${{ steps.rel.outputs.id }}
+        run: |
+          expected=$(printf '%s\n' \
+            Axel-Launcher-Linux.AppImage Axel-Launcher-Linux.deb Axel-Launcher-Linux.rpm \
+            Axel-Launcher-Windows-portable.zip Axel-Launcher-Windows.exe Axel-Launcher-macOS.dmg | sort)
+          actual=$(gh api "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" --jq '.[].name' | sort)
+          if [ "$expected" != "$actual" ]; then
+            echo "Набор файлов не совпал."; echo "Ожидалось:"; echo "$expected"; echo "Есть:"; echo "$actual"
+            exit 1
+          fi
+
+      - name: Контрольные суммы
+        env:
+          RELEASE_ID: ${{ steps.rel.outputs.id }}
+        run: |
+          mkdir files && cd files
+          gh release download "$TAG" --repo "$REPO" --pattern 'Axel-Launcher-*'
+          sha256sum Axel-Launcher-* > ../SHA256SUMS.txt
+          cd .. && cat SHA256SUMS.txt
+          gh api --method POST -H "Content-Type: text/plain" \
+            "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=SHA256SUMS.txt" \
+            --input SHA256SUMS.txt --silent
