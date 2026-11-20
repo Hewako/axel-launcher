@@ -24,7 +24,13 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "nsis",
+      "dmg",
+      "deb",
+      "rpm",
+      "appimage"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -36,7 +42,8 @@
     "shortDescription": "Открытый лаунчер Minecraft Java Edition",
     "license": "GPL-3.0-or-later",
     "macOS": {
-      "signingIdentity": "-"
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0"
     },
     "linux": {
       "deb": {
@@ -52,6 +59,21 @@
     },
     "resources": [
       "THIRD-PARTY-NOTICES.txt"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "Russian",
+          "English"
+        ],
+        "displayLanguageSelector": true,
+        "customLanguageFiles": {
+          "Russian": "installer/Russian.nsh",
+          "English": "installer/English.nsh"
+        },
+        "installerHooks": "installer/hooks.nsh"
+      }
+    }
   }
 }
