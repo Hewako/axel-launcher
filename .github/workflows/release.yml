@@ -74,7 +74,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Сборка и черновик релиза
-        id: tauri
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,7 +99,7 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_ID: ${{ steps.tauri.outputs.releaseId }}
+          TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
         run: |
           $dir = "portable/Axel Launcher"
@@ -109,9 +108,8 @@ jobs:
           Copy-Item "ui/src-tauri/THIRD-PARTY-NOTICES.txt" $dir
           Copy-Item ".github/release/README-portable.txt" $dir
           Compress-Archive -Path $dir -DestinationPath "Axel-Launcher-Windows-portable.zip" -Force
-          gh api --method POST -H "Content-Type: application/zip" `
-            "https://uploads.github.com/repos/$env:REPO/releases/$env:RELEASE_ID/assets?name=Axel-Launcher-Windows-portable.zip" `
-            --input "Axel-Launcher-Windows-portable.zip" --silent
+          # --clobber: при повторном запуске сборки заменить уже выложенный zip, а не упасть.
+          gh release upload $env:TAG "Axel-Launcher-Windows-portable.zip" --repo $env:REPO --clobber
 
   # Когда все сборки готовы: убрать лишнее, проверить набор файлов, выложить контрольные суммы.
   finalize:

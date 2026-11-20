@@ -29,4 +29,4 @@ LangString webview2Downloading ${LANG_ENGLISH} "Downloading WebView2 bootstrappe
 LangString webview2InstallError ${LANG_ENGLISH} "Error: Installing WebView2 failed with exit code $1"
 LangString webview2InstallSuccess ${LANG_ENGLISH} "WebView2 installed successfully"
 LangString deleteAppData ${LANG_ENGLISH} "Delete the app's service data (worlds and profiles are kept)"
-LangString quarryDataKept ${LANG_ENGLISH} "Axel Launcher has been removed.$\n$\nYour worlds, profiles and settings are still in:$\n$PROFILE\.quarry$\n$\nIf you no longer need them, delete that folder yourself."
+LangString quarryDataKept ${LANG_ENGLISH} "Your worlds, profiles and settings are kept in:$\n$PROFILE\.quarry$\n$\nRemoving or updating the program does not touch them."
