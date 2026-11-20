@@ -14,6 +14,7 @@ import { FirstRun } from "./screens/FirstRun";
 import { Avatar } from "./ui/Avatar";
 import { PauseButton, ProfileIcon, progressOf } from "./ui/common";
 import { Icon } from "./ui/icons";
+import { UpdateNotice } from "./ui/UpdateNotice";
 import { DialogProvider } from "./ui/Dialog";
 import { nick, path, setStreamer, useStreamer } from "./streamer";
 import { markRead, pushNote, useNotes } from "./notify";
@@ -260,16 +261,6 @@ function Shell() {
         {info.dev_launch && (
           <div className="devbar" role="status">{t("Сборка разработчика (dev-launch): разрешён запуск без входа для отладки на собственной копии игры. В релизе этого режима нет.")}</div>
         )}
-        {release && !releaseHidden && (
-          <div className="banner info" role="status">
-            <Icon name="info" size={16} />
-            <span className="grow"><b>{t("Вышла новая версия Axel' {0}.", release.version)}</b> {release.download_url ? t("Установите поверх — миры и профили останутся.") : t("Её можно скачать на странице релизов.")}</span>
-            {release.download_url && <button className="btn" onClick={() => api.openLink(release.download_url!).catch(() => {})}>{t("Скачать")}</button>}
-            <button className="btn" onClick={() => api.openLink(release.url).catch(() => {})}>{t("Открыть страницу загрузки")}</button>
-            <button className="btn" onClick={() => setReleaseHidden(true)}>{t("Позже")}</button>
-          </div>
-        )}
-
         <main className="content" id="main" tabIndex={-1}>
           {loadError && <div className="alert err"><div className="h">{t("Не удалось прочитать профили")}</div><span>{loadError}</span></div>}
           {broken.length > 0 && (
@@ -321,6 +312,9 @@ function Shell() {
           )}
           {screen === "settings" && <Settings info={info} theme={theme} onTheme={changeTheme} onAppearance={applyAppearance} release={release} />}
         </main>
+
+        {/* Лента внизу, а не над содержимым: шапка профиля и «Играть» не сдвигаются, когда она появляется. */}
+        {release && !releaseHidden && <UpdateNotice release={release} variant="ribbon" onLater={() => setReleaseHidden(true)} />}
 
         <footer className="bottombar">
           <span className="keys">

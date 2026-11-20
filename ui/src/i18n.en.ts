@@ -2,7 +2,6 @@
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
   "Установите поверх — миры и профили останутся.": "Install it over the current one — worlds and profiles stay.",
-  "Установите её поверх нынешней — миры, профили и настройки останутся.": "Install it over the current one — worlds, profiles and settings stay.",
   "У вас последняя версия (или проверка новой версии выключена в «Общих»).": "You have the latest version (or the new-version check is off in General).",
   "Все версии": "All versions",
   "Скачать": "Download",
@@ -807,7 +806,6 @@ export const EN: Record<string, string> = {
   "Проверить обновление": "Check for update",
   "Что нового в версии": "What's new in this version",
   "Вышла новая версия Axel' {0}": "Axel' {0} is out",
-  "Вышла новая версия Axel' {0}.": "Axel' {0} is out.",
   "Открыть страницу загрузки": "Open the download page",
   "Позже": "Later",
   "Сообщать о новой версии Axel'": "Tell me about new Axel' versions",
