@@ -3,6 +3,21 @@
 Открытый лаунчер Minecraft: Java Edition для игроков с несколькими профилями и модпаками.
 Рабочее название. Не связан с Mojang и Microsoft.
 
+<p align="center">
+  <a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows.exe"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-windows-dark.png">
+    <img alt="Скачать для Windows" src="docs/img/download-windows.png" width="240" height="56">
+  </picture></a>
+  <a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-macos-dark.png">
+    <img alt="Скачать для macOS" src="docs/img/download-macos.png" width="240" height="56">
+  </picture></a>
+  <a href="#установка"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-linux-dark.png">
+    <img alt="Скачать для Linux: .deb, .rpm, AppImage" src="docs/img/download-linux.png" width="240" height="56">
+  </picture></a>
+</p>
+
 **Состояние:** ранняя разработка (0.1). Что нового — [CHANGELOG.md](CHANGELOG.md),
 подробный журнал работы — [docs/PROGRESS.md](docs/PROGRESS.md).
 Как описывать изменения — [docs/COMMITS.md](docs/COMMITS.md).
