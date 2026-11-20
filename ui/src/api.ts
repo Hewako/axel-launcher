@@ -21,6 +21,9 @@ export interface LaunchOverrides {
 /** Запуск из журнала: профиль + итог. */
 export type LaunchRun = LastLaunch & { id: string };
 
+/** Новая версия Axel' на GitHub (core::updates::Release). download_url — файл для этой системы. */
+export interface LauncherRelease { version: string; url: string; notes: string; download_url?: string | null }
+
 export interface LastLaunch {
   prepare_secs?: number;
   peak_ram_mb?: number;
@@ -210,7 +213,7 @@ export const api = {
   pingServer: (address: string) => invoke<ServerStatus>("server_ping", { address }),
   firstRunInfo: () => invoke<{ data_dir: string; free_bytes?: number; javas: { path: string; major: number; version: string; arch: string }[] }>("first_run_info"),
   firstRunDone: (language: string) => invoke<void>("first_run_done", { language }),
-  launcherUpdate: () => invoke<{ version: string; url: string; notes: string } | null>("launcher_update"),
+  launcherUpdate: () => invoke<LauncherRelease | null>("launcher_update"),
   pauseDownloads: (paused: boolean) => invoke<void>("downloads_pause", { paused }),
   memoryAdvice: (maxMb: number, packMb?: number) => invoke<string[]>("memory_advice", { maxMb, packMb: packMb ?? null }),
   launchSettings: (id: string) =>

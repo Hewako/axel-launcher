@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { api, diagnostics, errText, sizeText, type AppInfo, type GlobalSettings } from "../api";
+import { api, diagnostics, errText, sizeText, type AppInfo, type GlobalSettings, type LauncherRelease } from "../api";
 import { useDialog } from "../ui/Dialog";
 import { path, setStreamer } from "../streamer";
 import { switchLang, t, tc } from "../i18n";
+import { Icon } from "../ui/icons";
 
 type Section = "general" | "look" | "game" | "data" | "privacy" | "about";
 const ACCENTS: [string, string][] = [["#3fb950", t("Зелёный")], ["#2563eb", t("Синий")], ["#7c3aed", t("Фиолетовый")], ["#d0703a", t("Оранжевый")], ["#c2415d", t("Малиновый")], ["#2a9d8f", t("Бирюзовый")]];
 
-export function Settings({ info, theme, onTheme, onAppearance }: { info: AppInfo; theme: string; onTheme: (t: string) => void; onAppearance: (g: GlobalSettings) => void }) {
+export function Settings({ info, theme, onTheme, onAppearance, release }: { info: AppInfo; theme: string; onTheme: (t: string) => void; onAppearance: (g: GlobalSettings) => void; release: LauncherRelease | null }) {
   const dialog = useDialog();
   const [s, setS] = useState<GlobalSettings | null>(null);
   const [args, setArgs] = useState("");
@@ -205,7 +206,17 @@ export function Settings({ info, theme, onTheme, onAppearance }: { info: AppInfo
           </>}
           {sec === "about" && <>
             <p>Axel' {info.version} {t("· открытый проект под GPL-3.0 · не связан с Mojang и Microsoft.")}</p>
-            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/releases").catch(() => {})}>{t("Открыть страницу загрузки")}</button>
+            {release ? (
+              <div className="alert info">
+                <div className="h">{t("Вышла новая версия Axel' {0}.", release.version)}</div>
+                <span className="small">{t("Установите её поверх нынешней — миры, профили и настройки останутся.")}</span>
+                <div className="row">
+                  {release.download_url && <button className="btn" onClick={() => api.openLink(release.download_url!).catch(() => {})}><Icon name="download" size={14} /> {t("Скачать")}</button>}
+                  <button className="btn" onClick={() => api.openLink(release.url).catch(() => {})}>{t("Открыть страницу загрузки")}</button>
+                </div>
+              </div>
+            ) : <p className="muted small">{t("У вас последняя версия (или проверка новой версии выключена в «Общих»).")}</p>}
+            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/releases").catch(() => {})}>{t("Все версии")}</button>
           </>}
           {!["privacy", "about"].includes(sec) && (
             <div className="row" style={{ marginTop: 14 }}>

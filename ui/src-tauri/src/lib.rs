@@ -2038,6 +2038,10 @@ mod tests {
         ));
         assert!(link_allowed("https://www.microsoft.com/link?otc=ABC"));
         assert!(link_allowed("https://modrinth.com/project/sodium"));
+        // Кнопка «Скачать» новой версии (updates::download_url).
+        assert!(link_allowed(
+            "https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
+        ));
         assert!(!link_allowed("https://ely.by.evil.com/login"));
         assert!(!link_allowed(
             "https://github.com/Hewako/quarry-launcher-evil"

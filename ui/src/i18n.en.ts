@@ -1,6 +1,11 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Установите поверх — миры и профили останутся.": "Install it over the current one — worlds and profiles stay.",
+  "Установите её поверх нынешней — миры, профили и настройки останутся.": "Install it over the current one — worlds, profiles and settings stay.",
+  "У вас последняя версия (или проверка новой версии выключена в «Общих»).": "You have the latest version (or the new-version check is off in General).",
+  "Все версии": "All versions",
+  "Скачать": "Download",
   " (код {0})": " (code {0})",
   " · {0} МБ/с{1}": " · {0} MB/s{1}",
   " · {0} мс": " · {0} ms",

@@ -1,5 +1,6 @@
 //! Проверка новой версии Axel' на странице релизов GitHub. Ничего не скачивает и не
-//! устанавливает сама: лаунчер только предлагает открыть страницу релиза.
+//! устанавливает сама: лаунчер предлагает скачать файл для своей системы в браузере или
+//! открыть страницу релиза.
 
 use crate::error::Result;
 use serde::Serialize;
@@ -11,6 +12,26 @@ pub struct Release {
     pub version: String,
     pub url: String,
     pub notes: String,
+    /// Постоянная ссылка на файл для этой системы (`releases/latest/download/…`); `None` — где
+    /// файл не угадать, там только страница релиза.
+    pub download_url: Option<String>,
+}
+
+/// Файл последней версии для системы `os` (`std::env::consts::OS`). Имена задаёт
+/// `.github/workflows/release.yml`. Linux — только если программа запущена из AppImage:
+/// `.deb` или `.rpm` нужен, надёжно не определить, и там открываем страницу релиза.
+pub fn download_asset(os: &str, appimage: bool) -> Option<&'static str> {
+    match os {
+        "windows" => Some("Axel-Launcher-Windows.exe"),
+        "macos" => Some("Axel-Launcher-macOS.dmg"),
+        "linux" if appimage => Some("Axel-Launcher-Linux.AppImage"),
+        _ => None,
+    }
+}
+
+/// Постоянная ссылка на файл последней опубликованной (не пробной) версии для системы.
+pub fn download_url(os: &str, appimage: bool) -> Option<String> {
+    download_asset(os, appimage).map(|f| format!("{RELEASES_URL}/latest/download/{f}"))
 }
 
 /// Новее ли `candidate` (например `v0.2.0`), чем `current` (`0.1.0`). Предрелизы
@@ -55,6 +76,8 @@ pub async fn latest() -> Result<Option<Release>> {
         version: r.tag_name.trim_start_matches('v').to_string(),
         url: r.html_url,
         notes: r.body.unwrap_or_default().chars().take(2000).collect(),
+        // AppImage сам задаёт переменную APPIMAGE запущенной программе.
+        download_url: download_url(std::env::consts::OS, std::env::var_os("APPIMAGE").is_some()),
     }))
 }
 
@@ -70,5 +93,30 @@ mod tests {
         assert!(!is_newer("v0.1.0", "0.1.0"));
         assert!(!is_newer("0.1.0-rc.1", "0.1.0"));
         assert!(!is_newer("мусор", "0.1.0"));
+    }
+
+    #[test]
+    fn download_file_per_system() {
+        assert_eq!(
+            download_asset("windows", false),
+            Some("Axel-Launcher-Windows.exe")
+        );
+        assert_eq!(
+            download_asset("macos", false),
+            Some("Axel-Launcher-macOS.dmg")
+        );
+        assert_eq!(
+            download_asset("linux", true),
+            Some("Axel-Launcher-Linux.AppImage")
+        );
+        // .deb и .rpm не различить надёжно — открываем страницу релиза.
+        assert_eq!(download_asset("linux", false), None);
+        assert_eq!(download_asset("freebsd", false), None);
+        assert_eq!(
+            download_url("macos", false).as_deref(),
+            Some(
+                "https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
+            )
+        );
     }
 }

@@ -1,7 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useCallback, useEffect, useState } from "react";
-import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance } from "./api";
+import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance, type LauncherRelease } from "./api";
 import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
 import { AllProfiles } from "./screens/AllProfiles";
@@ -89,7 +89,9 @@ function Shell() {
   const [theme, setTheme] = useState("dark");
   const [loadError, setLoadError] = useState("");
   const [firstRun, setFirstRun] = useState(false);
-  const [release, setRelease] = useState<{ version: string; url: string } | null>(null);
+  const [release, setRelease] = useState<LauncherRelease | null>(null);
+  // «Позже» прячет только ленту — в «Настройки → О Axel'» новая версия остаётся видна.
+  const [releaseHidden, setReleaseHidden] = useState(false);
   const notes = useNotes();
   // Сборку можно бросить в любое место окна: откроется «Новый профиль» с импортом (моды ловит ModsTab).
   const [dragging, setDragging] = useState(false);
@@ -258,12 +260,13 @@ function Shell() {
         {info.dev_launch && (
           <div className="devbar" role="status">{t("Сборка разработчика (dev-launch): разрешён запуск без входа для отладки на собственной копии игры. В релизе этого режима нет.")}</div>
         )}
-        {release && (
+        {release && !releaseHidden && (
           <div className="banner info" role="status">
             <Icon name="info" size={16} />
-            <span className="grow"><b>{t("Вышла новая версия Axel' {0}.", release.version)}</b> {t("Её можно скачать на странице релизов.")}</span>
+            <span className="grow"><b>{t("Вышла новая версия Axel' {0}.", release.version)}</b> {release.download_url ? t("Установите поверх — миры и профили останутся.") : t("Её можно скачать на странице релизов.")}</span>
+            {release.download_url && <button className="btn" onClick={() => api.openLink(release.download_url!).catch(() => {})}>{t("Скачать")}</button>}
             <button className="btn" onClick={() => api.openLink(release.url).catch(() => {})}>{t("Открыть страницу загрузки")}</button>
-            <button className="btn" onClick={() => setRelease(null)}>{t("Позже")}</button>
+            <button className="btn" onClick={() => setReleaseHidden(true)}>{t("Позже")}</button>
           </div>
         )}
 
@@ -316,7 +319,7 @@ function Shell() {
               </div>
             </>
           )}
-          {screen === "settings" && <Settings info={info} theme={theme} onTheme={changeTheme} onAppearance={applyAppearance} />}
+          {screen === "settings" && <Settings info={info} theme={theme} onTheme={changeTheme} onAppearance={applyAppearance} release={release} />}
         </main>
 
         <footer className="bottombar">
