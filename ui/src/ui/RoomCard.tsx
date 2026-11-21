@@ -18,7 +18,7 @@ export function RoomCard() {
         <div className="row">
           <button className="btn pri" onClick={() => run(room.create)}>{t("Создать комнату")}</button>
           <span className="muted">{t("или")}</span>
-          <input className="field mono roomcode" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="K7M2Q" aria-label={t("Код комнаты")}
+          <input className="field mono roomcode" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={t("Код")} aria-label={t("Код комнаты")}
             onKeyDown={(e) => { if (e.key === "Enter" && code.trim()) run(() => room.join(code)); }} />
           <button className="btn" disabled={!code.trim()} onClick={() => run(() => room.join(code))}>{t("Войти")}</button>
         </div>

@@ -565,6 +565,8 @@ details.adv summary::-webkit-details-marker { display: none; }
 .room { margin-bottom: 16px; }
 .room h3 { margin: 0 0 10px; }
 .room .row { align-items: center; flex-wrap: wrap; }
-.roomcode { width: 9ch; text-align: center; letter-spacing: .12em; }
-.roomcode.big { font-size: 22px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--panel2); width: auto; }
+/* Поле кода: 5 символов крупно и с запасом, серая подсказка «Код» обычным шрифтом. */
+.roomcode { width: 160px; flex: none; text-align: center; letter-spacing: .15em; font-size: 16px; }
+.roomcode::placeholder { letter-spacing: normal; font-family: var(--font, inherit); color: var(--muted); }
+.roomcode.big { font-size: 22px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--panel2); width: auto; flex: none; }
 .roomstate { margin: 10px 0 0; }
