@@ -239,10 +239,8 @@ async fn resolve_auth(
                 Some(acc),
             ))
         }
+        // Сборка разработчика отмечена в названии окна («Axel' Dev»), отдельное предупреждение не нужно.
         (Provider::Microsoft, None) if DEV_LAUNCH => {
-            emit(LaunchEvent::Warning {
-                message: "РЕЖИМ РАЗРАБОТЧИКА (dev-launch): запуск без входа, только для отладки на собственной копии игры. Онлайн-серверы недоступны.".into(),
-            });
             Ok((
                 GameAuth {
                     name: "QuarryDev".into(),

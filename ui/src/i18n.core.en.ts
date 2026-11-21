@@ -201,7 +201,6 @@ export const CORE_EN: Record<string, string> = {
   "После прошлого безопасного запуска моды остались в {0}, а в mods/ уже есть файлы — разберите вручную": "After the last safe launch, mods were left in {0}, but mods/ already has files — sort them out manually",
   "Моды после прошлого безопасного запуска возвращены на место": "Mods from the last safe launch are back in place",
   "На аккаунте {0} не куплена Minecraft: Java Edition — запуск невозможен.": "Minecraft: Java Edition is not purchased on account {0} — cannot launch.",
-  "РЕЖИМ РАЗРАБОТЧИКА (dev-launch): запуск без входа, только для отладки на собственной копии игры. Онлайн-серверы недоступны.": "DEVELOPER MODE (dev-launch): launch without sign-in, only for debugging on your own copy of the game. Online servers are unavailable.",
   "Нет аккаунта Microsoft. Войдите на экране «Аккаунты»: запуск возможен только с купленной Minecraft: Java Edition.": "No Microsoft account. Sign in on the “Accounts” screen: you can only launch with a purchased Minecraft: Java Edition.",
   "Профиль настроен на Ely.by, но аккаунта Ely.by нет. Войдите через Ely.by или переключите профиль на Microsoft.": "The profile is set to Ely.by, but there is no Ely.by account. Sign in with Ely.by or switch the profile to Microsoft.",
   "указана в настройках: {0}": "set in settings: {0}",
