@@ -58,8 +58,9 @@ function buildGraph(files: ModFile[], report: DoctorReport, journal: JournalEntr
   const linked = new Set(edges.flatMap((e) => [e.from, e.to]));
   // «Библиотека» — мод, который лаунчер поставил как чью-то зависимость (по журналу).
   const asDep = (n: string) => journal.some((j) => j.reason.startsWith("нужен для") && j.what.startsWith(n));
-  const nodes: Node[] = files.filter((f) => linked.has(f.file_name)).map((f) => ({ id: f.file_name, name: name(f), lib: asDep(f.mods[0]?.name ?? "") }));
-  return { nodes, edges, missing, hidden: files.filter((f) => f.enabled && !linked.has(f.file_name)).length };
+  // Моды без связей тоже на графе: отдельные узлы без линий (решение владельца 21.11.2026).
+  const nodes: Node[] = files.filter((f) => f.enabled || linked.has(f.file_name)).map((f) => ({ id: f.file_name, name: name(f), lib: asDep(f.mods[0]?.name ?? "") }));
+  return { nodes, edges, missing };
 }
 
 /** Пружинная раскладка: узлы отталкиваются, связи стягивают. Детерминированно (старт по кругу). */
@@ -148,7 +149,7 @@ export function DepsTab({ inst, running, onChanged }: { inst: Instance; running:
 
   if (error) return <div className="alert err"><span>{error}</span></div>;
   if (!g || !data) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
-  if (g.nodes.length === 0) return <div className="card empty"><p>{t("Связей между модами нет: каждый работает сам по себе.")}</p></div>;
+  if (g.nodes.length === 0) return <div className="card empty"><p>{t("В профиле пока нет модов.")}</p></div>;
 
   const near = new Set(sel ? [sel, ...g.edges.filter((e) => e.from === sel || e.to === sel).flatMap((e) => [e.from, e.to])] : []);
   const edges = g.edges.filter((e) => view === "all" || (view === "problems" ? e.kind === "bad" : !sel || near.has(e.from) && near.has(e.to) && (e.from === sel || e.to === sel)));
@@ -169,9 +170,7 @@ export function DepsTab({ inst, running, onChanged }: { inst: Instance; running:
             <button key={v} className={view === v ? "on" : ""} aria-pressed={view === v} onClick={() => setView(v)}>{l}</button>
           ))}
         </div>
-        <span className="muted small">{t("моды без связей скрыты ({0}) · узлы можно перетаскивать", g.hidden)}
-          {Object.keys(moved).length > 0 && <> · <button className="btn link small" onClick={resetPos}>{t("Разложить заново")}</button></>}
-        </span>
+        {Object.keys(moved).length > 0 && <button className="btn link small" onClick={resetPos}>{t("Разложить заново")}</button>}
       </div>
       <div className="modsgrid">
         <div className="card graph">

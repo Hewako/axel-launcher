@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "В профиле пока нет модов.": "This profile has no mods yet.",
   "Перед: установить {0}": "Before: install {0}",
   "Показано только то, что подходит к этому профилю": "Only what fits this profile is shown",
   "Ставим…": "Installing…",
@@ -775,7 +776,6 @@ export const EN: Record<string, string> = {
   "Игра работает": "The game works",
   "Прекратить поиск": "Stop searching",
   "Найти виновника краша…": "Find the crash culprit…",
-  "Связей между модами нет: каждый работает сам по себе.": "No links between mods: each one works on its own.",
   "нет в профиле": "not in profile",
   "Зависимости между модами": "Dependencies between mods",
   "до запуска": "before launch",
@@ -1026,7 +1026,6 @@ export const EN: Record<string, string> = {
   "Скрыть ошибку": "Hide error",
   "Открыть ошибку": "Show error",
   "Ошибка": "Error",
-  "моды без связей скрыты ({0}) · узлы можно перетаскивать": "mods without links are hidden ({0}) · nodes can be dragged",
   "Разложить заново": "Re-arrange",
   "Сведения о связях": "Link details",
   "Обязательные зависимости": "Required dependencies",
