@@ -1,44 +1,46 @@
-## Какой файл скачать
+## Какой файл взять
 
-| Ваша система | Файл |
+| У вас | Скачайте |
 |---|---|
-| Windows 10 и 11 (в том числе на ARM — через встроенную эмуляцию) | `Axel-Launcher-Windows.exe` — установщик |
-| Windows, без установки | `Axel-Launcher-Windows-portable.zip` — распакуйте и запустите `Axel Launcher.exe` |
-| macOS 11 и новее, любой Mac | `Axel-Launcher-macOS.dmg` |
+| Windows 10 или 11 (на ARM тоже работает) | `Axel-Launcher-Windows.exe` |
+| Windows, но ставить ничего не хочется | `Axel-Launcher-Windows-portable.zip` — распакуйте и запустите `Axel Launcher.exe` |
+| Mac на macOS 11 или новее, любой процессор | `Axel-Launcher-macOS.dmg` |
 | Ubuntu, Debian, Mint | `Axel-Launcher-Linux.deb` |
 | Fedora, openSUSE | `Axel-Launcher-Linux.rpm` |
 | Другой Linux | `Axel-Launcher-Linux.AppImage` |
 
-Миры, профили и настройки хранятся отдельно (папка `.quarry` в домашней папке) — обновление и
-удаление программы их не трогают.
+Если Axel' у вас уже стоит, просто поставьте новую версию поверх. Миры, профили и настройки
+лежат в папке `.quarry` в домашней папке, установка и удаление программы её не трогают.
 
-## Если система предупредила
+## Система ругается при первом запуске
 
-Установщики не подписаны сертификатом разработчика, поэтому при первом запуске система
-предупредит об этом — это ожидаемо.
+Так и должно быть: установщики не подписаны платным сертификатом, и система не знает автора.
 
-- **Windows:** «Система Windows защитила ваш компьютер» → «Подробнее» → «Выполнить в любом случае».
-- **macOS 15 и новее:** откройте `.dmg`, перетащите Axel' в «Программы» и запустите. macOS скажет,
-  что не может проверить приложение, — нажмите «Готово», затем «Системные настройки →
-  Конфиденциальность и безопасность → Всё равно открыть». **macOS 14 и старше:** правый клик по
-  Axel' в «Программах» → «Открыть».
-- **Linux, AppImage на Ubuntu 22.04 и новее:** нужна библиотека FUSE 2 —
-  `sudo apt install libfuse2` (на Ubuntu 24.04 — `libfuse2t64`). Затем «Свойства → Разрешить
-  запуск как программу» и двойной клик.
+- **Windows.** В окне «Система Windows защитила ваш компьютер» нажмите «Подробнее», потом
+  «Выполнить в любом случае».
+- **macOS 15 и новее.** Перетащите Axel' из `.dmg` в «Программы» и запустите. macOS скажет, что
+  не может проверить приложение: нажмите «Готово», откройте «Системные настройки →
+  Конфиденциальность и безопасность» и внизу нажмите «Всё равно открыть». На macOS 14 и старше
+  хватит правого клика по Axel' в «Программах» и пункта «Открыть».
+- **AppImage на Ubuntu 22.04 и новее.** Сначала поставьте FUSE 2: `sudo apt install libfuse2`
+  (на Ubuntu 24.04 пакет называется `libfuse2t64`). Потом «Свойства → Разрешить запуск как
+  программу» и двойной клик.
 
-Проверить, что файл не подменён: суммы SHA-256 — в `SHA256SUMS.txt`
-(`shasum -a 256 -c SHA256SUMS.txt --ignore-missing` на macOS и Linux,
-`Get-FileHash <файл>` в PowerShell).
+Хотите убедиться, что файл никто не подменил? Суммы SHA-256 лежат в `SHA256SUMS.txt`. На macOS и
+Linux: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`, на Windows: `Get-FileHash <файл>` в
+PowerShell.
 
-Что нового — в [CHANGELOG.md](https://github.com/Hewako/quarry-launcher/blob/main/CHANGELOG.md),
-подробная установка — в [README](https://github.com/Hewako/quarry-launcher#установка).
+Что изменилось в этой версии — в [CHANGELOG.md](https://github.com/Hewako/quarry-launcher/blob/main/CHANGELOG.md),
+установка по шагам — в [README](https://github.com/Hewako/quarry-launcher#установка).
+Нашли ошибку — [расскажите о ней](https://github.com/Hewako/quarry-launcher/issues/new).
 
 ---
 
-**English.** Windows: `Axel-Launcher-Windows.exe` (installer) or `…-portable.zip`; macOS (any Mac,
-11+): `Axel-Launcher-macOS.dmg`; Linux: `.deb`, `.rpm` or `.AppImage` (on Ubuntu 22.04+ AppImage
-needs `libfuse2`). The installers are not signed with a developer certificate, so the system
-warns on first launch: on Windows choose "More info" → "Run anyway"; on macOS 15+ open
-"System Settings → Privacy & Security → Open Anyway" (on macOS 14 and older: right-click → Open).
-Your worlds and profiles live in the `.quarry` folder in your home folder and are kept on update
-and uninstall. Checksums: `SHA256SUMS.txt`.
+**English.** Windows: `Axel-Launcher-Windows.exe`, or `…-portable.zip` if you'd rather not
+install anything. Mac (macOS 11+, Apple Silicon or Intel): `Axel-Launcher-macOS.dmg`. Linux:
+`.deb`, `.rpm` or `.AppImage` (on Ubuntu 22.04+ the AppImage needs `libfuse2`). The files aren't
+signed with a paid certificate, so your system will warn you the first time: on Windows click
+"More info" → "Run anyway"; on macOS 15+ go to System Settings → Privacy & Security → Open Anyway
+(on macOS 14 and older, right-click the app → Open). Install over the old version to update.
+Your worlds and profiles live in the `.quarry` folder in your home folder and survive updates and
+uninstalls. Checksums are in `SHA256SUMS.txt`.
