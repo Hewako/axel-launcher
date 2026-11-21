@@ -17,19 +17,12 @@ Axel' говорит, какой мод виноват, и предлагает 
 [![Задачи](https://img.shields.io/github/issues/Hewako/quarry-launcher?label=%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8)](https://github.com/Hewako/quarry-launcher/issues)
 ![Системы](https://img.shields.io/badge/Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-0b1110)
 
+<!-- До выхода 0.1.0 кнопки ведут на страницу релизов: ссылки releases/latest/download/… не видят пробные сборки.
+     После 0.1.0 вернуть прямые ссылки на файлы (docs/RELEASE_CHECKLIST.md). -->
 <p>
-  <a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows.exe"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-windows-dark.png">
-    <img alt="Скачать для Windows" src="docs/img/download-windows.png" width="240" height="56">
-  </picture></a>
-  <a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-macos-dark.png">
-    <img alt="Скачать для macOS" src="docs/img/download-macos.png" width="240" height="56">
-  </picture></a>
-  <a href="#установка"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/img/download-linux-dark.png">
-    <img alt="Скачать для Linux: .deb, .rpm, AppImage" src="docs/img/download-linux.png" width="240" height="56">
-  </picture></a>
+  <a href="https://github.com/Hewako/quarry-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-windows-dark.png"><img alt="Скачать для Windows" src="docs/img/download-windows.png" width="240" height="56"></picture></a>
+  <a href="https://github.com/Hewako/quarry-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-macos-dark.png"><img alt="Скачать для macOS" src="docs/img/download-macos.png" width="240" height="56"></picture></a>
+  <a href="#установка"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-linux-dark.png"><img alt="Скачать для Linux: .deb, .rpm, AppImage" src="docs/img/download-linux.png" width="240" height="56"></picture></a>
 </p>
 
 [Что умеет](#что-умеет) · [Все файлы](#все-файлы) · [Установка](#установка) · [Вопросы](#вопросы) · [Что пока не так](#что-пока-не-так) · [Помочь проекту](#помочь-проекту) · [Что нового](CHANGELOG.md)
@@ -71,16 +64,15 @@ Vanilla, Fabric, Quilt или NeoForge и любая версия из офиц�
 ## Все файлы
 
 <p align="center">
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"><img alt="macOS, .dmg" src="https://img.shields.io/badge/macOS-.dmg%20%C2%B7%20%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20Mac-000000?style=for-the-badge&logo=apple&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows.exe"><img alt="Windows, установщик .exe" src="https://img.shields.io/badge/Windows-.exe%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D1%89%D0%B8%D0%BA-0078D4?style=for-the-badge"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Windows-portable.zip"><img alt="Windows, .zip без установки" src="https://img.shields.io/badge/Windows-.zip%20%D0%B1%D0%B5%D0%B7%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8-1f5f99?style=for-the-badge"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.AppImage"><img alt="Linux, AppImage" src="https://img.shields.io/badge/Linux-AppImage-E3A008?style=for-the-badge&logo=linux&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.deb"><img alt="Debian и Ubuntu, .deb" src="https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?style=for-the-badge&logo=debian&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-Linux.rpm"><img alt="Fedora, .rpm" src="https://img.shields.io/badge/Fedora-.rpm-294172?style=for-the-badge&logo=fedora&logoColor=white"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="macOS, .dmg" src="https://img.shields.io/badge/macOS-.dmg%20%C2%B7%20%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20Mac-000000?style=for-the-badge&logo=apple&logoColor=white"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Windows, установщик .exe" src="https://img.shields.io/badge/Windows-.exe%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D1%89%D0%B8%D0%BA-0078D4?style=for-the-badge"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Windows, .zip без установки" src="https://img.shields.io/badge/Windows-.zip%20%D0%B1%D0%B5%D0%B7%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8-1f5f99?style=for-the-badge"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Linux, AppImage" src="https://img.shields.io/badge/Linux-AppImage-E3A008?style=for-the-badge&logo=linux&logoColor=white"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Debian и Ubuntu, .deb" src="https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?style=for-the-badge&logo=debian&logoColor=white"></a>
+<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Fedora, .rpm" src="https://img.shields.io/badge/Fedora-.rpm-294172?style=for-the-badge&logo=fedora&logoColor=white"></a>
 </p>
 
-Ссылки всегда ведут на последнюю вышедшую версию. Старые версии и пробные сборки — на
-[странице релизов](https://github.com/Hewako/quarry-launcher/releases). Миры, профили и настройки лежат отдельно, в папке `.quarry`
+Кнопки открывают [страницу релизов](https://github.com/Hewako/quarry-launcher/releases): там лежат все версии, включая пробные сборки. Миры, профили и настройки лежат отдельно, в папке `.quarry`
 в домашней папке: обновление и удаление программы их не трогают.
 
 ## Установка
