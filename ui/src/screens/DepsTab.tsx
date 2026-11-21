@@ -248,7 +248,7 @@ export function DepsTab({ inst, running, onChanged }: { inst: Instance; running:
         <span>{t("серый узел — библиотека, поставлена как зависимость")}</span>
       </p>
       {running && <p className="small" style={{ color: "var(--warn)" }}>{t("Игра запущена — менять моды можно после её закрытия.")}</p>}
-      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} kinds={["mod"]} onClose={() => setCatalog(null)} onPlan={(title, p) => { setCatalog(null); setPlan({ title, plan: p }); }} />}
+      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} kinds={["mod"]} onClose={() => setCatalog(null)} onInstalled={load} />}
       {plan && <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, t("Перед: {0}", plan.title.toLowerCase())); setPlan(null); load(); onChanged(); }} />}
     </>
   );

@@ -193,16 +193,48 @@ pub async fn resolve_profile(
     Ok(child.merged_onto(vanilla))
 }
 
-#[derive(Debug, Deserialize)]
-struct LoaderEntry {
-    loader: LoaderInfo,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 struct LoaderInfo {
     version: String,
     #[serde(default)]
     stable: Option<bool>,
+}
+
+/// Общие списки загрузчиков (одинаковые для всех версий игры) — запоминаем на 15 минут, чтобы
+/// переключение версии игры и загрузчика в «Новом профиле» не ходило в сеть каждый раз.
+/// Раньше брали список «для этой версии игры»: 600–730 КБ, на медленной сети он обрывался.
+async fn cached_json<T: serde::de::DeserializeOwned + Clone + Send + 'static>(
+    url: &str,
+) -> Result<T> {
+    use std::any::Any;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+    use std::time::{Duration, Instant};
+    type Entry = (Instant, Box<dyn Any + Send>);
+    static CACHE: Mutex<Option<HashMap<String, Entry>>> = Mutex::new(None);
+    const TTL: Duration = Duration::from_secs(15 * 60);
+    if let Some((at, v)) = CACHE
+        .lock()
+        .unwrap()
+        .get_or_insert_with(HashMap::new)
+        .get(url)
+        && at.elapsed() < TTL
+        && let Some(v) = v.downcast_ref::<T>()
+    {
+        return Ok(v.clone());
+    }
+    let v: T = crate::net::get_json(url).await?;
+    CACHE
+        .lock()
+        .unwrap()
+        .get_or_insert_with(HashMap::new)
+        .insert(url.to_string(), (Instant::now(), Box::new(v.clone())));
+    Ok(v)
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct GameEntry {
+    version: String,
 }
 
 mod fabric {
@@ -218,13 +250,18 @@ mod fabric {
     }
 
     pub async fn versions(game: &str) -> Result<Vec<LoaderVersion>> {
-        let url = format!("{META}/versions/loader/{}", urlencoding::encode(game));
-        let list: Vec<LoaderEntry> = crate::net::get_json(&url).await?;
+        // Версия игры поддерживается, если для неё есть intermediary (ответ — сотня байт).
+        let url = format!("{META}/versions/intermediary/{}", urlencoding::encode(game));
+        let intermediary: Vec<serde_json::Value> = cached_json(&url).await?;
+        if intermediary.is_empty() {
+            return Ok(Vec::new());
+        }
+        let list: Vec<LoaderInfo> = cached_json(&format!("{META}/versions/loader")).await?;
         Ok(list
             .into_iter()
-            .map(|e| LoaderVersion {
-                stable: e.loader.stable.unwrap_or(false),
-                version: e.loader.version,
+            .map(|l| LoaderVersion {
+                stable: l.stable.unwrap_or(false),
+                version: l.version,
             })
             .collect())
     }
@@ -248,17 +285,19 @@ mod quilt {
     }
 
     pub async fn versions(game: &str) -> Result<Vec<LoaderVersion>> {
-        let url = format!("{META}/versions/loader/{}", urlencoding::encode(game));
-        let list: Vec<LoaderEntry> = crate::net::get_json(&url).await?;
+        // Поддерживаемые версии игры (25 КБ) и все версии загрузчика (145 КБ) — вместо
+        // ответа «для этой версии» на 730 КБ, который на медленной сети обрывался.
+        let games: Vec<GameEntry> = cached_json(&format!("{META}/versions/game")).await?;
+        if !games.iter().any(|g| g.version == game) {
+            return Ok(Vec::new());
+        }
+        let list: Vec<LoaderInfo> = cached_json(&format!("{META}/versions/loader")).await?;
         // meta.quiltmc.org отдаёт версии не по порядку (проверено 21.10.2026) — сортируем.
         let mut out: Vec<LoaderVersion> = list
             .into_iter()
-            .map(|e| LoaderVersion {
-                stable: e
-                    .loader
-                    .stable
-                    .unwrap_or_else(|| is_stable(&e.loader.version)),
-                version: e.loader.version,
+            .map(|l| LoaderVersion {
+                stable: l.stable.unwrap_or_else(|| is_stable(&l.version)),
+                version: l.version,
             })
             .collect();
         out.sort_by(|a, b| compare_loader_versions(&b.version, &a.version));

@@ -46,13 +46,18 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
   useEffect(() => {
     setLoaderVersions(null);
     setLoaderVersion("");
+    setError(""); // ошибка прежнего загрузчика к новому выбору не относится
     if (loader === "vanilla" || !version) return;
+    // Ответ для прежнего загрузчика или версии игры может прийти позже нового — его отбрасываем.
+    let current = true;
     api.loaderVersions(loader, version)
       .then((list) => {
+        if (!current) return;
         setLoaderVersions(list);
         setLoaderVersion((list.find((v) => v.stable) ?? list[0])?.version ?? "");
       })
-      .catch((e) => { setLoaderVersions([]); setError(errText(e)); });
+      .catch((e) => { if (current) { setLoaderVersions([]); setError(errText(e)); } });
+    return () => { current = false; };
   }, [loader, version]);
 
   const shown = useMemo(() => (versions ?? []).filter((v) => kinds.includes(kindOf(v.type))), [versions, kinds]);
@@ -90,7 +95,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
         <div className="frow">
           <div className="lbl">
             {t("Версия Minecraft")}
-            <span className="hint">{version && version === latest ? t("Последняя стабильная") : ""}{offline ? t(" · нет сети, список из кеша") : ""}</span>
+            <span className="hint">{version && version === latest ? t("Последняя") : ""}{offline ? t(" · нет сети, список из кеша") : ""}</span>
           </div>
           <div className="stack tight">
             {versions === null ? <span className="muted small"><span className="spinner" /> {t("Загружаем список версий…")}</span> : (
@@ -127,7 +132,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
             ) : (
               <select className="field" value={loaderVersion} onChange={(e) => setLoaderVersion(e.target.value)}>
                 {loaderVersions.map((v) => (
-                  <option key={v.version} value={v.version}>{v.version}{v.stable ? t(" · стабильная") : t(" · нестабильная")}</option>
+                  <option key={v.version} value={v.version}>{v.version}</option>
                 ))}
               </select>
             )}

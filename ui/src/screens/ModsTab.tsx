@@ -2,7 +2,7 @@
 // Любое изменение модов — через предпросмотр и автоматический снимок.
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, errText, isPackPath, mods, sizeText, type CatalogSource, type Channel, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
+import { api, errText, isPackPath, loaderName, mods, sizeText, type CatalogSource, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
@@ -61,46 +61,64 @@ const CATS: Record<ProjectKind, [string, string][]> = {
   resourcepack: [["vanilla-like", t("Как ванилла")], ["realistic", t("Реалистичные")], ["simplistic", t("Простые")], ["themed", t("Тематические")], ["tweaks", t("Мелкие правки")], ["16x", "16x"], ["32x", "32x"], ["64x", "64x"]],
   shader: [["vanilla-like", t("Как ванилла")], ["semi-realistic", t("Полуреалистичные")], ["realistic", t("Реалистичные")], ["fantasy", t("Сказочные")], ["potato", t("Для слабых ПК")], ["low", t("Лёгкие")], ["high", t("Тяжёлые")]],
 };
-const CHANNELS: [Channel, string][] = [["auto", t("Стабильная, если есть")], ["release", t("Только стабильные")], ["beta", t("Бета и стабильные")], ["alpha", t("Любые, включая альфа")]];
 
 const KINDS: [ProjectKind, string][] = [["mod", t("Моды")], ["resourcepack", t("Ресурспаки")], ["shader", t("Шейдеры")], ["datapack", t("Датапаки")]];
 
-export function CatalogDialog({ inst, initial, onClose, onPlan, kinds = ["mod", "resourcepack", "shader"], onInstalled, world }: {
+export function CatalogDialog({ inst, initial, onClose, kinds = ["mod", "resourcepack", "shader"], onInstalled, world }: {
   world?: string;
   inst: Instance;
   initial: string;
   onClose: () => void;
-  onPlan?: (title: string, p: Plan) => void;
   kinds?: ProjectKind[];
   onInstalled?: () => void;
 }) {
   const [query, setQuery] = useState(initial);
   const [kind, setKind] = useState<ProjectKind>(kinds[0]);
-  const [done, setDone] = useState<string[]>([]);
+  // Состояние установки по каждому проекту: ставим по очереди в фоне, окно при этом живое.
+  const [status, setStatus] = useState<Record<string, "queued" | "installing" | "done">>({});
+  const queue = useRef<Promise<void>>(Promise.resolve());
   const [category, setCategory] = useState("");
-  const [channel, setChannel] = useState<Channel>("auto");
   const [source, setSource] = useState<CatalogSource>("modrinth");
   const [cf, setCf] = useState(false);
   useEffect(() => { api.appInfo().then((i) => setCf(i.curseforge)).catch(() => {}); }, []);
   const src: CatalogSource = cf ? source : "modrinth";
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  // Уже найденное запоминаем: переключение «Моды / Ресурспаки / Шейдеры» туда и обратно — сразу.
+  const found = useRef(new Map<string, SearchHit[]>());
+  const typed = useRef(query);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setError("");
-      mods.search(inst.id, query, kind, 0, src === "modrinth" ? category : "", src).then((r) => setHits(r.hits)).catch((e) => { setHits([]); setError(errText(e)); });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [inst.id, query, kind, category, src]);
-  const pick = async (h: SearchHit) => {
-    setBusy(h.project_id);
+    const key = [kind, src, category, query.trim()].join("\u0000");
+    const cached = found.current.get(key);
     setError("");
-    try {
-      if (kind === "mod") onPlan?.(t("Установить {0}", h.title), await mods.planInstall(inst.id, h.project_id, channel, src));
-      else { await api.installResource(inst.id, h.project_id, kind, world, src); setDone((d) => [...d, h.project_id]); onInstalled?.(); }
-    } catch (e) { setError(errText(e)); }
-    finally { setBusy(null); }
+    setHits(cached ?? null);
+    if (cached) return;
+    let current = true;
+    // Ждём паузы только пока человек печатает; смена вида, источника или категории — без задержки.
+    const delay = typed.current !== query ? 300 : 0;
+    typed.current = query;
+    const timer = setTimeout(() => {
+      mods.search(inst.id, query, kind, 0, src === "modrinth" ? category : "", src)
+        .then((r) => { found.current.set(key, r.hits); if (current) setHits(r.hits); })
+        .catch((e) => { if (current) { setHits([]); setError(errText(e)); } });
+    }, delay);
+    return () => { current = false; clearTimeout(timer); };
+  }, [inst.id, query, kind, category, src]);
+  const pick = (h: SearchHit) => {
+    const k = kind;
+    setStatus((st) => ({ ...st, [h.project_id]: "queued" }));
+    queue.current = queue.current.then(async () => {
+      setStatus((st) => ({ ...st, [h.project_id]: "installing" }));
+      try {
+        if (k === "mod") await mods.apply(inst.id, await mods.planInstall(inst.id, h.project_id, "auto", src), t("Перед: установить {0}", h.title));
+        else await api.installResource(inst.id, h.project_id, k, world, src);
+        setStatus((st) => ({ ...st, [h.project_id]: "done" }));
+        onInstalled?.();
+      } catch (e) {
+        setStatus((st) => { const { [h.project_id]: _, ...rest } = st; return rest; });
+        setError(`${h.title}: ${errText(e)}`);
+      }
+    });
   };
   return (
     <Modal title={src === "curseforge" ? t("Каталог CurseForge") : t("Каталог Modrinth")} onClose={onClose} wide>
@@ -123,13 +141,9 @@ export function CatalogDialog({ inst, initial, onClose, onPlan, kinds = ["mod", 
           <option value="">{t("Все категории")}</option>
           {CATS[kind].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>}
-        {kind === "mod" && (
-          <select className="field auto" aria-label={t("Какие версии ставить")} value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
-            {CHANNELS.map(([v, l]) => <option key={v} value={v}>{t("Версии:")} {l.toLowerCase()}</option>)}
-          </select>
-        )}
+        {/* Для какой игры и загрузчика ищем: всё в каталоге уже отфильтровано по ним. */}
+        <span className="pill" title={t("Показано только то, что подходит к этому профилю")}>Minecraft {inst.game_version}{kind === "mod" && inst.loader !== "vanilla" ? ` · ${loaderName[inst.loader]}` : ""}</span>
       </div>
-      <span className="muted small">{t("Показано то, что подходит к Minecraft")} {inst.game_version}{kind === "mod" ? t(" и {0}", inst.loader) : ""}{t(". Ставится только по вашему нажатию.")}</span>
       {kind === "shader" && <span className="muted small">{t("Шейдеры работают с модом Iris (Fabric/Quilt) или Oculus (NeoForge). После установки шейдер можно выбрать в разделе «Ресурсы и конфиги».")}</span>}
       {error && <div className="alert err"><span>{error}</span></div>}
       <div className="hits">
@@ -142,7 +156,10 @@ export function CatalogDialog({ inst, initial, onClose, onPlan, kinds = ["mod", 
               <b>{h.title}</b> <span className="muted small">· {h.author} · {h.downloads.toLocaleString("ru-RU")} {t("скачиваний")}</span>
               <small>{h.description}</small>
             </div>
-            <button className="btn" disabled={busy !== null || done.includes(h.project_id)} onClick={() => pick(h)}>{busy === h.project_id ? "…" : done.includes(h.project_id) ? t("Установлено") : t("Установить")}</button>
+            {(() => {
+              const st = status[h.project_id];
+              return <button className="btn" disabled={!!st} onClick={() => pick(h)}>{st === "done" ? t("Установлено") : st === "installing" ? <><span className="spinner" /> {t("Ставим…")}</> : st === "queued" ? t("В очереди") : t("Установить")}</button>;
+            })()}
           </div>
         ))}
       </div>
@@ -460,7 +477,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
       )}
 
       <p className="muted small">{t("Состояние — по метаданным модов (fabric.mod.json, quilt.mod.json, mods.toml), а не по имени файла. «Конфликтов не найдено» не гарантирует, что игра запустится: настоящую проверку даёт запуск.")}</p>
-      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} onClose={() => setCatalog(null)} onPlan={(title, p) => { setCatalog(null); setPlan({ title, plan: p, reason: t("Перед: {0}", title.toLowerCase()) }); }} />}
+      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} onClose={() => setCatalog(null)} onInstalled={() => { load(); refreshUpdates(); }} />}
       {plan && (
         <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, plan.reason); setPlan(null); setPicked(new Set()); load(); refreshUpdates(); }} />
       )}

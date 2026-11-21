@@ -72,6 +72,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .updnote .btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; font-size: 13px; }
 .updnote .btn.get { background: var(--info); border-color: var(--info); color: var(--info-ink); font-weight: 600; }
 .updnote .btn.later { background: transparent; }
+/* Фильтр каталога «Minecraft 26.3 · Fabric»: не кнопка, а подпись-пилюля. */
+.pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--panel2); color: var(--text); font-size: 13px; white-space: nowrap; }
 
 h2 { font-size: 18px; margin: 0 0 4px; }
 .sub { color: var(--muted); margin: 0 0 16px; }
@@ -357,8 +359,8 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .mtabs button.on { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
 .tabsrow kbd { margin-left: 4px; }
 .seg.subtabs { margin-bottom: 16px; padding: 3px; border-radius: 10px; background: var(--panel); gap: 2px; }
-.seg.subtabs button { background: none; border-radius: 7px; padding: 6px 14px; border-bottom: 2px solid transparent; }
-.seg.subtabs button.on { background: var(--panel2); color: var(--text); border-bottom-color: var(--accent); }
+.seg.subtabs button { background: none; border-radius: 7px; padding: 6px 14px; transition: background .18s, color .18s; }
+.seg.subtabs button.on { background: var(--panel2); color: var(--text); }
 .shead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .shead .btn.cta { padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; }
 .split2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -440,7 +442,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .ov .cmd { max-height: 220px; }
 .psec h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
 .psec.danger { border-color: var(--err-line); }
-.psec.danger h3 { color: var(--err); }
+/* «Опасная зона» — обычный блок с красной рамкой, без отдельного цвета заголовка. */
 
 /* Иконки в кнопках: по центру строки, с ровным зазором до текста */
 .ico { display: inline-block; vertical-align: -3px; flex: none; }
@@ -499,9 +501,10 @@ details.adv summary::-webkit-details-marker { display: none; }
 .foundico { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--accent); background: var(--panel2); }
 .settings { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 18px; align-items: start; max-width: 1100px; }
 .secnav { display: grid; gap: 2px; position: sticky; top: 0; }
-.secnav button { text-align: left; border: 0; background: none; color: var(--muted); padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 500; }
+/* Выбранный раздел выдвигается вправо и подсвечивается фоном, без обводок (решение владельца 21.11.2026). */
+.secnav button { text-align: left; border: 0; background: none; color: var(--muted); padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 500; transition: transform .22s cubic-bezier(.2,.8,.2,1), background .22s, color .22s; }
 .secnav button:hover { color: var(--text); background: var(--panel); }
-.secnav button.on { color: var(--text); background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
+.secnav button.on { color: var(--text); background: var(--panel2); transform: translateX(8px); }
 .settings > .card h3 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
 
 .logsgrid { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -548,7 +551,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .state .ico { vertical-align: -2px; }
 .modcard .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 
-@media (max-width: 1100px) { .modtable:not(.proftable) th:nth-child(4), .modtable:not(.proftable) td:nth-child(4) { display: none; } .logsgrid { grid-template-columns: minmax(0, 1fr); } .settings { grid-template-columns: minmax(0, 1fr); } .secnav { display: flex; flex-wrap: wrap; position: static; } .snaps li { grid-template-columns: minmax(0, 1fr); } .snaps .acts { grid-column: 1; } .modsgrid, .split2, .ov { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1100px) { .modtable:not(.proftable) th:nth-child(4), .modtable:not(.proftable) td:nth-child(4) { display: none; } .logsgrid { grid-template-columns: minmax(0, 1fr); } .settings { grid-template-columns: minmax(0, 1fr); } .secnav { display: flex; flex-wrap: wrap; position: static; } .secnav button.on { transform: none; } .snaps li { grid-template-columns: minmax(0, 1fr); } .snaps .acts { grid-column: 1; } .modsgrid, .split2, .ov { grid-template-columns: minmax(0, 1fr); } }
 
 /* Узкое окно (макеты 23, 24): правая колонка уходит вниз карточками в ряд, «Папка» — в меню «Ещё»,
    подсказки клавиш профиля в нижней панели прячутся. */

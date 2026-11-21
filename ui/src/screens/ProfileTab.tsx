@@ -334,14 +334,14 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       </section>
 
       <section className="card psec danger" aria-labelledby="ps-danger">
-        <h3 id="ps-danger">{t("Опасная зона")}</h3>
+        <h3 id="ps-danger">{t("Архив и удаление")}</h3>
         <div className="setting">
-          <div className="lbl">{t("Архив")}<span className="hint">{t("в конце рельсы, бледнее; файлы останутся на месте")}</span></div>
+          <div className="lbl">{t("Архив")}<span className="hint">{t("Профиль уйдёт в конец списка, файлы останутся")}</span></div>
           <label className="row"><input type="checkbox" checked={meta.archived} onChange={(e) => save({ archived: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">
-          <div className="lbl">{t("В корзину")}<span className="hint">{t("профиль с мирами переедет в trash/, его можно вернуть")}</span></div>
+          <div className="lbl">{t("В корзину")}<span className="hint">{t("Профиль вместе с мирами можно будет вернуть")}</span></div>
           <span />
           <button className="btn danger" disabled={running} onClick={onTrash}>{t("В корзину")}</button>
         </div>
