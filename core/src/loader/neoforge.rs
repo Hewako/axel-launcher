@@ -1,4 +1,6 @@
-//! NeoForge: профиль версии (`version.json` с `inheritsFrom`) и процессоры установщика.
+//! NeoForge и Forge: профиль версии (`version.json` с `inheritsFrom`) и процессоры установщика.
+//! Установщики у них одного формата (Forge — предок NeoForge), различаются Maven и имена —
+//! это `Flavor`. Список версий Forge — в `forge`.
 //!
 //! Установщик `neoforge-<v>-installer.jar` содержит `install_profile.json`: данные (`data`),
 //! библиотеки для процессоров и сами процессоры — Java-программы, которые готовят клиент
@@ -18,7 +20,40 @@ use std::path::{Path, PathBuf};
 
 use super::LoaderVersion;
 
-const MAVEN: &str = "https://maven.neoforged.net/releases";
+/// Чей установщик: где лежит в Maven и как называется.
+pub struct Flavor {
+    /// Для сообщений игроку: «NeoForge», «Forge».
+    pub name: &'static str,
+    maven: &'static str,
+    /// Путь группы в Maven: `net/neoforged`.
+    group: &'static str,
+    artifact: &'static str,
+}
+
+pub const NEOFORGE: Flavor = Flavor {
+    name: "NeoForge",
+    maven: "https://maven.neoforged.net/releases",
+    group: "net/neoforged",
+    artifact: "neoforge",
+};
+
+pub const FORGE: Flavor = Flavor {
+    name: "Forge",
+    maven: "https://maven.minecraftforge.net",
+    group: "net/minecraftforge",
+    artifact: "forge",
+};
+
+impl Flavor {
+    /// Версия в Maven: у NeoForge как есть, у Forge — с версией игры спереди.
+    fn maven_version(&self, game: &str, version: &str) -> String {
+        if self.artifact == "forge" {
+            super::forge::maven_version(game, version)
+        } else {
+            version.to_string()
+        }
+    }
+}
 const VERSIONS_API: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
 
@@ -64,18 +99,27 @@ pub async fn versions(game: &str) -> Result<Vec<LoaderVersion>> {
         .collect())
 }
 
-fn installer_path(data: &DataDir, version: &str) -> PathBuf {
+fn installer_path(data: &DataDir, f: &Flavor, version: &str) -> PathBuf {
     data.libraries()
-        .join("net/neoforged/neoforge")
+        .join(f.group)
+        .join(f.artifact)
         .join(version)
-        .join(format!("neoforge-{version}-installer.jar"))
+        .join(format!("{}-{version}-installer.jar", f.artifact))
 }
 
-/// Скачать установщик (SHA-1 — из файла `.sha1` в Maven NeoForge).
-async fn ensure_installer(data: &DataDir, version: &str, cancel: &Cancel) -> Result<PathBuf> {
+/// Скачать установщик (SHA-1 — из файла `.sha1` в Maven). `version` — полная, как в Maven.
+async fn ensure_installer(
+    data: &DataDir,
+    f: &Flavor,
+    version: &str,
+    cancel: &Cancel,
+) -> Result<PathBuf> {
     metadata::file_safe(version)?;
-    let path = installer_path(data, version);
-    let url = format!("{MAVEN}/net/neoforged/neoforge/{version}/neoforge-{version}-installer.jar");
+    let path = installer_path(data, f, version);
+    let url = format!(
+        "{}/{}/{}/{version}/{}-{version}-installer.jar",
+        f.maven, f.group, f.artifact, f.artifact
+    );
     let sha1 = crate::net::get_text(&format!("{url}.sha1"))
         .await
         .ok()
@@ -85,9 +129,10 @@ async fn ensure_installer(data: &DataDir, version: &str, cancel: &Cancel) -> Res
         // Нет сети, но установщик уже есть — работаем с ним.
         _ if path.exists() => return Ok(path),
         _ => {
-            return Err(Error::invalid(
-                "Не удалось получить хэш установщика NeoForge",
-            ));
+            return Err(Error::invalid(format!(
+                "Не удалось получить хэш установщика {}",
+                f.name
+            )));
         }
     };
     download::download_all(
@@ -108,23 +153,25 @@ async fn ensure_installer(data: &DataDir, version: &str, cancel: &Cancel) -> Res
 
 fn read_zip_text(zip_path: &Path, name: &str) -> Result<String> {
     let file = std::fs::File::open(zip_path).at(zip_path)?;
-    let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("установщик NeoForge", e))?;
+    let mut zip =
+        zip::ZipArchive::new(file).map_err(|e| Error::parse("установщик загрузчика", e))?;
     let mut entry = zip
         .by_name(name)
-        .map_err(|_| Error::invalid(format!("В установщике NeoForge нет {name}")))?;
+        .map_err(|_| Error::invalid(format!("В установщике загрузчика нет {name}")))?;
     let mut text = String::new();
     entry.read_to_string(&mut text).at(zip_path)?;
     Ok(text)
 }
 
-/// Профиль версии NeoForge без процессоров — для сборки classpath и аргументов.
-pub async fn profile(data: &DataDir, game: &str, version: &str) -> Result<VersionJson> {
-    let installer = ensure_installer(data, version, &Cancel::new()).await?;
+/// Профиль версии без процессоров — для сборки classpath и аргументов.
+pub async fn profile(data: &DataDir, f: &Flavor, game: &str, version: &str) -> Result<VersionJson> {
+    let mv = f.maven_version(game, version);
+    let installer = ensure_installer(data, f, &mv, &Cancel::new()).await?;
     let json = VersionJson::parse(&read_zip_text(&installer, "version.json")?)?;
     if json.inherits_from.as_deref() != Some(game) {
         return Err(Error::invalid(format!(
-            "NeoForge {version} рассчитан на Minecraft {:?}, а не {game}",
-            json.inherits_from
+            "{} {version} рассчитан на Minecraft {:?}, а не {game}",
+            f.name, json.inherits_from
         )));
     }
     Ok(json)
@@ -178,7 +225,7 @@ fn resolve_value(value: &str, libs: &Path, installer: &Path, extract_dir: &Path)
             .ok_or_else(|| Error::invalid(format!("Недопустимый путь в установщике: {value}")))?;
         let file = std::fs::File::open(installer).at(installer)?;
         let mut zip =
-            zip::ZipArchive::new(file).map_err(|e| Error::parse("установщик NeoForge", e))?;
+            zip::ZipArchive::new(file).map_err(|e| Error::parse("установщик загрузчика", e))?;
         let mut entry = zip
             .by_name(inner)
             .map_err(|_| Error::invalid(format!("В установщике нет {inner}")))?;
@@ -228,33 +275,35 @@ pub fn main_class(jar: &Path) -> Result<String> {
         .ok_or_else(|| Error::invalid(format!("В {} нет Main-Class", jar.display())))
 }
 
-fn marker_path(data: &DataDir, version: &str) -> PathBuf {
+fn marker_path(data: &DataDir, f: &Flavor, version: &str) -> PathBuf {
     data.meta()
         .join("loaders")
-        .join(format!("neoforge-{version}.installed.json"))
+        .join(format!("{}-{version}.installed.json", f.artifact))
 }
 
 /// Выполнить клиентские процессоры, если их результат ещё не готов. `java` — Java версии игры,
-/// `client_jar` — уже скачанный ванильный клиент. Лог — в `logs/neoforge-<v>.log`.
+/// `client_jar` — уже скачанный ванильный клиент. Лог — в `logs/<загрузчик>-<v>.log`.
 pub async fn run_processors(
     data: &DataDir,
+    f: &Flavor,
     game: &str,
     version: &str,
     java: &Path,
     client_jar: &Path,
     cancel: &Cancel,
 ) -> Result<()> {
-    let marker = marker_path(data, version);
+    let version = &f.maven_version(game, version);
+    let marker = marker_path(data, f, version);
     if let Ok(text) = std::fs::read_to_string(&marker) {
         let outputs: BTreeMap<PathBuf, String> = serde_json::from_str(&text).unwrap_or_default();
         if !outputs.is_empty() && outputs.keys().all(|p| p.exists()) {
             return Ok(());
         }
     }
-    let installer = ensure_installer(data, version, cancel).await?;
+    let installer = ensure_installer(data, f, version, cancel).await?;
     let profile: InstallProfile =
         serde_json::from_str(&read_zip_text(&installer, "install_profile.json")?)
-            .map_err(|e| Error::parse("install_profile.json NeoForge", e))?;
+            .map_err(|e| Error::parse("install_profile.json загрузчика", e))?;
     let libs = data.libraries();
 
     // Библиотеки процессоров — с хэшами из профиля.
@@ -274,8 +323,10 @@ pub async fn run_processors(
     }
     download::download_all(tasks, 8, Verify::Quick, None, cancel).await?;
 
-    let work =
-        crate::paths::unique_sibling(&data.tmp().join(format!("neoforge-{version}")), "work");
+    let work = crate::paths::unique_sibling(
+        &data.tmp().join(format!("{}-{version}", f.artifact)),
+        "work",
+    );
     std::fs::create_dir_all(&work).at(&work)?;
     let mut vars: BTreeMap<String, String> = BTreeMap::new();
     for (k, v) in &profile.data {
@@ -293,7 +344,7 @@ pub async fn run_processors(
     vars.insert("LIBRARY_DIR".into(), path(&libs));
 
     std::fs::create_dir_all(data.logs()).at(data.logs())?;
-    let log_path = data.logs().join(format!("neoforge-{version}.log"));
+    let log_path = data.logs().join(format!("{}-{version}.log", f.artifact));
     let mut log = String::new();
     let mut produced: BTreeMap<PathBuf, String> = BTreeMap::new();
     let sep = if cfg!(windows) { ";" } else { ":" };
@@ -327,7 +378,7 @@ pub async fn run_processors(
             .current_dir(&work)
             .output()
             .await
-            .map_err(|e| Error::Java(format!("Не удалось запустить процессор NeoForge: {e}")))?;
+            .map_err(|e| Error::Java(format!("Не удалось запустить процессор {}: {e}", f.name)))?;
         log.push_str(&String::from_utf8_lossy(&out.stdout));
         log.push_str(&String::from_utf8_lossy(&out.stderr));
         let _ = write_atomic(
@@ -336,7 +387,8 @@ pub async fn run_processors(
         );
         if !out.status.success() {
             return Err(Error::invalid(format!(
-                "Процессор NeoForge {} завершился с ошибкой (код {:?}). Подробности — {}",
+                "Процессор {} {} завершился с ошибкой (код {:?}). Подробности — {}",
+                f.name,
                 proc.jar,
                 out.status.code(),
                 log_path.display()
@@ -363,7 +415,8 @@ pub async fn run_processors(
         let p = PathBuf::from(patched);
         let bytes = std::fs::read(&p).map_err(|_| {
             Error::invalid(format!(
-                "После процессоров NeoForge нет пропатченного клиента {}",
+                "После процессоров {} нет пропатченного клиента {}",
+                f.name,
                 p.display()
             ))
         })?;

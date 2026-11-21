@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Forge в Axel' — для Minecraft 1.17 и новее": "Forge in Axel' works with Minecraft 1.17 and newer",
   "Для каждой версии игры Axel' подберёт Java сам.": "Axel' picks the right Java for each game version.",
   "Java не нашлась — ничего страшного: Axel' скачает нужную при первом запуске игры.": "No Java found — no problem: Axel' will download the right one the first time you play.",
   "В интернет он ходит только за игрой, входом, Java, модами и новой версией Axel'.": "It only goes online for the game, sign-in, Java, mods and new versions of Axel'.",
@@ -107,7 +108,7 @@ export const EN: Record<string, string> = {
   "В корзину": "Move to trash",
   "В папке данных Axel'.": "In the Axel' data folder.",
   "В профиле без загрузчика модов шейдеры не запустятся.": "Shaders won't work in a profile without a mod loader.",
-  "В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt или NeoForge.": "Mods don't work in a profile without a loader. Create a profile with Fabric, Quilt or NeoForge.",
+  "В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt, Forge или NeoForge.": "Mods don't work in a profile without a loader. Create a profile with Fabric, Quilt, Forge or NeoForge.",
   "В содержимом:": "In content:",
   "В этом мире датапаков нет. Новые игра включит сама при входе в мир.": "There are no datapacks in this world. The game enables new ones when you enter the world.",
   "Ваши данные": "Your data",

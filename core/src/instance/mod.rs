@@ -308,9 +308,9 @@ impl InstanceStore {
             return Err(Error::invalid("Имя профиля длиннее 64 символов"));
         }
         crate::metadata::file_safe(game_version)?;
-        if !loader.is_supported() {
+        if !loader.supports(game_version) {
             return Err(Error::invalid(format!(
-                "{} пока не поддерживается",
+                "{} для Minecraft {game_version} пока не поддерживается",
                 loader.display()
             )));
         }
@@ -467,7 +467,10 @@ mod tests {
         let (list, broken) = s.list().unwrap();
         assert_eq!(list.len(), 2);
         assert!(broken.is_empty());
-        assert!(s.create("x", "26.3", LoaderKind::Forge, None).is_err());
+        assert!(
+            s.create("x", "1.12.2", LoaderKind::Forge, None).is_err(),
+            "старый Forge — нет"
+        );
         std::fs::remove_dir_all(&root).unwrap();
     }
 

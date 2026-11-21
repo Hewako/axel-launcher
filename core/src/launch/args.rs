@@ -155,6 +155,22 @@ fn uses_feature(args: &[Argument], feature: &str) -> bool {
     })
 }
 
+/// Forge и NeoForge 1.17–1.21 (BootstrapLauncher) не должны грузить ванильный клиент как
+/// модуль: официальный лаунчер называет его `<version_name>.jar`, и `-DignoreList` его
+/// пропускает. У нас клиент лежит как `<версия игры>.jar` — дописываем это имя в список.
+fn ignore_client_jar(arg: String, client_jar: &Path) -> String {
+    let Some(list) = arg.strip_prefix("-DignoreList=") else {
+        return arg;
+    };
+    let Some(name) = client_jar.file_name().map(|n| n.to_string_lossy()) else {
+        return arg;
+    };
+    if list.split(',').any(|x| x == name) {
+        return arg;
+    }
+    format!("{arg},{name}")
+}
+
 pub fn build(spec: &LaunchSpec) -> LaunchCommand {
     let inst = spec.installed;
     let version = &inst.version;
@@ -238,7 +254,10 @@ pub fn build(spec: &LaunchSpec) -> LaunchCommand {
         Some(a) => {
             for arg in &a.jvm {
                 for v in arg.resolve(&env) {
-                    args.push(substitute(&v, &vars, &mut unresolved));
+                    args.push(ignore_client_jar(
+                        substitute(&v, &vars, &mut unresolved),
+                        &inst.client_jar,
+                    ));
                 }
             }
         }
@@ -318,6 +337,21 @@ fn library_root(inst: &Installed) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ignore_list_gets_our_client_jar() {
+        let jar = Path::new("/data/versions/1.20.1/1.20.1.jar");
+        assert_eq!(
+            ignore_client_jar("-DignoreList=forge-,1.20.1-forge-47.4.28.jar".into(), jar),
+            "-DignoreList=forge-,1.20.1-forge-47.4.28.jar,1.20.1.jar"
+        );
+        assert_eq!(
+            ignore_client_jar("-DignoreList=a,1.20.1.jar".into(), jar),
+            "-DignoreList=a,1.20.1.jar",
+            "не дублируем"
+        );
+        assert_eq!(ignore_client_jar("-Xss2M".into(), jar), "-Xss2M");
+    }
 
     #[test]
     fn substitution() {

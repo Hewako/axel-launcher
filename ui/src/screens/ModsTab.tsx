@@ -265,7 +265,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
     return (data?.files ?? []).filter((f) => !q || f.file_name.toLowerCase().includes(q) || f.mods.some((m) => m.name.toLowerCase().includes(q) || m.id.includes(q)));
   }, [data, filter]);
 
-  if (inst.loader === "vanilla") return <>{tabs}<div className="card empty"><p>{t("В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt или NeoForge.")}</p></div></>;
+  if (inst.loader === "vanilla") return <>{tabs}<div className="card empty"><p>{t("В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt, Forge или NeoForge.")}</p></div></>;
   if (error) return <>{tabs}<div className="alert err"><span>{error}</span></div></>;
   if (!data) return <>{tabs}<p className="muted"><span className="spinner" /> {t("Проверяем моды…")}</p></>;
 

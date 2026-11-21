@@ -218,7 +218,11 @@ impl Installer<'_> {
         for lib in version.libraries.iter().filter(|l| l.is_allowed(&self.env)) {
             if let Some(art) = lib.main_artifact() {
                 let (task, dest) = artifact_task(&libs_dir, &art)?;
-                tasks.push(task);
+                // Библиотека без ссылки (у Forge 26.x — пропатченный клиент) появляется после
+                // процессоров установщика: качать нечего, но в classpath она нужна.
+                if !art.url.is_empty() {
+                    tasks.push(task);
+                }
                 if seen_cp.insert(dest.clone()) {
                     libraries.push(dest);
                 }

@@ -144,10 +144,11 @@ pub fn find_prism_instances() -> Vec<PathBuf> {
 /// Импорт инстанса Prism/MultiMC: копия папки игры, настройки памяти и JVM.
 pub fn import_mmc(store: &InstanceStore, dir: &Path) -> Result<ImportResult> {
     let detected = detect_mmc(dir)?;
-    if !detected.loader.is_supported() {
+    if !detected.loader.supports(&detected.game_version) {
         return Err(Error::invalid(format!(
-            "{} пока не поддерживается — такой инстанс импортировать нельзя",
-            detected.loader.display()
+            "{} для Minecraft {} пока не поддерживается — такой инстанс импортировать нельзя",
+            detected.loader.display(),
+            detected.game_version
         )));
     }
     let cfg = parse_instance_cfg(&std::fs::read_to_string(dir.join("instance.cfg")).at(dir)?);
@@ -492,9 +493,9 @@ pub async fn import_mrpack(
 ) -> Result<ImportResult> {
     let index = read_index(path)?;
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
-    if !loader.is_supported() {
+    if !loader.supports(&game) {
         return Err(Error::invalid(format!(
-            "Сборка на {} — этот загрузчик пока не поддерживается",
+            "Сборка на {} для Minecraft {game} — так пока не поддерживается",
             loader.display()
         )));
     }
@@ -1103,10 +1104,11 @@ pub fn import_curseforge(store: &InstanceStore, path: &Path) -> Result<ImportRes
         .and_then(|l| parse_cf_loader(&l.id))
         .map(|(k, v)| (k, Some(v)))
         .unwrap_or((LoaderKind::Vanilla, None));
-    if !loader.is_supported() {
+    if !loader.supports(&m.minecraft.version) {
         return Err(Error::invalid(format!(
-            "Сборка на {} — этот загрузчик пока не поддерживается",
-            loader.display()
+            "Сборка на {} для Minecraft {} — так пока не поддерживается",
+            loader.display(),
+            m.minecraft.version
         )));
     }
     let name = if m.version.is_empty() {

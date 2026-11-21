@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, errText, loaderName, type Instance, type LoaderKind, type LoaderVersion, type VersionEntry } from "../api";
 import { t } from "../i18n";
 
-// Forge — после v1.0 (план, Приложение А), поэтому в выборе его нет.
-const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "neoforge"];
+const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "forge", "neoforge"];
 
 type Kind = "release" | "snapshot" | "old";
 const kindOf = (type: string): Kind => (type === "release" ? "release" : type === "snapshot" ? "snapshot" : "old");
@@ -124,7 +123,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
             {loaderVersions === null ? (
               <span className="muted small"><span className="spinner" /> {t("Проверяем совместимость…")}</span>
             ) : incompatible ? (
-              <span className="badge err">{loaderName[loader]} {t("не поддерживает Minecraft")} {version}</span>
+              <span className="badge err">{loader === "forge" ? t("Forge в Axel' — для Minecraft 1.17 и новее") : <>{loaderName[loader]} {t("не поддерживает Minecraft")} {version}</>}</span>
             ) : (
               <select className="field" value={loaderVersion} onChange={(e) => setLoaderVersion(e.target.value)}>
                 {loaderVersions.map((v) => (

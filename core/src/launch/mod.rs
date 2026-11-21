@@ -474,18 +474,19 @@ async fn prepare_files(
     });
     cancel.check()?;
 
-    // NeoForge: процессоры установщика нужны Java игры и скачанный ванильный клиент.
-    if inst.loader == crate::loader::LoaderKind::NeoForge {
+    // NeoForge и Forge: процессорам установщика нужны Java игры и скачанный ванильный клиент.
+    if let Some(flavor) = crate::loader::installer_flavor(inst.loader) {
         let lv = inst
             .loader_version
             .as_deref()
-            .ok_or_else(|| Error::invalid("Не указана версия NeoForge"))?;
+            .ok_or_else(|| Error::invalid(format!("Не указана версия {}", flavor.name)))?;
         emit(LaunchEvent::Stage {
             stage: Stage::Loader,
             label: Stage::Loader.label(),
         });
         crate::loader::neoforge::run_processors(
             data,
+            flavor,
             &inst.game_version,
             lv,
             &java.install.path,

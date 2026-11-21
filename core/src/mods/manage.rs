@@ -90,7 +90,7 @@ fn ctx(store: &InstanceStore, id: &str) -> Result<Ctx> {
     let loaders = catalog::loaders_for(instance.loader);
     if loaders.is_empty() {
         return Err(Error::invalid(
-            "В профиле без загрузчика моды не работают — выберите профиль с Fabric, Quilt или NeoForge",
+            "В профиле без загрузчика моды не работают — выберите профиль с Fabric, Quilt, Forge или NeoForge",
         ));
     }
     Ok(Ctx {
@@ -419,7 +419,7 @@ pub async fn add_files(
         let metas = super::meta::read_jar(p)?;
         if metas.is_empty() {
             return Err(Error::invalid(format!(
-                "{name} — не мод: в файле нет метаданных Fabric, Quilt или NeoForge"
+                "{name} — не мод: в файле нет метаданных Fabric, Quilt, Forge или NeoForge"
             )));
         }
         let sha1 = crate::download::hash_file::<sha1::Sha1>(p)?;

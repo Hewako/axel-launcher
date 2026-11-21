@@ -1,8 +1,9 @@
 //! Загрузчики модов. Каждый — отдельный адаптер со своей схемой установки, без «универсальной
 //! магии». Fabric и Quilt описывают установку профилем JSON поверх ванили (без запуска
-//! установщика). NeoForge — профиль из установщика плюс процессоры (см. `neoforge`).
-//! Forge — отдельное решение после v1.0 (план, Приложение А).
+//! установщика). NeoForge и Forge — профиль из установщика плюс процессоры (см. `neoforge`);
+//! Forge — для Minecraft 1.17 и новее (`forge::supported_game`).
 
+pub mod forge;
 pub mod neoforge;
 
 use crate::error::{Error, Result};
@@ -40,10 +41,14 @@ impl LoaderKind {
             Self::Forge => "Forge",
         }
     }
+    /// Можно ли поставить этот загрузчик на эту версию игры (Forge — только 1.17 и новее).
+    pub fn supports(self, game: &str) -> bool {
+        self.is_supported() && (self != Self::Forge || forge::supported_game(game))
+    }
     pub fn is_supported(self) -> bool {
         matches!(
             self,
-            Self::Vanilla | Self::Fabric | Self::Quilt | Self::NeoForge
+            Self::Vanilla | Self::Fabric | Self::Quilt | Self::NeoForge | Self::Forge
         )
     }
 }
@@ -63,7 +68,7 @@ pub async fn versions(kind: LoaderKind, game: &str) -> Result<Vec<LoaderVersion>
         LoaderKind::Fabric => fabric::versions(game).await,
         LoaderKind::Quilt => quilt::versions(game).await,
         LoaderKind::NeoForge => neoforge::versions(game).await,
-        LoaderKind::Forge => Err(unsupported(kind)),
+        LoaderKind::Forge => forge::versions(game).await,
     }
 }
 
@@ -99,11 +104,13 @@ pub fn default_version(list: &[LoaderVersion]) -> Option<&LoaderVersion> {
     list.iter().find(|v| v.stable).or_else(|| list.first())
 }
 
-fn unsupported(kind: LoaderKind) -> Error {
-    Error::invalid(format!(
-        "{} пока не поддерживается: его установщик требует выполнения процессоров, это отдельная работа (этап 3).",
-        kind.display()
-    ))
+/// Загрузчики, которые ставятся своим установщиком с процессорами.
+pub fn installer_flavor(kind: LoaderKind) -> Option<&'static neoforge::Flavor> {
+    match kind {
+        LoaderKind::NeoForge => Some(&neoforge::NEOFORGE),
+        LoaderKind::Forge => Some(&neoforge::FORGE),
+        _ => None,
+    }
 }
 
 /// Проверить совместимость и выбрать версию загрузчика — до скачивания чего-либо.
@@ -160,14 +167,22 @@ pub async fn resolve_profile(
             };
             (VersionJson::parse(&text)?, name)
         }
-        LoaderKind::NeoForge => {
-            let lv = loader_version.ok_or_else(|| Error::invalid("Не указана версия NeoForge"))?;
+        LoaderKind::NeoForge | LoaderKind::Forge => {
+            let f = installer_flavor(kind).expect("NeoForge и Forge ставятся установщиком");
+            let lv = loader_version
+                .ok_or_else(|| Error::invalid(format!("Не указана версия {}", f.name)))?;
             (
-                neoforge::profile(data, game, lv).await?,
-                format!("neoforge-{lv}"),
+                neoforge::profile(data, f, game, lv).await?,
+                format!(
+                    "{}-{lv}",
+                    if kind == LoaderKind::Forge {
+                        "forge"
+                    } else {
+                        "neoforge"
+                    }
+                ),
             )
         }
-        LoaderKind::Forge => return Err(unsupported(kind)),
     };
     if child.inherits_from.as_deref() != Some(game) {
         return Err(Error::invalid(format!(
@@ -268,7 +283,7 @@ mod tests {
         assert_eq!(LoaderKind::parse("vanilla").unwrap(), LoaderKind::Vanilla);
         assert!(LoaderKind::parse("rift").is_err());
         assert!(LoaderKind::NeoForge.is_supported());
-        assert!(!LoaderKind::Forge.is_supported());
+        assert!(LoaderKind::Forge.is_supported());
     }
 
     #[test]

@@ -113,7 +113,7 @@ export function ImportDialog({ onDone, dragging, dropped }: {
               <input className="field" style={{ flex: 2 }} value={link.name} onChange={(e) => setLink({ ...link, name: e.target.value })} aria-label={t("Название")} />
               <input className="field" style={{ flex: 1 }} placeholder={t("Версия, например 26.3")} value={link.version} onChange={(e) => setLink({ ...link, version: e.target.value.trim() })} aria-label={t("Версия")} />
               <select className="field" style={{ flex: 1 }} value={link.loader} onChange={(e) => setLink({ ...link, loader: e.target.value as LoaderKind })}>
-                <option value="vanilla">Vanilla</option><option value="fabric">Fabric</option><option value="quilt">Quilt</option><option value="neoforge">NeoForge</option>
+                <option value="vanilla">Vanilla</option><option value="fabric">Fabric</option><option value="quilt">Quilt</option><option value="forge">Forge</option><option value="neoforge">NeoForge</option>
               </select>
               <button className="btn pri" disabled={!link.version || busy !== ""}>{t("Подключить")}</button>
             </div>
