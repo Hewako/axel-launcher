@@ -109,7 +109,8 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
   const selAcc = accounts.find((a) => accountKey(a) === sel) ?? accounts.find((a) => accountKey(a) === defaultKey) ?? accounts[0];
   const selKey = selAcc ? accountKey(selAcc) : undefined;
   useEffect(() => { if (selKey) showSkin(selKey); }, [selKey]);
-  const verified = accounts.some((a) => a.provider === "microsoft" && a.owns_java_edition);
+  // В сборке разработчика (dev-launch) Ely.by доступен и без Microsoft, как запуск без входа.
+  const verified = info.dev_launch || accounts.some((a) => a.provider === "microsoft" && a.owns_java_edition);
 
   const remove = async (a: AccountRef) => {
     const ok = await dialog.confirm({

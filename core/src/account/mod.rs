@@ -301,8 +301,10 @@ impl<'a> AccountStore<'a> {
             .any(|a| a.provider == Provider::Microsoft && a.owns_java_edition))
     }
 
+    /// В сборке разработчика (`dev-launch`, только отладка) Ely.by доступен и без Microsoft —
+    /// так же, как там разрешён запуск без входа (решение владельца 21.11.2026).
     pub fn ensure_ely_allowed(&self) -> Result<()> {
-        if self.has_verified_microsoft()? {
+        if crate::launch::DEV_LAUNCH || self.has_verified_microsoft()? {
             Ok(())
         } else {
             Err(Error::Auth(
@@ -379,6 +381,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(feature = "dev-launch"))] // в сборке разработчика Ely.by открыт без Microsoft
     fn ely_requires_verified_microsoft() {
         let (d, root) = data("gate");
         let secrets = MemoryStore::default();

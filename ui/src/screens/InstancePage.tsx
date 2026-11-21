@@ -240,7 +240,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
               catch (err) { await dialog.alert(t("Нельзя переключить вход"), errText(err)); }
             }}>
               <option value="microsoft">{t("Microsoft — официальные серверы")}</option>
-              <option value="ely_by" disabled={!ms.some((a) => a.owns_java_edition) || ely.length === 0}>{t("Ely.by — только совместимые серверы")}</option>
+              <option value="ely_by" disabled={ely.length === 0}>{t("Ely.by — только совместимые серверы")}</option>
             </select>
             <span />
           </div>

@@ -446,6 +446,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(not(feature = "dev-launch"))] // в сборке разработчика Ely.by открыт без Microsoft
     async fn login_is_blocked_without_microsoft() {
         let root = std::env::temp_dir().join(format!("quarry-ely-gate-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
