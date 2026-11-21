@@ -562,3 +562,10 @@ details.adv summary::-webkit-details-marker { display: none; }
   .menu .narrow-only { display: revert; }
   .bottombar .keys .hint-wide { display: none; }
 }
+/* «Игра с друзьями» (ui/RoomCard.tsx). */
+.room { margin-bottom: 16px; }
+.room h3 { margin: 0 0 10px; }
+.room .row { align-items: center; flex-wrap: wrap; }
+.roomcode { width: 9ch; text-align: center; letter-spacing: .12em; }
+.roomcode.big { font-size: 22px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--panel2); width: auto; }
+.roomstate { margin: 10px 0 0; }

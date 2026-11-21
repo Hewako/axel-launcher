@@ -29,6 +29,7 @@ pub mod net;
 pub mod options;
 pub mod paths;
 pub mod resources;
+pub mod room;
 pub mod servers;
 pub mod settings;
 pub mod skin;

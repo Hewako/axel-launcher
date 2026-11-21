@@ -5,6 +5,7 @@ import { launches } from "../launches";
 import { Modal, useDialog } from "../ui/Dialog";
 import { address, useStreamer } from "../streamer";
 import { t } from "../i18n";
+import { RoomCard } from "../ui/RoomCard";
 
 type Ping = ServerStatus | { error: string } | "loading";
 
@@ -79,10 +80,9 @@ export function ServersTab({ inst, running }: { inst: Instance; running: boolean
 
   return (
     <>
+      <RoomCard />
       <div className="pagehead" style={{ marginBottom: 14 }}>
-        <p className="muted small" style={{ margin: 0, maxWidth: 680 }}>
-          {t("Тот же список, что в игре в «Сетевой игре». «Играть» запускает игру и сразу подключает к серверу. Менять список можно, только пока игра закрыта.")}
-        </p>
+        <h3 style={{ margin: 0 }}>{t("Серверы")}</h3>
         {allTags.length > 0 && (
           <select className="field auto" aria-label={t("Показывать серверы с тегом")} value={tagFilter} onChange={(e) => setTagFilter(e.target.value)}>
             <option value="">{t("Все серверы")}</option>

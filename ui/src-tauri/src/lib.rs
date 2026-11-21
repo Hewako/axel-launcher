@@ -19,6 +19,8 @@ struct AppState {
     registry: LaunchRegistry,
     /// Текущий вход (Microsoft device code или Ely.by), чтобы его можно было отменить.
     login_cancel: Mutex<Option<Cancel>>,
+    /// Комната для игры с друзьями в одной сети: одна на лаунчер (хозяин или гость).
+    room: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
 }
 
 type CmdResult<T> = Result<T, String>;
@@ -38,6 +40,76 @@ struct AppInfo {
     /// Свободно на диске с данными Axel' (для проверки перед запуском).
     free_bytes: Option<u64>,
     os: &'static str,
+}
+
+/// Событие комнаты для интерфейса: шаги из ядра или ошибка (комната при этом закрыта).
+#[derive(Clone, Serialize)]
+#[serde(untagged)]
+enum RoomPayload {
+    Event(quarry_core::room::RoomEvent),
+    Error { kind: &'static str, message: String },
+}
+
+fn start_room<F>(app: &tauri::AppHandle, state: &AppState, run: F)
+where
+    F: FnOnce(
+        quarry_core::room::EventFn,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = quarry_core::error::Result<()>> + Send>,
+    >,
+{
+    if let Some(old) = state.room.lock().unwrap().take() {
+        old.abort();
+    }
+    let emitter = app.clone();
+    let on_event: quarry_core::room::EventFn = Arc::new(move |e| {
+        let _ = emitter.emit("room-event", RoomPayload::Event(e));
+    });
+    let fut = run(on_event);
+    let app = app.clone();
+    let handle = tauri::async_runtime::spawn(async move {
+        if let Err(e) = fut.await {
+            let _ = app.emit(
+                "room-event",
+                RoomPayload::Error {
+                    kind: "error",
+                    message: e.to_string(),
+                },
+            );
+        }
+    });
+    *state.room.lock().unwrap() = Some(handle);
+}
+
+/// Создать комнату: вернуть код и ждать, пока хозяин откроет мир для сети.
+#[tauri::command]
+fn room_create(app: tauri::AppHandle, state: State<AppState>) -> String {
+    let code = quarry_core::room::new_code();
+    let c = code.clone();
+    start_room(&app, &state, move |ev| {
+        Box::pin(quarry_core::room::host(c, ev))
+    });
+    code
+}
+
+/// Войти в комнату по коду: найти хозяина в сети и показать его мир в «Сетевой игре».
+#[tauri::command]
+fn room_join(app: tauri::AppHandle, state: State<AppState>, code: String) -> CmdResult<String> {
+    let code = quarry_core::room::normalize_code(&code)
+        .ok_or_else(|| "Код комнаты: 5 букв и цифр, например K7M2Q".to_string())?;
+    let c = code.clone();
+    start_room(&app, &state, move |ev| {
+        Box::pin(quarry_core::room::join(c, ev))
+    });
+    Ok(code)
+}
+
+/// Закрыть комнату или выйти из неё.
+#[tauri::command]
+fn room_leave(state: State<AppState>) {
+    if let Some(h) = state.room.lock().unwrap().take() {
+        h.abort();
+    }
 }
 
 #[tauri::command]
@@ -1915,11 +1987,15 @@ pub fn run() {
                 data,
                 registry: LaunchRegistry::default(),
                 login_cancel: Mutex::new(None),
+                room: Mutex::new(None),
             });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            room_create,
+            room_join,
+            room_leave,
             list_instances,
             launch_history,
             create_instance,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Tauri сам добавляет эти ключи в Info.plist приложения. Без NSLocalNetworkUsageDescription
+     macOS 15+ молча режет пакеты комнаты (поиск друга и объявление мира в локальной сети). -->
+<plist version="1.0">
+<dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Axel' находит комнату друга в вашей сети Wi-Fi и показывает его мир в «Сетевой игре».</string>
+</dict>
+</plist>

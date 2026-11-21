@@ -2,6 +2,17 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "локальная сеть": "local network",
+  "порт объявлений Minecraft": "Minecraft announcement port",
+  "группа объявлений Minecraft": "Minecraft announcement group",
+  "порт комнаты": "room port",
+  "объявление Minecraft": "Minecraft announcement",
+  "поиск комнаты": "room search",
+  "Комната {0} не найдена. Проверьте код, что вы в одной сети Wi-Fi и что хозяин открыл мир для сети.": "Room {0} not found. Check the code, that you are on the same Wi-Fi network, and that the host opened the world to LAN.",
+  "проход до игры хозяина": "connection to the host's game",
+  "проход": "connection",
+  "объявление мира": "world announcement",
+  "Код комнаты: 5 букв и цифр, например K7M2Q": "A room code is 5 letters and digits, for example K7M2Q",
   "install_profile.json загрузчика": "loader install_profile.json",
   "{0} для Minecraft {1} пока не поддерживается": "{0} for Minecraft {1} is not supported yet",
   "Сборка на {0} для Minecraft {1} — так пока не поддерживается": "A {0} pack for Minecraft {1} — not supported yet",

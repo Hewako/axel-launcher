@@ -65,6 +65,9 @@ mockIPC((cmd, args) => {
       ? { version: "Paper 26.3", protocol: 800, online: 7, max: 50, motd: "Добро пожаловать!\nВыживание с друзьями", latency_ms: 38 }
       : Promise.reject("Сервер не ответил: Connection refused");
     case "servers_save": return null;
+    case "room_create": return "K7M2Q";
+    case "room_join": return String(a.code).toUpperCase();
+    case "room_leave": return null;
     case "server_tags": return { "mc.example.org": ["друзья", "выживание"] };
     case "server_set_tags": return null;
     case "disk_usage": return { total: 1_480_000_000, parts: [{ label: "Миры", size: 820_000_000 }, { label: "Моды", size: 410_000_000 }, { label: "Ресурспаки и шейдеры", size: 160_000_000 }, { label: "Снимки модов", size: 70_000_000 }, { label: "Скриншоты", size: 20_000_000 }] };

@@ -3802,6 +3802,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "sha2 0.11.1",
+ "socket2",
  "tar",
  "thiserror 2.0.21",
  "tokio",

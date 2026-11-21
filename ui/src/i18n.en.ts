@@ -1,6 +1,18 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Игра с друзьями": "Play with friends",
+  "Создать комнату": "Create a room",
+  "или": "or",
+  "Код комнаты": "Room code",
+  "Скопировать": "Copy",
+  "Закрыть комнату": "Close the room",
+  "Мир «{0}» открыт, друзей в комнате: {1}": "World “{0}” is open, friends in the room: {1}",
+  "Мир «{0}» открыт, друзья могут заходить": "World “{0}” is open, friends can join",
+  "Отправьте код друзьям и откройте мир в игре: Esc, «Открыть для сети».": "Send the code to your friends and open the world in the game: Esc, “Open to LAN”.",
+  "Выйти из комнаты": "Leave the room",
+  "Мир «{0}» ждёт вас в игре: «Сетевая игра».": "World “{0}” is waiting for you in the game: “Multiplayer”.",
+  "Ищем комнату в вашей сети…": "Looking for the room on your network…",
   "В профиле пока нет модов.": "This profile has no mods yet.",
   "Перед: установить {0}": "Before: install {0}",
   "Показано только то, что подходит к этому профилю": "Only what fits this profile is shown",
@@ -604,7 +616,6 @@ export const EN: Record<string, string> = {
   "Токены, путь к домашней папке и IP-адреса маскируются ещё при записи лога: в файл, на экран и в отчёт они не попадают.": "Tokens, the home folder path and IP addresses are masked when the log is written: they never reach the file, the screen or a report.",
   "Только загрузчик": "Loader only",
   "Только стабильные": "Stable only",
-  "Тот же список, что в игре в «Сетевой игре». «Играть» запускает игру и сразу подключает к серверу. Менять список можно, только пока игра закрыта.": "The same list as in the game's Multiplayer screen. “Play” launches the game and connects to the server right away. You can change the list only while the game is closed.",
   "Точная команда запуска (токен скрыт)": "Exact launch command (token hidden)",
   "Транспорт": "Transportation",
   "Тяжёлые": "Heavy",
