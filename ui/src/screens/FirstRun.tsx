@@ -93,8 +93,9 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
 
         <div className="acts">
+          {/* «Пропустить мастер» — слева, отдельно от «Назад» и «Дальше». */}
+          <button className="btn link" style={{ marginRight: "auto" }} onClick={finish}>{t("Пропустить мастер")}</button>
           {step > 0 && <button className="btn" onClick={() => setStep(step - 1)}>{t("Назад")}</button>}
-          <button className="btn link" onClick={finish}>{t("Пропустить мастер")}</button>
           <button className="btn pri" onClick={forward}>{step === STEPS.length - 1 ? t("Начать") : t("Дальше")}</button>
         </div>
       </div>

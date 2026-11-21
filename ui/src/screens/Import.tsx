@@ -87,11 +87,10 @@ export function ImportDialog({ onDone, dragging, dropped }: {
         ))}
       </section>
 
+      {/* Блок показываем, только если что-то нашлось: пустой занимал полэкрана. */}
+      {sources && (sources.prism.length > 0 || sources.official) && (
       <section className="card panel" aria-label={t("Нашли на этом компьютере")}>
         <h3>{t("Нашли на этом компьютере")}</h3>
-        {sources === null ? <span className="muted small"><span className="spinner" /> {t("Ищем инстансы…")}</span> : sources.prism.length === 0 && !sources.official ? (
-          <span className="muted small">{t("Инстансов Prism/MultiMC в стандартной папке не найдено.")}</span>
-        ) : (
           <div className="rlist">
             {sources.prism.map(([path, name]) => (
               <div className="rrow" key={path}>
@@ -108,7 +107,6 @@ export function ImportDialog({ onDone, dragging, dropped }: {
               </div>
             )}
           </div>
-        )}
         {link && (
           <form className="form" onSubmit={(e) => { e.preventDefault(); run("link", () => importer.link(link.path, link.name, link.version, link.loader)); }}>
             <span className="muted small">{t("Профиль будет работать прямо в этой папке: миры и настройки общие с официальным лаунчером. Корзина Axel' эту папку не трогает.")}</span>
@@ -122,8 +120,8 @@ export function ImportDialog({ onDone, dragging, dropped }: {
             </div>
           </form>
         )}
-        <span className="muted small">{t("Исходные файлы не меняются: Axel' делает свою копию. Если импорт не удастся, недоделанный профиль убирается.")}</span>
       </section>
+      )}
 
       {o && (
         <Modal title={t("Дополнительные компоненты сборки")} onClose={() => setOptional(null)}>

@@ -82,7 +82,7 @@ mockIPC((cmd, args) => {
         profile: i.settings, global: {}, total_memory_mb: 16384, memory_range: [2048, 12288],
       };
     }
-    case "list_versions": return { versions: [{ id: "26.3", type: "release", releaseTime: "2026-10-14T10:00:00+00:00" }, { id: "26.2", type: "release", releaseTime: "2026-07-01T10:00:00+00:00" }, { id: "1.21.11", type: "release", releaseTime: "2025-12-09T10:00:00+00:00" }], latest_release: "26.3", offline: false };
+    case "list_versions": return { versions: [{ id: "26.4-snapshot-2", type: "snapshot", releaseTime: "2026-11-12T10:00:00+00:00" }, { id: "26.3", type: "release", releaseTime: "2026-10-14T10:00:00+00:00" }, { id: "26.2", type: "release", releaseTime: "2026-07-01T10:00:00+00:00" }, { id: "1.21.11", type: "release", releaseTime: "2025-12-09T10:00:00+00:00" }, { id: "b1.7.3", type: "old_beta", releaseTime: "2011-07-08T10:00:00+00:00" }], latest_release: "26.3", offline: false };
     case "launch_history": {
       if (params.has("nolaunch")) return [];
       const now = Math.floor(Date.now() / 1000);

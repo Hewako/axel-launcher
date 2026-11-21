@@ -7,11 +7,13 @@ import { t } from "../i18n";
 // Forge — после v1.0 (план, Приложение А), поэтому в выборе его нет.
 const LOADERS: LoaderKind[] = ["vanilla", "fabric", "quilt", "neoforge"];
 
+type Kind = "release" | "snapshot" | "old";
+const kindOf = (type: string): Kind => (type === "release" ? "release" : type === "snapshot" ? "snapshot" : "old");
+
 export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void }) {
   const [name, setName] = useState("");
-  // Какие версии показывать (макет 09): релизы всегда, плюс снапшоты или старые alpha/beta.
-  const [kinds, setKinds] = useState<"release" | "snapshot" | "old">("release");
-  const [query, setQuery] = useState("");
+  // Какие версии показывать: можно включить несколько сразу, хотя бы одна остаётся включённой.
+  const [kinds, setKinds] = useState<Kind[]>(["release"]);
   const [versions, setVersions] = useState<VersionEntry[] | null>(null);
   const [latest, setLatest] = useState("");
   const [offline, setOffline] = useState(false);
@@ -25,7 +27,8 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
 
   useEffect(() => {
     setVersions(null);
-    api.listVersions(kinds === "snapshot", kinds === "old")
+    // Список берём целиком один раз, а фильтруем по выбранным видам здесь.
+    api.listVersions(true, true)
       .then((r) => {
         setVersions(r.versions);
         setOffline(r.offline);
@@ -33,12 +36,12 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
         setVersion((v) => v || r.latest_release);
       })
       .catch((e) => setError(errText(e)));
-  }, [kinds]);
+  }, []);
 
   useEffect(() => {
     if (!version) return;
     setJava("");
-    api.versionInfo(version).then((i) => setJava(t("нужна Java {0} ({1})", i.java_major, i.java_reason))).catch(() => setJava(""));
+    api.versionInfo(version).then((i) => setJava(t("Нужна Java {0} — Axel' скачает её сам.", i.java_major))).catch(() => setJava(""));
   }, [version]);
 
   useEffect(() => {
@@ -53,11 +56,12 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
       .catch((e) => { setLoaderVersions([]); setError(errText(e)); });
   }, [loader, version]);
 
-  // Выбранная версия остаётся в списке, даже если поиск её отфильтровал.
-  const shown = useMemo(
-    () => (versions ?? []).filter((v) => v.id === version || v.id.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 300),
-    [versions, query, version],
-  );
+  const shown = useMemo(() => (versions ?? []).filter((v) => kinds.includes(kindOf(v.type))), [versions, kinds]);
+  // Если выбранная версия скрылась фильтром — берём первую из видимых.
+  useEffect(() => {
+    if (versions && shown.length && !shown.some((v) => v.id === version)) setVersion(shown[0].id);
+  }, [shown, versions, version]);
+  const toggleKind = (k: Kind) => setKinds((ks) => (ks.includes(k) ? (ks.length > 1 ? ks.filter((x) => x !== k) : ks) : [...ks, k]));
 
   const incompatible = loader !== "vanilla" && loaderVersions !== null && loaderVersions.length === 0;
   const canCreate = name.trim() && version && !busy && !incompatible && (loader === "vanilla" || !!loaderVersion);
@@ -93,18 +97,17 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
           <div className="stack tight">
             {versions === null ? <span className="muted small"><span className="spinner" /> {t("Загружаем список версий…")}</span> : (
               <select className="field" aria-label={t("Версии")} value={version} onChange={(e) => setVersion(e.target.value)}>
-                {shown.map((v) => <option key={v.id} value={v.id}>{v.id}{v.type !== "release" ? ` · ${v.type}` : ""} · {v.releaseTime.slice(0, 10)}</option>)}
+                {shown.map((v) => <option key={v.id} value={v.id}>{v.id}{kindOf(v.type) === "snapshot" ? ` · ${t("снапшот")}` : kindOf(v.type) === "old" ? ` · ${t("старая")}` : ""}</option>)}
               </select>
             )}
-            <input className="field" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Найти версию…")} aria-label={t("Поиск версии")} />
-            {java && <span className="muted small">{version}: {java}</span>}
+            {java && <span className="muted small">{java}</span>}
           </div>
         </div>
         <div className="stack tight">
           <span className="lbl" id="kinds-label">{t("Какие версии показывать")}</span>
-          <div className="seg subtabs loaderseg" role="radiogroup" aria-labelledby="kinds-label">
+          <div className="seg subtabs loaderseg" role="group" aria-labelledby="kinds-label">
             {([["release", t("Релизы")], ["snapshot", t("Снапшоты")], ["old", t("Старые")]] as const).map(([k, l]) => (
-              <button type="button" key={k} role="radio" aria-checked={kinds === k} className={kinds === k ? "on" : ""} onClick={() => setKinds(k)}>{l}</button>
+              <button type="button" key={k} aria-pressed={kinds.includes(k)} className={kinds.includes(k) ? "on" : ""} onClick={() => toggleKind(k)}>{l}</button>
             ))}
           </div>
         </div>
