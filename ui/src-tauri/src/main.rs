@@ -1,5 +1,6 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// Без окна консоли на Windows и в обычной, и в сборке разработчика (она тоже отладочная).
+// Цена: на Windows вывод `npm run tauri dev` в терминал не идёт; на macOS и Linux не влияет.
+#![windows_subsystem = "windows"]
 
 fn main() {
     quarry_ui_lib::run()
