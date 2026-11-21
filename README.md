@@ -198,10 +198,7 @@ CurseForge, а папку официального лаунчера подхва
 Самая полезная помощь — сообщить об ошибке или о том, что неудобно: [задачи](https://github.com/Hewako/quarry-launcher/issues).
 Хотите поправить код — добро пожаловать, пулреквесты читаем.
 
-<!-- Статистика вклада (как у freeCodeCamp): владелец подключает репозиторий на
-     https://repobeats.axiom.co, получает ссылку вида
-     https://repobeats.axiom.co/api/embed/<код>.svg и вставляет сюда строкой:
-     ![Статистика репозитория](https://repobeats.axiom.co/api/embed/<код>.svg "Repobeats") -->
+![Статистика репозитория: вклад, задачи, пулреквесты и участники за последние 30 дней](https://repobeats.axiom.co/api/embed/cb6d3549708b77e9db997029c7072d1beb00c54a.svg "Repobeats analytics image")
 
 <details>
 <summary><b>Собрать из исходников</b></summary>
