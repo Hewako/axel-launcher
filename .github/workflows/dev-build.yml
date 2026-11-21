@@ -1,0 +1,64 @@
+# Сборка разработчика для Windows: dev-launch (запуск без входа, Ely.by без Microsoft),
+# только отладочный режим. Запускается отправкой коммита в ветку `dev-build`
+# (git push origin HEAD:refs/heads/dev-build) или вручную из Actions.
+#
+# Результат кладётся ТОЛЬКО в черновик релиза: черновики видят лишь владельцы репозитория.
+# Черновик не публиковать — в открытом релизе такую сборку скачал бы кто угодно.
+# Приложение называется «Axel Launcher Dev» и ставится рядом с обычным, не заменяя его.
+name: Сборка разработчика
+
+on:
+  push:
+    branches: [dev-build]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows (dev-launch)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: dev-windows
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Зависимости интерфейса
+        working-directory: ui
+        run: npm ci
+
+      - name: Сборка Axel Launcher Dev
+        working-directory: ui
+        shell: bash
+        env:
+          QUARRY_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
+          QUARRY_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
+        run: |
+          # Своё имя и идентификатор: dev-сборка не перезаписывает установленный Axel'.
+          echo '{"productName":"Axel Launcher Dev","identifier":"com.quarry.launcher.dev"}' > dev-config.json
+          npm run tauri build -- --debug --features dev-launch --bundles nsis --config dev-config.json
+
+      - name: В черновик релиза (не публиковать)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+        run: |
+          exe=$(ls target/debug/bundle/nsis/*.exe | head -1)
+          cp "$exe" Axel-Launcher-Dev-Windows.exe
+          gh release create "dev-$RUN" Axel-Launcher-Dev-Windows.exe --repo "$REPO" --draft \
+            --target "$SHA" --title "Axel' Dev $RUN — сборка разработчика, не публиковать" \
+            --notes "Отладочная сборка с dev-launch: запуск без входа и Ely.by без Microsoft. Только для проверки разработчиком. Не публиковать. Коммит $SHA."
