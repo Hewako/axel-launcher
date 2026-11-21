@@ -1,11 +1,11 @@
-# Сборка разработчика для Windows: dev-launch (запуск без входа, Ely.by без Microsoft),
-# только отладочный режим. Запускается отправкой коммита в ветку `dev-build`
-# (git push origin HEAD:refs/heads/dev-build) или вручную из Actions.
+# Сборка разработчика «d»: те же установщики, что у обычного релиза (Windows .exe и zip, macOS .dmg,
+# Linux .deb/.rpm/AppImage, SHA256SUMS.txt), но с dev-launch — вход через Ely.by без Microsoft.
+# Название по схеме владельца: следующий номер после последнего rc с пометкой -d (v0.1.0-rc.10-d).
 #
-# Результат кладётся ТОЛЬКО в черновик релиза: черновики видят лишь владельцы репозитория.
-# Черновик не публиковать — в открытом релизе такую сборку скачал бы кто угодно.
-# Приложение называется «Axel Launcher Dev» (так же подписано окно); установщик сам удаляет
-# обычный Axel Launcher (installer/hooks-dev.nsh), миры и профили остаются.
+# Запуск: отправка коммита в ветку `dev-build` (git push origin HEAD:refs/heads/dev-build) или вручную.
+# Результат — ТОЛЬКО черновик релиза: черновики видят лишь владельцы репозитория. Не публиковать.
+# Приложение называется «Axel Launcher Dev» (окно — «Axel' Dev»); на Windows установщик сам
+# удаляет обычный Axel Launcher (installer/hooks-dev.nsh), миры и профили остаются.
 name: Сборка разработчика
 
 on:
@@ -16,18 +16,98 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: dev-build
+  cancel-in-progress: true
+
+env:
+  # Те же настройки, что у [profile.release]: размер и скорость как у обычного Axel'.
+  # Отладочные проверки (debug_assertions) остаются — без них dev-launch не собирается.
+  CARGO_PROFILE_DEV_OPT_LEVEL: "3"
+  CARGO_PROFILE_DEV_DEBUG: "false"
+  CARGO_PROFILE_DEV_STRIP: "true"
+  CARGO_PROFILE_DEV_LTO: "true"
+  CARGO_PROFILE_DEV_CODEGEN_UNITS: "1"
+  CARGO_PROFILE_DEV_PANIC: abort
+  CARGO_PROFILE_DEV_INCREMENTAL: "false"
+
 jobs:
-  windows:
-    name: Windows (dev-launch)
-    runs-on: windows-latest
+  prepare:
+    name: Номер и описание
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Номер сборки
+        id: tag
+        run: |
+          ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          last=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[].tag_name' \
+            | grep -oE "^v${ver}-rc\.[0-9]+" | sed 's/.*rc\.//' | sort -n | tail -1)
+          echo "tag=v${ver}-rc.$(( ${last:-0} + 1 ))-d" >> "$GITHUB_OUTPUT"
+
+      - name: Черновик с описанием
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          # Что изменилось: коммиты после прошлой сборки «d» (или после последнего rc), кроме служебных.
+          prev=$(gh api "repos/$REPO/releases?per_page=100" \
+            --jq '[.[] | select(.tag_name | endswith("-d"))][0].target_commitish // empty')
+          if [ -z "$prev" ] || ! git cat-file -e "$prev^{commit}" 2>/dev/null; then
+            prev=$(git tag --list 'v*-rc.*' --sort=-creatordate | grep -v -- '-d$' | head -1)
+          fi
+          {
+            echo "> **Сборка разработчика (d).** Вход через Ely.by без Microsoft. Приложение называется"
+            echo "> «Axel Launcher Dev»; на Windows установщик сам заменяет обычный Axel Launcher, миры и профили остаются."
+            echo
+            echo "## Что изменилось"
+            echo
+            git log --no-merges --format='- %s' "${prev:+$prev..}HEAD" | grep -v '^- Служебное:' | head -60 || true
+            echo
+            sed 's/Axel-Launcher-/Axel-Launcher-Dev-/g' .github/release/body.md
+          } > notes.md
+          gh release create "$TAG" --repo "$REPO" --draft --prerelease --target "$SHA" \
+            --title "Axel' $TAG" --notes-file notes.md
+
+  build:
+    name: ${{ matrix.name }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS, os: macos-latest, args: "--target universal-apple-darwin --bundles dmg", targets: "aarch64-apple-darwin,x86_64-apple-darwin", out: "target/universal-apple-darwin/debug/bundle" }
+          - { name: Windows, os: windows-latest, args: "--bundles nsis", targets: "", out: "target/debug/bundle" }
+          - { name: Linux, os: ubuntu-22.04, args: "--bundles deb,rpm,appimage", targets: "", out: "target/debug/bundle" }
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - uses: actions/checkout@v5
 
+      - name: Системные библиотеки для Tauri и keyring (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libdbus-1-dev pkg-config
+
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.targets }}
 
       - uses: Swatinem/rust-cache@v2
         with:
-          key: dev-windows
+          key: dev-${{ matrix.name }}
 
       - uses: actions/setup-node@v5
         with:
@@ -45,35 +125,54 @@ jobs:
         env:
           QUARRY_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
           QUARRY_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
-          # Те же настройки, что у [profile.release]: размер и скорость как у обычного Axel'.
-          # Отладочные проверки (debug_assertions) остаются — без них dev-launch не собирается.
-          CARGO_PROFILE_DEV_OPT_LEVEL: "3"
-          CARGO_PROFILE_DEV_DEBUG: "false"
-          CARGO_PROFILE_DEV_STRIP: "true"
-          CARGO_PROFILE_DEV_LTO: "true"
-          CARGO_PROFILE_DEV_CODEGEN_UNITS: "1"
-          CARGO_PROFILE_DEV_PANIC: abort
-          CARGO_PROFILE_DEV_INCREMENTAL: "false"
+          ARGS: ${{ matrix.args }}
         run: |
-          # Своё имя: «Dev» видно в названии приложения; хуки удаляют обычный Axel' перед установкой.
           echo '{"productName":"Axel Launcher Dev","identifier":"com.quarry.launcher.dev","bundle":{"windows":{"nsis":{"installerHooks":"installer/hooks-dev.nsh"}}}}' > dev-config.json
-          npm run tauri build -- --debug --features dev-launch --bundles nsis --config dev-config.json
+          # shellcheck disable=SC2086
+          npm run tauri build -- --debug --features dev-launch --config dev-config.json $ARGS
 
-      - name: В черновик релиза (не публиковать)
+      - name: Файлы в черновик
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          OUT: ${{ matrix.out }}
         run: |
-          # Название по схеме владельца: следующий номер после последнего rc, с пометкой -d,
-          # например v0.1.0-rc.10-d. Версия — из Cargo.toml. Только черновик.
-          ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
-          last=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[].tag_name' \
-            | grep -oE "^v${ver}-rc\.[0-9]+" | sed 's/.*rc\.//' | sort -n | tail -1)
-          tag="v${ver}-rc.$(( ${last:-0} + 1 ))-d"
-          exe=$(ls target/debug/bundle/nsis/*.exe | head -1)
-          cp "$exe" Axel-Launcher-Dev-Windows.exe
-          gh release create "$tag" Axel-Launcher-Dev-Windows.exe --repo "$REPO" --draft --prerelease \
-            --target "$SHA" --title "Axel' $tag" \
-            --notes "Сборка разработчика (d): вход через Ely.by без Microsoft. Черновик, не публиковать. Коммит $SHA."
+          mkdir up
+          case "$RUNNER_OS" in
+            macOS) cp "$OUT"/dmg/*.dmg up/Axel-Launcher-Dev-macOS.dmg ;;
+            Windows)
+              cp "$OUT"/nsis/*.exe up/Axel-Launcher-Dev-Windows.exe
+              dir="portable/Axel Launcher Dev"; mkdir -p "$dir"
+              cp target/debug/quarry-ui.exe "$dir/Axel Launcher Dev.exe"
+              cp ui/src-tauri/THIRD-PARTY-NOTICES.txt .github/release/README-portable.txt "$dir/"
+              (cd portable && 7z a -tzip ../up/Axel-Launcher-Dev-Windows-portable.zip "Axel Launcher Dev" >/dev/null) ;;
+            Linux)
+              cp "$OUT"/deb/*.deb up/Axel-Launcher-Dev-Linux.deb
+              cp "$OUT"/rpm/*.rpm up/Axel-Launcher-Dev-Linux.rpm
+              cp "$OUT"/appimage/*.AppImage up/Axel-Launcher-Dev-Linux.AppImage ;;
+          esac
+          ls -la up
+          gh release upload "$TAG" up/* --repo "$REPO" --clobber
+
+  finalize:
+    name: Проверка файлов и суммы
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - name: Набор файлов и контрольные суммы
+        run: |
+          expected=$(printf '%s\n' \
+            Axel-Launcher-Dev-Linux.AppImage Axel-Launcher-Dev-Linux.deb Axel-Launcher-Dev-Linux.rpm \
+            Axel-Launcher-Dev-Windows-portable.zip Axel-Launcher-Dev-Windows.exe Axel-Launcher-Dev-macOS.dmg | sort)
+          mkdir files && cd files
+          gh release download "$TAG" --repo "$REPO" --pattern 'Axel-Launcher-Dev-*'
+          actual=$(ls | sort)
+          if [ "$expected" != "$actual" ]; then
+            echo "Набор файлов не совпал."; echo "Ожидалось:"; echo "$expected"; echo "Есть:"; echo "$actual"; exit 1
+          fi
+          sha256sum Axel-Launcher-Dev-* > ../SHA256SUMS.txt
+          cd .. && cat SHA256SUMS.txt
+          gh release upload "$TAG" SHA256SUMS.txt --repo "$REPO" --clobber
