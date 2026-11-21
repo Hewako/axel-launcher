@@ -43,7 +43,6 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
             <p className="mono small" style={{ userSelect: "text" }}>{info?.data_dir || "…"}</p>
             {info?.free_bytes !== undefined && <p>{t("Свободно на диске:")} <b>{sizeText(info.free_bytes)}</b>.</p>}
             {lowSpace && <div className="alert warn"><span>{t("Места мало. Одна версия игры с модами занимает 1–3 ГБ — освободите место заранее.")}</span></div>}
-            <p className="muted small">{t("Папку любого профиля потом можно перенести на другой диск (вкладка «Профиль»).")}</p>
           </>
         )}
         {step === 2 && (
@@ -53,9 +52,9 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
               <>
                 <p>{t("Нашли на компьютере:")}</p>
                 <ul className="small">{info.javas.slice(0, 5).map((j) => <li key={j.path}>Java {j.major} ({j.arch})</li>)}</ul>
-                <p className="muted small">{t("Для каждой версии игры Axel' сам выберет подходящую Java, а если нужной нет — скачает её.")}</p>
+                <p className="muted small">{t("Для каждой версии игры Axel' подберёт Java сам.")}</p>
               </>
-            ) : <p>{t("Java не найдена — это не страшно. Axel' сам скачает нужную версию при первом запуске игры.")}</p>}
+            ) : <p>{t("Java не нашлась — ничего страшного: Axel' скачает нужную при первом запуске игры.")}</p>}
           </>
         )}
         {step === 3 && (
@@ -75,7 +74,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
             <div className="row">
               <button className={`btn ${next === "create" ? "pri" : ""}`} onClick={() => { setNext("create"); setStep(5); }}>{t("Создать профиль")}</button>
               <button className={`btn ${next === "import" ? "pri" : ""}`} onClick={() => { setNext("import"); setStep(5); }}>{t("Импортировать сборку")}</button>
-              <button className="btn" onClick={() => setStep(5)}>{t("Пропустить")}</button>
+              <button className="btn" onClick={() => setStep(5)}>{t("Позже")}</button>
             </div>
           </>
         )}
@@ -84,9 +83,8 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
             <h3 id="wiz-title">{t("Ваши данные")}</h3>
             <ul className="small privacy">
               <li>{t("Axel' не собирает статистику и ничего не отправляет разработчикам.")}</li>
-              <li>{t("Лаунчер обращается только к нужным сервисам: Mojang и Microsoft (игра и вход), Modrinth и CurseForge (моды), Adoptium (Java), GitHub (проверка новой версии Axel').")}</li>
-              <li>{t("Данные входа хранятся в защищённом хранилище системы, а не в файлах.")}</li>
-              <li>{t("Из логов и отчётов скрываются токены, путь к домашней папке и IP-адреса.")}</li>
+              <li>{t("В интернет он ходит только за игрой, входом, Java, модами и новой версией Axel'.")}</li>
+              <li>{t("Данные входа лежат в защищённом хранилище системы, а в логах и отчётах скрыты.")}</li>
             </ul>
             <button className="btn link small" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/blob/main/docs/PRIVACY.md").catch(() => {})}>{t("Подробнее о приватности")}</button>
           </>

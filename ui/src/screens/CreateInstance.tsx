@@ -82,7 +82,6 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
     <section className="card panel" aria-label={t("Создать с нуля")}>
       <div>
         <h3>{t("Создать с нуля")}</h3>
-        <p className="muted small">{t("Готово за полминуты. Настройки подберём сами.")}</p>
       </div>
       <form id="create-form" className="form" onSubmit={(e) => { e.preventDefault(); if (canCreate) create(); }}>
         <label className="frow">

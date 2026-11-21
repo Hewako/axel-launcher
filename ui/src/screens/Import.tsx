@@ -67,7 +67,6 @@ export function ImportDialog({ onDone, dragging, dropped }: {
     <div className="stack">
       <div className={`dropzone ${dragging ? "on" : ""}`}>
         <b>{t("Перетащите сборку сюда")}</b>
-        <span className="muted small">{t(".mrpack, zip из CurseForge или папку")}</span>
         <div className="row" style={{ justifyContent: "center" }}>
           <button className="btn" disabled={busy !== ""} onClick={pickFile}>{busy === "file" ? t("Скачиваем моды сборки…") : t("Выбрать .mrpack или .zip CurseForge…")}</button>
           <button className="btn" disabled={busy !== ""} onClick={pickFolder}>{t("Выбрать папку инстанса…")}</button>
@@ -102,7 +101,7 @@ export function ImportDialog({ onDone, dragging, dropped }: {
             {sources.official && (
               <div className="rrow">
                 <span className="foundico"><Icon name="folder" /></span>
-                <div className="grow"><b>{t("Официальный лаунчер")}</b><div className="muted small">{t("Папка официального лаунчера")}</div></div>
+                <div className="grow"><b>{t("Официальный лаунчер")}</b></div>
                 {!link && <button className="btn" onClick={() => setLink({ path: sources.official!, name: t("Официальный лаунчер"), version: "", loader: "vanilla" })}>{t("Подключить без копирования…")}</button>}
               </div>
             )}
