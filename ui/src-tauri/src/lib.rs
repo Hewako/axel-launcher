@@ -1983,6 +1983,12 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 let _ = quarry_core::mods::rules::refresh(&d).await;
             });
+            // Сборка разработчика отмечена в названии окна (вместо полосы сверху).
+            if launch::DEV_LAUNCH
+                && let Some(w) = app.get_webview_window("main")
+            {
+                let _ = w.set_title("Axel' Dev");
+            }
             app.manage(AppState {
                 data,
                 registry: LaunchRegistry::default(),

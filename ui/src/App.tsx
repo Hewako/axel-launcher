@@ -258,9 +258,6 @@ function Shell() {
       </nav>
 
       <div className="main">
-        {info.dev_launch && (
-          <div className="devbar" role="status">{t("Сборка разработчика (dev-launch): разрешён запуск без входа для отладки на собственной копии игры. В релизе этого режима нет.")}</div>
-        )}
         <main className="content" id="main" tabIndex={-1}>
           {loadError && <div className="alert err"><div className="h">{t("Не удалось прочитать профили")}</div><span>{loadError}</span></div>}
           {broken.length > 0 && (

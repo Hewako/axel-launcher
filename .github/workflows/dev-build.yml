@@ -4,7 +4,8 @@
 #
 # Результат кладётся ТОЛЬКО в черновик релиза: черновики видят лишь владельцы репозитория.
 # Черновик не публиковать — в открытом релизе такую сборку скачал бы кто угодно.
-# Приложение называется «Axel Launcher Dev» и ставится рядом с обычным, не заменяя его.
+# Приложение называется «Axel Launcher Dev» (так же подписано окно); установщик сам удаляет
+# обычный Axel Launcher (installer/hooks-dev.nsh), миры и профили остаются.
 name: Сборка разработчика
 
 on:
@@ -54,8 +55,8 @@ jobs:
           CARGO_PROFILE_DEV_PANIC: abort
           CARGO_PROFILE_DEV_INCREMENTAL: "false"
         run: |
-          # Своё имя и идентификатор: dev-сборка не перезаписывает установленный Axel'.
-          echo '{"productName":"Axel Launcher Dev","identifier":"com.quarry.launcher.dev"}' > dev-config.json
+          # Своё имя: «Dev» видно в названии приложения; хуки удаляют обычный Axel' перед установкой.
+          echo '{"productName":"Axel Launcher Dev","identifier":"com.quarry.launcher.dev","bundle":{"windows":{"nsis":{"installerHooks":"installer/hooks-dev.nsh"}}}}' > dev-config.json
           npm run tauri build -- --debug --features dev-launch --bundles nsis --config dev-config.json
 
       - name: В черновик релиза (не публиковать)

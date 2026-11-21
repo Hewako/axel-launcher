@@ -59,7 +59,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .2s; }
 .bar.wide { width: 100%; }
 .content { flex: 1; overflow: auto; scrollbar-gutter: stable; padding: 24px 28px; }
-.devbar { background: var(--warn-bg); color: var(--warn); border-bottom: 1px solid var(--warn-line); padding: 6px 20px; font-size: 12.5px; }
 /* Новая версия Axel' (ui/UpdateNotice.tsx): лента над нижней панелью и блок в «О Axel'». */
 .updnote { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 8px 8px 14px; border: 1px solid var(--info-line); border-radius: var(--radius); background: var(--info-bg); }
 .updnote.ribbon { margin: 0 28px 12px; flex: none; }

@@ -548,7 +548,6 @@ export const EN: Record<string, string> = {
   "Ресурсы игры": "Game assets",
   "Русский": "Русский",
   "Сборка": "Pack",
-  "Сборка разработчика (dev-launch): разрешён запуск без входа для отладки на собственной копии игры. В релизе этого режима нет.": "Developer build (dev-launch): launching without sign-in is allowed for debugging on your own copy of the game. This mode does not exist in releases.",
   "Светлая": "Light",
   "Свободно на диске:": "Free disk space:",
   "Сделан для формата {0}–{1}": "Made for format {0}–{1}",
