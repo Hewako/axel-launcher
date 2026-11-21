@@ -64,11 +64,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          RUN: ${{ github.run_number }}
           SHA: ${{ github.sha }}
         run: |
+          # Название по схеме владельца: следующий номер после последнего rc, с пометкой -d,
+          # например v0.1.0-rc.10-d. Версия — из Cargo.toml. Только черновик.
+          ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          last=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[].tag_name' \
+            | grep -oE "^v${ver}-rc\.[0-9]+" | sed 's/.*rc\.//' | sort -n | tail -1)
+          tag="v${ver}-rc.$(( ${last:-0} + 1 ))-d"
           exe=$(ls target/debug/bundle/nsis/*.exe | head -1)
           cp "$exe" Axel-Launcher-Dev-Windows.exe
-          gh release create "dev-$RUN" Axel-Launcher-Dev-Windows.exe --repo "$REPO" --draft \
-            --target "$SHA" --title "Axel' Dev $RUN — сборка разработчика, не публиковать" \
-            --notes "Отладочная сборка с dev-launch: запуск без входа и Ely.by без Microsoft. Только для проверки разработчиком. Не публиковать. Коммит $SHA."
+          gh release create "$tag" Axel-Launcher-Dev-Windows.exe --repo "$REPO" --draft --prerelease \
+            --target "$SHA" --title "Axel' $tag" \
+            --notes "Сборка разработчика (d): вход через Ely.by без Microsoft. Черновик, не публиковать. Коммит $SHA."
