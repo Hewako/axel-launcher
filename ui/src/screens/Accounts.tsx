@@ -102,7 +102,6 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
   };
   const dialog = useDialog();
   const [msLogin, setMsLogin] = useState(false);
-  const [elyBusy, setElyBusy] = useState(false);
   const [elyPassword, setElyPassword] = useState(false);
   // Справа — скин выбранного аккаунта (сначала основного).
   const [sel, setSel] = useState<string | null>(null);
@@ -123,18 +122,6 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
     catch (e) { await dialog.alert(t("Не удалось выйти"), errText(e)); }
   };
 
-  const ely = async () => {
-    setElyBusy(true);
-    try {
-      const a = await api.elyLogin();
-      onChanged();
-      await dialog.alert(t("Ely.by подключён"), t("{0}: доступен в профилях, переключённых на Ely.by. Официальные серверы с ним недоступны.", a.name));
-    } catch (e) {
-      await dialog.alert(t("Вход через Ely.by не удался"), errText(e));
-    } finally {
-      setElyBusy(false);
-    }
-  };
 
   return (
     <>
@@ -194,7 +181,8 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
         <div className="acc">
           <span className="foundico" aria-hidden><Icon name="link" size={16} /></span>
           <div className="grow"><b>Ely.by</b><p className="muted small" style={{ margin: 0 }}>{t("Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется. Нужен Microsoft-аккаунт с купленной игрой.")}</p>
-            {verified && <button className="btn link small" disabled={elyBusy} onClick={ely}>{elyBusy ? t("Ждём браузер…") : t("или через браузер (OAuth)")}</button>}
+            {/* Вход через браузер (OAuth) убран: Ely.by требует для него секрет приложения
+                (invalid_client, проверено вживую 21.11.2026), а в открытую программу его не вшить. */}
           </div>
           <button className="btn" disabled={!verified} onClick={() => setElyPassword(true)}>{t("Войти через Ely.by")}</button>
         </div>
