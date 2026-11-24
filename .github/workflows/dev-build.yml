@@ -176,3 +176,18 @@ jobs:
           sha256sum Axel-Launcher-Dev-* > ../SHA256SUMS.txt
           cd .. && cat SHA256SUMS.txt
           gh release upload "$TAG" SHA256SUMS.txt --repo "$REPO" --clobber
+
+  # Если сборку отменили или она упала, пустой черновик не остаётся: иначе номера пропускались бы
+  # и в списке висели бы черновики без файлов.
+  cleanup:
+    name: Убрать черновик неудачной сборки
+    needs: [prepare, build, finalize]
+    if: ${{ always() && needs.prepare.result == 'success' && needs.finalize.result != 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - name: Удалить черновик
+        run: gh release delete "$TAG" --repo "$REPO" --yes || true

@@ -66,3 +66,10 @@ jobs:
             echo "dev-launch собрался в release — так быть не должно"; exit 1
           fi
           echo "ok: dev-launch недоступен в release"
+
+      # Комнаты по-настоящему: хозяин и гость на одном компьютере через петлю. Не блокирует сборку
+      # (сеть раннера не всегда пускает такие пакеты), но показывает, что комната работает на
+      # каждой ОС, в том числе на Windows.
+      - name: Комнаты — сетевые тесты
+        continue-on-error: true
+        run: cargo test -p quarry-core --lib room -- --ignored --test-threads=1
