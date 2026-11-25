@@ -46,6 +46,41 @@ const keyLabel = (k: string) => {
   return m[k] ?? k.replace(/^key\.(keyboard|mouse)\./, "").replace(/\./g, " ").toUpperCase();
 };
 
+/** Название действия управления, как в самой игре; у модов — как есть. */
+const ACTIONS: Record<string, string> = {
+  "attack": t("Атаковать / разрушить"),
+  "use": t("Использовать / поставить"),
+  "forward": t("Вперёд"),
+  "back": t("Назад"),
+  "left": t("Влево"),
+  "right": t("Вправо"),
+  "jump": t("Прыжок"),
+  "sneak": t("Красться"),
+  "sprint": t("Бег"),
+  "drop": t("Выбросить предмет"),
+  "inventory": t("Инвентарь"),
+  "chat": t("Открыть чат"),
+  "playerlist": t("Список игроков"),
+  "pickItem": t("Выбрать блок"),
+  "command": t("Ввести команду"),
+  "socialInteractions": t("Социальные взаимодействия"),
+  "screenshot": t("Снимок экрана"),
+  "togglePerspective": t("Сменить вид"),
+  "smoothCamera": t("Плавная камера"),
+  "fullscreen": t("Полный экран"),
+  "spectatorOutlines": t("Подсветить игроков"),
+  "swapOffhand": t("Поменять предметы в руках"),
+  "saveToolbarActivator": t("Сохранить панель"),
+  "loadToolbarActivator": t("Загрузить панель"),
+  "advancements": t("Достижения"),
+  "quickActions": t("Быстрые действия"),
+};
+function actionName(id: string): string {
+  const a = id.replace(/^key_key\./, "").replace(/^key_/, "").replace(/^key\./, "");
+  const slot = a.match(/^hotbar\.(\d)$/);
+  return slot ? t("Слот {0}", slot[1]) : ACTIONS[a] ?? a;
+}
+
 export function OptionsTab({ inst, running }: { inst: Instance; running: boolean }) {
   const dialog = useDialog();
   const [view, setView] = useState<OptionsView | null>(null);
@@ -101,7 +136,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       {view.conflicts.length > 0 && (
         <div className="alert warn" style={{ marginBottom: 12 }}>
           <div className="h">{t("Одна клавиша на несколько действий:")} {view.conflicts.length}</div>
-          {view.conflicts.map((c) => <span key={c.key} className="small">{keyLabel(c.key)} — {c.actions.map((a) => a.replace(/^key\./, "")).join(", ")}</span>)}
+          {view.conflicts.map((c) => <span key={c.key} className="small">{keyLabel(c.key)}: {c.actions.map(actionName).join(", ")}</span>)}
         </div>
       )}
       <div className="row" style={{ marginBottom: 12 }}>
@@ -169,7 +204,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
           <tbody>
             {keys.map(([k, v]) => (
               <tr key={k} className={conflictKeys.has(v) ? "conflict" : ""}>
-                <td className="small">{k.replace(/^key_key\./, "").replace(/^key_/, "")}</td>
+                <td className="small">{actionName(k)}</td>
                 <td style={{ textAlign: "right" }}>
                   {conflictKeys.has(v) && <span className="badge warn" style={{ marginRight: 8 }}>{t("конфликт")}</span>}
                   <button className={`btn ${capture === k ? "pri" : ""}`} onClick={() => setCapture(capture === k ? null : k)}>

@@ -1,5 +1,6 @@
 // Вкладка «Откат» (макет 03): снимки с метками и сравнением, журнал изменений модов; справа миры и их бэкапы.
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { pressable } from "../ui/common";
 import { errText, relTime, sizeText, snapshots, type Instance, type JournalEntry, type SnapshotDiff, type SnapshotInfo, type WorldBackup, type WorldInfo } from "../api";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
@@ -142,7 +143,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
           ) : (
             <ul className="snaps">
               {list.map((s) => (
-                <li key={s.id} className={focus?.id === s.id ? "on" : ""} onClick={() => setPicked(s.id)}>
+                <li key={s.id} className={focus?.id === s.id ? "on" : ""} aria-current={focus?.id === s.id ? "true" : undefined} {...pressable(() => setPicked(s.id))}>
                   <span className="when muted">{when(s.created_at)}</span>
                   <div className="what">
                     <b>{tc(s.reason)}</b>
@@ -164,7 +165,6 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
             </ul>
           )}
         </section>
-        <p className="muted small" style={{ margin: 0 }}>{t("Автоматических снимков хранится 10. Закреплённые и сделанные вручную не удаляются.")}</p>
         {journal.length > 0 && (
           <details className="card">
             <summary>{t("Журнал изменений (")}{journal.length})</summary>

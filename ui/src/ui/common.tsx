@@ -15,6 +15,17 @@ const ICONS = [
   "linear-gradient(#e8b04a 0 30%,#a0660a 30% 100%)",
 ];
 
+/** Строка таблицы или списка, которая нажимается: мышью, а с клавиатуры — Tab и Enter или пробел. */
+export function pressable(fn: () => void) {
+  return {
+    tabIndex: 0,
+    onClick: fn,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target === e.currentTarget) { e.preventDefault(); fn(); }
+    },
+  };
+}
+
 export function iconFor(id: string): string {
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;

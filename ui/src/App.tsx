@@ -64,7 +64,7 @@ function useSettingLabels() {
     let n = 0;
     const link = () => document.querySelectorAll<HTMLElement>(".setting").forEach((row) => {
       const lbl = row.querySelector<HTMLElement>(".lbl");
-      const field = row.querySelector<HTMLElement>("input:not([type=checkbox]):not([type=radio]), select, textarea");
+      const field = row.querySelector<HTMLElement>("input:not([type=radio]), select, textarea");
       if (!lbl || !field || field.hasAttribute("aria-label") || field.hasAttribute("aria-labelledby")) return;
       lbl.id ||= `setting-lbl-${++n}`;
       field.setAttribute("aria-labelledby", lbl.id);

@@ -1,6 +1,7 @@
 // Вкладка «Моды · Mod Doctor»: проверка сборки, список модов, каталог Modrinth, обновления.
 // Любое изменение модов — через предпросмотр и автоматический снимок.
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { pressable } from "../ui/common";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, errText, isPackPath, loaderName, mods, sizeText, type CatalogSource, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
@@ -349,7 +350,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     const u = updateFor(f);
     return (
       <Fragment key={f.rel_path}>
-      <tr className={`${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} onClick={() => setSelected(f.file_name)}>
+      <tr className={`pick ${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} aria-selected={sel?.file_name === f.file_name} {...pressable(() => setSelected(f.file_name))}>
         <td><button className={`tog ${f.enabled ? "on" : ""}`} role="switch" aria-checked={f.enabled} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${m?.name ?? f.file_name}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
         <td><button className="rowname" aria-pressed={sel?.file_name === f.file_name} onClick={() => setSelected(f.file_name)}><b>{m?.name ?? f.file_name}</b>{(st?.notes.length ?? 0) > 0 && <span className="muted"> {tc(st!.notes[0])}</span>}</button></td>
         <td className="mono">{m?.version ?? "?"}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")} aria-label={t("закреплена")}> <Icon name="lock" size={14} /></span>}</td>
@@ -479,7 +480,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
         </div>
       )}
 
-      <p className="muted small">{t("Состояние определяется по метаданным модов (fabric.mod.json, quilt.mod.json, mods.toml), а не по имени файла. «Конфликтов не найдено» не гарантирует, что игра запустится: настоящую проверку даёт запуск.")}</p>
+      <p className="muted small">{t("Состояние берётся из описаний внутри файлов модов. Точно скажет только запуск игры.")}</p>
       {plan && (
         <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, plan.reason); setPlan(null); setPicked(new Set()); load(); refreshUpdates(); }} />
       )}

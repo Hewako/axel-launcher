@@ -380,7 +380,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     <aside className="stack">
       <section className="card">
         <h3>{t("Что входит в экспорт")}</h3>
-        <p className="muted">{t("Моды (с Modrinth ссылками, остальные файлами) и настройки модов из папки config. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
+        <p className="muted">{t("Моды и их настройки из папки config: моды с Modrinth записываются ссылками, остальные кладутся файлами. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
       </section>
     </aside>
     </div>

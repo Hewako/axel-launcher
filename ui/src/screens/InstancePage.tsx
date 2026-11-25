@@ -198,7 +198,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
       <div className="stack">
         <div className="card">
           <div className="setting">
-            <div className="lbl">{t("Память")}<span className="hint">{t("Xms = Xmx: память не перевыделяется посреди игры.")}</span></div>
+            <div className="lbl">{t("Память")}<span className="hint">{t("Игре сразу отдаётся вся выбранная память.")}</span></div>
             <div>
               <div className="row" style={{ justifyContent: "space-between" }}>
                 <span className="memval"><b>{(max.value / 1024).toFixed(1).replace(".0", "")} {t("ГБ")}</b>{total ? <span className="muted"> {t(" из {0} ГБ ОЗУ", Math.round(total / 1024)).trim()}</span> : null}</span>
@@ -211,7 +211,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <SourceTag source={max.source} onReset={() => setDraft({ ...draft, max_memory_mb: undefined, min_memory_mb: undefined })} />
           </div>
           <div className="setting">
-            <div className="lbl">Java<span className="hint">{t("по умолчанию берётся из javaVersion в JSON версии")}</span></div>
+            <div className="lbl">Java<span className="hint">{t("по умолчанию подходящая для версии игры")}</span></div>
             <div className="stack tight">
               <select className="field" aria-label="Java" value={customJava ? "custom" : draft.java_path ?? ""}
                 onChange={(e) => { const v = e.target.value; setCustomJava(v === "custom"); if (v !== "custom") setDraft({ ...draft, java_path: v || undefined }); }}>
@@ -312,8 +312,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
         </section>
         <section className="card">
           <h3>{t("Откуда берутся значения")}</h3>
-          <p className="muted">{t("Значение берётся с ближайшего уровня, где оно задано: профиль → сборка → глобальные. Метка показывает, откуда пришло текущее значение; «сбросить» возвращает наследуемое.")}</p>
-          <p className="muted small" style={{ marginTop: 8 }}>{t("Прирост FPS от флагов не обещаем: он зависит от модов, Java и железа.")}</p>
+          <p className="muted">{t("Значение профиля важнее значения сборки, а оно важнее общих настроек. Метка рядом показывает, откуда значение, «сбросить» возвращает общее.")}</p>
         </section>
       </div>
     </div>

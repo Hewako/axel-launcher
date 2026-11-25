@@ -112,7 +112,7 @@ export function ConfigsTab({ inst, running }: { inst: Instance; running: boolean
         ))}
       </div>
       {!path ? (
-        <p className="muted small">{t("Выберите файл выше. Axel' проверит синтаксис JSON и TOML перед сохранением, покажет изменения и сохранит прежнюю версию в историю.")}</p>
+        <p className="muted small">{t("Выберите файл выше. Перед сохранением Axel' проверит его и сохранит прежнюю версию.")}</p>
       ) : (
         <>
           {base && base.diff.length > 0 && <Diff lines={base.diff} />}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DataDirButton } from "../ui/DataDirButton";
 import { api, diagnostics, errText, sizeText, type AppInfo, type GlobalSettings, type LauncherRelease } from "../api";
 import { useDialog } from "../ui/Dialog";
@@ -21,27 +21,39 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
   useEffect(() => {
     api.globalSettings().then((g) => { setS(g); setArgs((g.launch.jvm_args ?? []).join(" ")); }).catch(() => {});
   }, []);
-  if (!s) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
-
-  const save = async () => {
+  // Изменения сохраняются сами: через полсекунды после правки и сразу при уходе с экрана.
+  // Иначе внешний вид менялся на глазах, а после перезапуска молча возвращался.
+  const pending = useRef<GlobalSettings | null>(null);
+  const loaded = useRef(false);
+  const flush = useCallback(async () => {
+    const next = pending.current;
+    if (!next) return;
+    pending.current = null;
     try {
-      const next: GlobalSettings = { ...s, theme, launch: { ...s.launch, jvm_args: args.trim() ? args.trim().split(/\s+/) : undefined } };
       await api.saveGlobalSettings(next);
       setStreamer(next.streamer_mode);
-      setS(next);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
       await dialog.alert(t("Настройки не сохранены"), errText(e));
     }
-  };
+  }, [dialog]);
+  useEffect(() => {
+    if (!s) return;
+    if (!loaded.current) { loaded.current = true; return; }
+    pending.current = { ...s, theme, launch: { ...s.launch, jvm_args: args.trim() ? args.trim().split(/\s+/) : undefined } };
+    const timer = setTimeout(flush, 500);
+    return () => clearTimeout(timer);
+  }, [s, args]);
+  useEffect(() => () => { void flush(); }, [flush]);
+  if (!s) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
 
   const SECTIONS: [Section, string][] = [["general", t("Общие")], ["look", t("Внешний вид")], ["game", t("Игра")], ["data", t("Данные и сеть")], ["privacy", t("Приватность")], ["about", t("О Axel'")]];
   const title = SECTIONS.find(([k]) => k === sec)![1];
   return (
     <>
       <h2>{t("Настройки Axel'")}</h2>
-      <p className="sub">{t("Эти значения действуют во всех профилях, если в профиле или сборке не задано своё.")}</p>
+      <p className="sub">{t("Настройки лаунчера и значения по умолчанию для профилей.")}</p>
       <div className="settings">
         <nav className="secnav" aria-label={t("Разделы настроек")}>
           {SECTIONS.map(([k, l]) => <button key={k} className={sec === k ? "on" : ""} aria-current={sec === k ? "page" : undefined} onClick={() => setSec(k)}>{l}</button>)}
@@ -208,14 +220,10 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           {sec === "about" && <>
             {release && <UpdateNotice release={release} variant="block" />}
             <p>Axel' {info.version} {t("· открытый проект под GPL-3.0 · не связан с Mojang и Microsoft.")}</p>
-            {!release && <p className="muted small">{t("У вас последняя версия (или проверка новой версии выключена в «Общих»).")}</p>}
+            {!release && <p className="muted small">{s.check_launcher_updates ? t("У вас последняя версия.") : t("Проверка новой версии выключена в «Общих».")}</p>}
             <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/releases").catch(() => {})}>{t("Все версии")}</button>
           </>}
-          {!["privacy", "about"].includes(sec) && (
-            <div className="row" style={{ marginTop: 14 }}>
-              <button className="btn cta" onClick={save}>{saved ? t("Сохранено") : t("Сохранить")}</button>
-            </div>
-          )}
+          <p className="muted small" role="status" aria-live="polite">{saved ? t("Сохранено") : ""}</p>
         </section>
       </div>
     </>

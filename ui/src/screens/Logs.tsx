@@ -7,6 +7,7 @@ import { LogView } from "../ui/LogView";
 import { CrashCard } from "../ui/CrashCard";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
+import { clearNotes, useNotes } from "../notify";
 
 /** Итог запуска словами: «Падение через 11 с», «Без ошибок, 48 мин». */
 function runTitle(r: LastLaunch): string {
@@ -38,6 +39,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
   useEffect(() => { api.launchHistory().then(setHistory).catch(() => setHistory([])); }, [phases]);
 
   const nameOf = (pid: string) => instances.find((i) => i.id === pid)?.name ?? pid;
+  const { notes } = useNotes();
   const runs = (history ?? []).filter((r) => !filter || r.id === filter);
   const key = (r: LaunchRun) => `${r.id}:${r.at}`;
   const run = runs.find((r) => key(r) === sel) ?? runs[0];
@@ -61,6 +63,27 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
   return (
     <>
       <h2>{t("Логи и краши")}</h2>
+      {/* Уведомления: колокольчик на рельсе ведёт сюда. */}
+      {notes.length > 0 && (
+        <section className="card notes" aria-label={t("Уведомления")}>
+          <div className="sechead">
+            <h3>{t("Уведомления")}</h3>
+            <button className="btn link small" onClick={clearNotes}>{t("Очистить")}</button>
+          </div>
+          <ul>
+            {notes.slice(0, 10).map((n) => (
+              <li key={n.id} className={n.kind}>
+                <Icon name={n.kind === "err" ? "error" : n.kind === "warn" ? "warn" : "info"} size={16} />
+                <div>
+                  <b>{tc(n.title)}</b>
+                  {n.body && <small>{tc(n.body)}</small>}
+                  <small className="muted">{[n.profile && nameOf(n.profile), relTime(Math.floor(n.at / 1000))].filter(Boolean).join(" · ")}</small>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <p className="sub">{history && history.length === 0 ? t("Запусков пока нет") : `${t("Запуски всех профилей.")}${latestBad ? ` ${t("Последний закончился ошибкой.")}` : ""}`}</p>
       {history && history.length === 0 ? (
         <div className="logsgrid">
@@ -80,7 +103,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
             <button key={key(r)} className={`run ${toneOf(r)} ${run && key(r) === key(run) ? "on" : ""}`} aria-current={run && key(r) === key(run) ? "true" : undefined} onClick={() => setSel(key(r))}>
               <span className="muted small">{relTime(r.at)}</span>
               <b>{runTitle(r)}</b>
-              <span className="muted small">{[!filter && nameOf(r.id), r.outcome !== "success" && r.message ? tc(r.message) : r.peak_ram_mb ? t("Пик памяти {0} ГБ", (r.peak_ram_mb / 1024).toFixed(1)) : ""].filter(Boolean).join(" · ")}</span>
+              <span className="muted small">{[!filter && nameOf(r.id), r.outcome !== "success" && r.message ? tc(r.message) : r.peak_ram_mb ? t("Пик памяти {0} ГБ", (r.peak_ram_mb / 1024).toLocaleString(undefined, { maximumFractionDigits: 1 })) : ""].filter(Boolean).join(" · ")}</span>
             </button>
           ))}
         </nav>

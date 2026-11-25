@@ -128,7 +128,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       <div className="shead">
         <div>
           <h2>{t("Аккаунты и скины")}</h2>
-          <p className="sub">{t("Провайдеры не смешиваются: у каждого аккаунта свой UUID и токены. Токены лежат только в хранилище секретов ОС.")}</p>
+          <p className="sub">{t("Можно добавить несколько аккаунтов. Токены входа хранятся в защищённом хранилище системы.")}</p>
         </div>
         <button className="btn cta" disabled={!info.microsoft_configured} onClick={() => setMsLogin(true)}><Icon name="plus" size={16} /> {t("Добавить аккаунт")}</button>
       </div>
@@ -180,7 +180,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
         </div>
         <div className="acc">
           <span className="foundico" aria-hidden><Icon name="link" size={16} /></span>
-          <div className="grow"><b>Ely.by</b><p className="muted small" style={{ margin: 0 }}>{t("Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется. Нужен Microsoft-аккаунт с купленной игрой.")}</p>
+          <div className="grow"><b>Ely.by</b><p className="muted small" style={{ margin: 0 }}>{info.dev_launch ? t("Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется.") : t("Логин и пароль Ely.by, двухфакторный вход поддерживается; пароль не сохраняется. Нужен Microsoft-аккаунт с купленной игрой.")}</p>
             {/* Вход через браузер (OAuth) убран: Ely.by требует для него секрет приложения
                 (invalid_client, проверено вживую 21.11.2026), а в открытую программу его не вшить. */}
           </div>

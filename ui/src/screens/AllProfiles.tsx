@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, errText, loaderName, relTime, sizeText, type Instance } from "../api";
 import { isActive, launches, type LaunchState } from "../launches";
-import { ProfileIcon } from "../ui/common";
+import { ProfileIcon, pressable } from "../ui/common";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t } from "../i18n";
@@ -99,7 +99,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
               const s = status(i);
               const active = isActive(states.get(i.id));
               return (
-                <tr key={i.id} className={i.archived ? "off" : ""} onClick={() => onOpen(i.id)}>
+                <tr key={i.id} className={`pick ${i.archived ? "off" : ""}`} {...pressable(() => onOpen(i.id))}>
                   <td>
                     <button className="rowname profrow" onClick={(e) => { e.stopPropagation(); onOpen(i.id); }}>
                       <ProfileIcon id={i.id} color={i.color} size={28} />
