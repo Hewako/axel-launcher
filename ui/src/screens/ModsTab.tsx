@@ -7,6 +7,7 @@ import { Modal, useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
 import { MOD, isMod } from "../keys";
+import type { CatalogKind } from "./Catalog";
 
 const stateCls: Record<ModState, string> = { ok: "ok", warning: "warn", blocked: "err", disabled: "", unknown: "warn" };
 const sideName: Record<string, string> = { client: t("клиент"), server: t("сервер"), both: t("обе"), unknown: "—" };
@@ -55,7 +56,7 @@ export function PlanDialog({ title, plan, onClose, onApply }: { title: string; p
 
 /** Категории Modrinth для фильтра каталога (подписи — для игрока). */
 const MOD_CATS: [string, string][] = [["optimization", t("Оптимизация")], ["utility", t("Удобство")], ["decoration", t("Декор")], ["worldgen", t("Генерация мира")], ["technology", t("Техника")], ["magic", t("Магия")], ["adventure", t("Приключения")], ["storage", t("Хранение")], ["mobs", t("Мобы")], ["equipment", t("Снаряжение")], ["food", t("Еда")], ["transportation", t("Транспорт")], ["game-mechanics", t("Механики")], ["management", t("Управление")], ["library", t("Библиотеки")]];
-const CATS: Record<ProjectKind, [string, string][]> = {
+export const CATS: Record<ProjectKind, [string, string][]> = {
   mod: MOD_CATS,
   datapack: MOD_CATS,
   resourcepack: [["vanilla-like", t("Как ванилла")], ["realistic", t("Реалистичные")], ["simplistic", t("Простые")], ["themed", t("Тематические")], ["tweaks", t("Мелкие правки")], ["16x", "16x"], ["32x", "32x"], ["64x", "64x"]],
@@ -98,7 +99,7 @@ export function CatalogDialog({ inst, initial, onClose, kinds = ["mod", "resourc
     const delay = typed.current !== query ? 300 : 0;
     typed.current = query;
     const timer = setTimeout(() => {
-      mods.search(inst.id, query, kind, 0, src === "modrinth" ? category : "", src)
+      mods.search(inst.id, query, kind, 0, src === "modrinth" && category ? { category } : {}, src)
         .then((r) => { found.current.set(key, r.hits); if (current) setHits(r.hits); })
         .catch((e) => { if (current) { setHits([]); setError(errText(e)); } });
     }, delay);
@@ -194,8 +195,10 @@ export function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; file
   );
 }
 
-export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
+export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }: {
   inst: Instance;
+  /** Открыть экран «Каталог» для этого профиля. */
+  onCatalog: (kind: CatalogKind, query: string) => void;
   running: boolean;
   /** Подвкладки: на макете они в одной строке с поиском и «Добавить». */
   tabs: React.ReactNode;
@@ -206,7 +209,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
   const [data, setData] = useState<{ files: ModFile[]; report: DoctorReport; journal: JournalEntry[] } | null>(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
-  const [catalog, setCatalog] = useState<string | null>(null);
+  const setCatalog = (q: string) => onCatalog("mod", q);
   const [plan, setPlan] = useState<{ title: string; plan: Plan; reason: string } | null>(null);
   const [checking, setChecking] = useState(false);
   // Доступные обновления: проверяются сами при открытии вкладки (один запрос к Modrinth).
@@ -477,7 +480,6 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect }: {
       )}
 
       <p className="muted small">{t("Состояние — по метаданным модов (fabric.mod.json, quilt.mod.json, mods.toml), а не по имени файла. «Конфликтов не найдено» не гарантирует, что игра запустится: настоящую проверку даёт запуск.")}</p>
-      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} onClose={() => setCatalog(null)} onInstalled={() => { load(); refreshUpdates(); }} />}
       {plan && (
         <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, plan.reason); setPlan(null); setPicked(new Set()); load(); refreshUpdates(); }} />
       )}

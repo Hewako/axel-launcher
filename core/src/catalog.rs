@@ -106,6 +106,10 @@ pub struct Project {
     pub categories: Vec<String>,
     #[serde(default)]
     pub license: Option<License>,
+    #[serde(default)]
+    pub icon_url: Option<String>,
+    #[serde(default)]
+    pub downloads: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,14 +196,59 @@ impl ProjectType {
     }
 }
 
-/// Адрес поиска Modrinth с фильтрами: тип, версия игры, загрузчик (для модов), категория.
+/// Порядок выдачи поиска.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Sort {
+    #[default]
+    Relevance,
+    Downloads,
+    Newest,
+    Updated,
+}
+
+impl Sort {
+    fn index(self) -> &'static str {
+        match self {
+            Sort::Relevance => "relevance",
+            Sort::Downloads => "downloads",
+            Sort::Newest => "newest",
+            Sort::Updated => "updated",
+        }
+    }
+}
+
+/// Фильтры каталога. `client` и `server` — нужен ли проект на этой стороне:
+/// `required`, `optional` или `unsupported`; другое значение не учитывается.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Filters {
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(default)]
+    pub sort: Sort,
+    #[serde(default)]
+    pub client: Option<String>,
+    #[serde(default)]
+    pub server: Option<String>,
+}
+
+fn side(v: &Option<String>) -> Option<&str> {
+    v.as_deref()
+        .filter(|v| matches!(*v, "required" | "optional" | "unsupported"))
+}
+
+/// Сколько проектов на одной странице каталога.
+pub const PAGE: u32 = 20;
+
+/// Адрес поиска Modrinth с фильтрами: тип, версия игры, загрузчик (для модов), категория,
+/// стороны клиента и сервера, порядок.
 pub fn search_url(
     query: &str,
     kind: ProjectType,
     loaders: &[&str],
     game_version: &str,
     offset: u32,
-    category: Option<&str>,
+    filters: &Filters,
 ) -> String {
     let mut facets: Vec<Vec<String>> = vec![vec![format!("project_type:{}", kind.as_str())]];
     // Сборки ищутся без версии игры: профиля ещё нет.
@@ -209,12 +258,19 @@ pub fn search_url(
     if kind == ProjectType::Mod && !loaders.is_empty() {
         facets.push(loaders.iter().map(|l| format!("categories:{l}")).collect());
     }
-    if let Some(c) = category.filter(|c| !c.is_empty()) {
+    if let Some(c) = filters.category.as_deref().filter(|c| !c.is_empty()) {
         facets.push(vec![format!("categories:{c}")]);
     }
+    if let Some(c) = side(&filters.client) {
+        facets.push(vec![format!("client_side:{c}")]);
+    }
+    if let Some(c) = side(&filters.server) {
+        facets.push(vec![format!("server_side:{c}")]);
+    }
     format!(
-        "{API}/search?query={}&limit=20&offset={offset}&index=relevance&facets={}",
+        "{API}/search?query={}&limit={PAGE}&offset={offset}&index={}&facets={}",
         urlencoding::encode(query),
+        filters.sort.index(),
         urlencoding::encode(&serde_json::to_string(&facets).unwrap_or_default())
     )
 }
@@ -225,7 +281,7 @@ pub async fn search(
     loaders: &[&str],
     game_version: &str,
     offset: u32,
-    category: Option<&str>,
+    filters: &Filters,
 ) -> Result<SearchResult> {
     get(&search_url(
         query,
@@ -233,9 +289,35 @@ pub async fn search(
         loaders,
         game_version,
         offset,
-        category,
+        filters,
     ))
     .await
+}
+
+/// Папка профиля, где лежат проекты этого вида (как путь в `pack.lock`).
+fn folder(kind: ProjectType) -> Option<&'static str> {
+    match kind {
+        ProjectType::Mod => Some("mods/"),
+        ProjectType::Resourcepack => Some("resourcepacks/"),
+        ProjectType::Shader => Some("shaderpacks/"),
+        ProjectType::Datapack | ProjectType::Modpack => None,
+    }
+}
+
+/// Что из каталога уже стоит в профиле: записи `pack.lock` этого вида с номером проекта.
+pub fn installed(
+    lock: &crate::mods::lock::PackLock,
+    kind: ProjectType,
+) -> Vec<&crate::mods::lock::LockEntry> {
+    let Some(dir) = folder(kind) else {
+        return Vec::new();
+    };
+    let mut seen = std::collections::HashSet::new();
+    lock.files
+        .iter()
+        .filter(|e| e.path.starts_with(dir) && e.project_id.is_some())
+        .filter(|e| seen.insert(e.project_id.clone()))
+        .collect()
 }
 
 pub async fn project(id: &str) -> Result<Project> {
@@ -402,9 +484,16 @@ mod tests {
     #[tokio::test]
     #[ignore = "сеть: api.modrinth.com"]
     async fn live_search_and_versions() {
-        let r = search("sodium", ProjectType::Mod, &["fabric"], "1.21.11", 0, None)
-            .await
-            .unwrap();
+        let r = search(
+            "sodium",
+            ProjectType::Mod,
+            &["fabric"],
+            "1.21.11",
+            0,
+            &Filters::default(),
+        )
+        .await
+        .unwrap();
         assert!(r.hits.iter().any(|h| h.slug == "sodium"));
         let vs = versions("sodium", &["fabric"], "1.21.11").await.unwrap();
         assert!(pick_best(&vs).is_some());
@@ -431,7 +520,12 @@ mod tests {
             &["fabric"],
             "26.3",
             20,
-            Some("optimization"),
+            &Filters {
+                category: Some("optimization".into()),
+                sort: Sort::Downloads,
+                client: Some("required".into()),
+                server: Some("anything".into()),
+            },
         );
         let facets = urlencoding::decode(url.split("facets=").nth(1).unwrap())
             .unwrap()
@@ -439,6 +533,56 @@ mod tests {
         assert!(facets.contains("\"categories:optimization\""), "{facets}");
         assert!(facets.contains("\"categories:fabric\""));
         assert!(url.contains("offset=20"));
-        assert!(!search_url("", ProjectType::Shader, &[], "26.3", 0, None).contains("categories"));
+        assert!(url.contains("index=downloads"), "сортировка по скачиваниям");
+        assert!(facets.contains("\"client_side:required\""), "{facets}");
+        assert!(
+            !facets.contains("server_side"),
+            "незнакомое значение стороны не попадает в запрос"
+        );
+        assert!(
+            !search_url("", ProjectType::Shader, &[], "26.3", 0, &Filters::default())
+                .contains("categories")
+        );
+    }
+
+    #[test]
+    fn installed_projects_by_kind() {
+        use crate::mods::lock::{Layer, LockEntry, PackLock, Source};
+        let e = |path: &str, id: Option<&str>| LockEntry {
+            path: path.into(),
+            sha1: String::new(),
+            sha512: None,
+            source: Source::Modrinth,
+            project_id: id.map(Into::into),
+            version_id: None,
+            version_number: None,
+            title: None,
+            layer: Layer::User,
+            installed_at: 0,
+            pinned: false,
+        };
+        let lock = PackLock {
+            files: vec![
+                e("mods/sodium.jar", Some("AANobbMI")),
+                e("mods/sodium-old.jar", Some("AANobbMI")),
+                e("mods/own.jar", None),
+                e("resourcepacks/faithful.zip", Some("faith")),
+                e("shaderpacks/bsl.zip", Some("bsl")),
+            ],
+        };
+        let ids = |k| {
+            installed(&lock, k)
+                .iter()
+                .map(|e| e.project_id.clone().unwrap())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            ids(ProjectType::Mod),
+            ["AANobbMI"],
+            "без повторов и без модов, положенных вручную"
+        );
+        assert_eq!(ids(ProjectType::Resourcepack), ["faith"]);
+        assert_eq!(ids(ProjectType::Shader), ["bsl"]);
+        assert!(ids(ProjectType::Modpack).is_empty());
     }
 }

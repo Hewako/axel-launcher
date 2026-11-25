@@ -156,7 +156,14 @@ mockIPC((cmd, args) => {
     case "world_restore": return "New World";
     case "import_sources": return { prism: [["/Users/player/Library/Application Support/PrismLauncher/instances/Tech", "Технология+ (1.21.11 · Fabric)"]], official: "/Users/player/Library/Application Support/minecraft" };
     case "mods_check_updates": return { changes: [{ kind: "update", title: "Sodium", old_version: "0.8.12", new_version: "0.8.14", reason: "новая версия", size: 1914874 }], notes: ["Моды, которых нет на Modrinth, проверить на обновления нельзя"] };
-    case "catalog_search": return { hits: [{ project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "jellysquid3", client_side: "required", categories: [] }], total_hits: 1 };
+    case "catalog_installed": return [{ project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "", client_side: "required", categories: [] }];
+    case "modpack_search": return { hits: [{ project_id: "1KVo5zza", slug: "fabulously-optimized", title: "Fabulously Optimized", description: "Простая сборка для быстрой и красивой игры", downloads: 12000000, author: "robotkoer", client_side: "required", categories: [] }], total_hits: 1 };
+    case "catalog_search": return { hits: [
+      { project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "jellysquid3", client_side: "required", categories: [] },
+      { project_id: "YL57xq9U", slug: "iris", title: "Iris Shaders", description: "Шейдеры вместе с Sodium", downloads: 120000000, author: "coderbot", client_side: "required", categories: [] },
+      { project_id: "gvQqBUqZ", slug: "lithium", title: "Lithium", description: "Оптимизация логики игры без изменения правил", downloads: 90000000, author: "jellysquid3", client_side: "optional", categories: [] },
+    ], total_hits: 57 };
+    case "__old_catalog_search": return { hits: [{ project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "jellysquid3", client_side: "required", categories: [] }], total_hits: 1 };
     default: return null;
   }
 }, { shouldMockEvents: true });

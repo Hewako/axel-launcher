@@ -3,7 +3,8 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errText, mods, type DoctorReport, type JournalEntry, type ModFile, type Instance, type Plan } from "../api";
 import { useDialog } from "../ui/Dialog";
-import { CatalogDialog, FindingCard, PlanDialog } from "./ModsTab";
+import { FindingCard, PlanDialog } from "./ModsTab";
+import type { CatalogKind } from "./Catalog";
 import { t, tc } from "../i18n";
 
 type Pt = { x: number; y: number };
@@ -96,13 +97,13 @@ function layout(nodes: Node[], edges: Edge[], w: number, h: number): Map<string,
   return pos;
 }
 
-export function DepsTab({ inst, running, onChanged }: { inst: Instance; running: boolean; onChanged: () => void }) {
+export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instance; running: boolean; onChanged: () => void; onCatalog: (kind: CatalogKind, query: string) => void }) {
   const dialog = useDialog();
   const [data, setData] = useState<{ files: ModFile[]; report: DoctorReport; journal: JournalEntry[] } | null>(null);
   const [error, setError] = useState("");
   const [view, setView] = useState<View>("all");
   const [sel, setSel] = useState<string | null>(null);
-  const [catalog, setCatalog] = useState<string | null>(null);
+  const setCatalog = (q: string) => onCatalog("mod", q);
   const [plan, setPlan] = useState<{ title: string; plan: Plan } | null>(null);
   const [moved, setMoved] = useState<Record<string, Pt>>(() => loadPos(inst.id));
   const svg = useRef<SVGSVGElement>(null);
@@ -247,7 +248,6 @@ export function DepsTab({ inst, running, onChanged }: { inst: Instance; running:
         <span>{t("серый узел — библиотека, поставлена как зависимость")}</span>
       </p>
       {running && <p className="small" style={{ color: "var(--warn)" }}>{t("Игра запущена — менять моды можно после её закрытия.")}</p>}
-      {catalog !== null && <CatalogDialog inst={inst} initial={catalog} kinds={["mod"]} onClose={() => setCatalog(null)} onInstalled={load} />}
       {plan && <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, t("Перед: {0}", plan.title.toLowerCase())); setPlan(null); load(); onChanged(); }} />}
     </>
   );

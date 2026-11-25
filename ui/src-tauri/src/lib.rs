@@ -881,7 +881,7 @@ async fn catalog_search(
     query: String,
     kind: quarry_core::catalog::ProjectType,
     offset: u32,
-    category: Option<String>,
+    filters: Option<quarry_core::catalog::Filters>,
     source: Option<String>,
 ) -> CmdResult<quarry_core::catalog::SearchResult> {
     let inst = InstanceStore::new(state.data.clone())
@@ -892,8 +892,10 @@ async fn catalog_search(
             quarry_core::curseforge::search(&query, kind, inst.loader, &inst.game_version, offset)
                 .await
                 .map_err(err)?;
+        // CurseForge не сообщает, сколько всего нашлось: полная страница — значит, есть следующая.
+        let more = hits.len() as u64 >= quarry_core::catalog::PAGE as u64;
         return Ok(quarry_core::catalog::SearchResult {
-            total_hits: hits.len() as u64,
+            total_hits: offset as u64 + hits.len() as u64 + more as u64,
             hits,
         });
     }
@@ -904,10 +906,70 @@ async fn catalog_search(
         &loaders,
         &inst.game_version,
         offset,
-        category.as_deref(),
+        &filters.unwrap_or_default(),
     )
     .await
     .map_err(err)
+}
+
+/// Что из каталога уже стоит в профиле — в виде карточек каталога. Для проектов Modrinth
+/// подтягиваются значок и описание; без сети — только названия из `pack.lock`.
+#[tauri::command]
+async fn catalog_installed(
+    state: State<'_, AppState>,
+    id: String,
+    kind: quarry_core::catalog::ProjectType,
+) -> CmdResult<Vec<quarry_core::catalog::SearchHit>> {
+    use quarry_core::mods::lock::{PackLock, Source};
+    let store = InstanceStore::new(state.data.clone());
+    let lock = PackLock::load(&store.dir(&id).map_err(err)?).map_err(err)?;
+    let entries = quarry_core::catalog::installed(&lock, kind);
+    let modrinth: Vec<String> = entries
+        .iter()
+        .filter(|e| e.source == Source::Modrinth)
+        .filter_map(|e| e.project_id.clone())
+        .collect();
+    let projects = if modrinth.is_empty() {
+        Vec::new()
+    } else {
+        quarry_core::catalog::projects(&modrinth)
+            .await
+            .unwrap_or_default()
+    };
+    Ok(entries
+        .iter()
+        .map(|e| {
+            let pid = e.project_id.clone().unwrap_or_default();
+            match projects.iter().find(|p| p.id == pid) {
+                Some(p) => quarry_core::catalog::SearchHit {
+                    project_id: p.id.clone(),
+                    slug: p.slug.clone(),
+                    title: p.title.clone(),
+                    description: p.description.clone(),
+                    categories: p.categories.clone(),
+                    client_side: p.client_side.clone(),
+                    server_side: p.server_side.clone(),
+                    downloads: p.downloads,
+                    icon_url: p.icon_url.clone(),
+                    author: String::new(),
+                },
+                None => quarry_core::catalog::SearchHit {
+                    title: e.title.clone().unwrap_or_else(|| {
+                        e.path.rsplit('/').next().unwrap_or(&e.path).to_string()
+                    }),
+                    project_id: pid,
+                    slug: String::new(),
+                    description: String::new(),
+                    categories: Vec::new(),
+                    client_side: String::new(),
+                    server_side: String::new(),
+                    downloads: 0,
+                    icon_url: None,
+                    author: String::new(),
+                },
+            }
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -1795,6 +1857,7 @@ struct PackVersion {
 async fn modpack_search(
     query: String,
     offset: u32,
+    filters: Option<quarry_core::catalog::Filters>,
 ) -> CmdResult<quarry_core::catalog::SearchResult> {
     quarry_core::catalog::search(
         &query,
@@ -1802,7 +1865,7 @@ async fn modpack_search(
         &[],
         "",
         offset,
-        None,
+        &filters.unwrap_or_default(),
     )
     .await
     .map_err(err)
@@ -2035,6 +2098,7 @@ pub fn run() {
             mods_pin,
             mods_add_files,
             catalog_search,
+            catalog_installed,
             mods_plan_install,
             mods_check_updates,
             mods_apply,

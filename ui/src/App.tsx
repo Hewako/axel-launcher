@@ -1,9 +1,10 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useCallback, useEffect, useState } from "react";
-import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance, type LauncherRelease } from "./api";
+import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, type DoctorReport, type GlobalSettings, type Instance, type LauncherRelease, type SearchHit } from "./api";
 import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
+import { Catalog, type CatalogKind, type CatalogTarget } from "./screens/Catalog";
 import { AllProfiles } from "./screens/AllProfiles";
 import { CreateInstance } from "./screens/CreateInstance";
 import { ImportDialog } from "./screens/Import";
@@ -22,7 +23,7 @@ import { src, syncLang, t } from "./i18n";
 import { ALT, MOD, isMod } from "./keys";
 
 /** Профиль с вкладками или один из общих экранов, открытых с рельсы. */
-type Screen = "profile" | "all" | "logs" | "accounts" | "settings" | "new";
+type Screen = "profile" | "all" | "catalog" | "logs" | "accounts" | "settings" | "new";
 
 function applyTheme(theme: string) {
   const dark = theme === "system" ? window.matchMedia("(prefers-color-scheme: dark)").matches : theme !== "light";
@@ -97,6 +98,10 @@ function Shell() {
   // Сборку можно бросить в любое место окна: откроется «Новый профиль» с импортом (моды ловит ModsTab).
   const [dragging, setDragging] = useState(false);
   const [dropped, setDropped] = useState<{ path: string; n: number } | null>(null);
+  // Каталог: с чем открыт и откуда (из профиля — есть кнопка «К профилю»); сборка из каталога.
+  const [catalogAt, setCatalogAt] = useState<CatalogTarget | undefined>();
+  const [catalogFromProfile, setCatalogFromProfile] = useState(false);
+  const [pack, setPack] = useState<{ hit: SearchHit; n: number } | null>(null);
   useEffect(() => {
     let off: (() => void) | undefined;
     let alive = true;
@@ -203,6 +208,11 @@ function Shell() {
 
   if (!info) return <div className="content muted">{t("Загрузка…")}</div>;
   const open = (id: string, tab?: Tab) => { setSelectedId(id); setProfileTab(tab); setScreen("profile"); };
+  const openCatalog = (id: string | undefined, kind: CatalogKind, query: string) => {
+    setCatalogAt({ id, kind, query, n: Date.now() });
+    setCatalogFromProfile(!!id);
+    setScreen("catalog");
+  };
   // Рельса: сначала избранные, потом по последнему запуску; архивные — в самом конце, приглушённые.
   const rail = [...instances].sort((a, b) =>
     Number(!!a.archived) - Number(!!b.archived) || Number(!!b.favorite) - Number(!!a.favorite) || (b.last_launch?.at ?? 0) - (a.last_launch?.at ?? 0));
@@ -226,6 +236,8 @@ function Shell() {
       <nav className="rail" aria-label={t("Профили и разделы")}>
         <div className="rail-logo" title={`Axel' ${info.version}`}><img src="/logo.png" alt="" width={34} height={34} /></div>
         <button className={`rail-btn ${screen === "all" ? "on" : ""}`} aria-label={t("Все профили")} title={t("Все профили")} aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /></button>
+        <button className={`rail-btn ${screen === "catalog" ? "on" : ""}`} aria-label={t("Каталог")} title={t("Каталог")} aria-current={screen === "catalog" ? "page" : undefined}
+          onClick={() => { setCatalogFromProfile(false); setScreen("catalog"); }}><Icon name="search" size={20} /></button>
         <div className="rail-div" aria-hidden />
         <div className="rail-list">
           {rail.map((i, n) => {
@@ -269,7 +281,8 @@ function Shell() {
             <InstancePage key={selected.id} inst={selected} mods={modsCount[selected.id]} instances={instances} state={states.get(selected.id)} accounts={accounts} initialTab={profileTab}
               onCloned={async (i) => { await refresh(); open(i.id, "profile"); }}
               onChanged={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))}
-              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onNew={() => setScreen("new")} onDoctor={noteDoctor} />
+              onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onNew={() => setScreen("new")} onDoctor={noteDoctor}
+              onCatalog={(kind, query) => openCatalog(selected.id, kind, query)} />
           ) : (
             <div className="card empty">
               <p>{t("Профилей нет.")}</p>
@@ -279,6 +292,11 @@ function Shell() {
             </div>
           ))}
           {screen === "all" && <AllProfiles instances={instances} mods={modsCount} states={states} status={status} onOpen={(id) => open(id)} onNew={() => setScreen("new")} />}
+          {screen === "catalog" && (
+            <Catalog instances={instances} target={catalogAt ?? (selectedId ? { id: selectedId, kind: "mod", query: "", n: 0 } : undefined)}
+              onPack={(hit) => { setPack({ hit, n: Date.now() }); setScreen("new"); }} onNew={() => setScreen("new")}
+              onBack={catalogFromProfile ? () => setScreen("profile") : undefined} />
+          )}
           {screen === "logs" && <Logs instances={instances} states={states} id={selectedId} onPick={setSelectedId} />}
           {screen === "accounts" && <Accounts info={info} accounts={accounts} defaultKey={defaultKey} onChanged={refreshAccounts} instances={instances} onInstance={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))} />}
           {screen === "new" && (
@@ -294,7 +312,7 @@ function Shell() {
               <div className="split2">
                 <CreateInstance onCreated={(i) => refresh().then(() => open(i.id))} />
                 <div className="stack">
-                  <ImportDialog dragging={dragging} dropped={dropped} onDone={(i) => refresh().then(() => open(i.id))} />
+                  <ImportDialog dragging={dragging} dropped={dropped} pack={pack} onDone={(i) => refresh().then(() => open(i.id))} />
                   <section className="card">
                     <h3>{t("Что появится")}</h3>
                     <ul className="facts">

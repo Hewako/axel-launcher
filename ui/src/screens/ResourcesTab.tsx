@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, errText, sizeText, snapshots, type Instance, type PackInfo, type ResKind, type WorldInfo } from "../api";
 import { useDialog } from "../ui/Dialog";
 import { CatalogDialog } from "./ModsTab";
+import type { CatalogKind } from "./Catalog";
 import { t } from "../i18n";
 
 type View = { packs: PackInfo[]; game_format?: number; shader_loader: boolean };
@@ -26,7 +27,7 @@ function Switch({ on, disabled, name, onChange }: { on: boolean; disabled: boole
   return <button className={`tog ${on ? "on" : ""}`} role="switch" aria-checked={on} disabled={disabled} aria-label={`${on ? t("Выключить") : t("Включить")} ${name}`} title={on ? t("Выключить") : t("Включить")} onClick={onChange} />;
 }
 
-export function ResourcesTab({ inst, running }: { inst: Instance; running: boolean }) {
+export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; running: boolean; onCatalog: (kind: CatalogKind, query: string) => void }) {
   const dialog = useDialog();
   const [packs, setPacks] = useState<View | null>(null);
   const [shaders, setShaders] = useState<View | null>(null);
@@ -83,7 +84,7 @@ export function ResourcesTab({ inst, running }: { inst: Instance; running: boole
           <h3>{t("Ресурспаки")}</h3>
           <p className="muted small">{t("Верхний перекрывает нижние.")}{packs && packs.game_format === undefined && t(" Совместимость проверится после первого запуска этой версии игры.")}</p>
         </div>
-        <button className="btn" onClick={() => setCatalog("resourcepack")}>{t("Найти ресурспак…")}</button>
+        <button className="btn" onClick={() => onCatalog("resourcepack", "")}>{t("Найти ресурспак…")}</button>
       </div>
       {packs === null ? <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p> : packs.packs.length === 0 ? (
         <p className="muted">{t("Ресурспаков нет. Найдите их в каталоге или положите .zip в папку resourcepacks.")}</p>
@@ -108,7 +109,7 @@ export function ResourcesTab({ inst, running }: { inst: Instance; running: boole
 
       <div className="sechead">
         <h3>{t("Шейдеры")}</h3>
-        <button className="btn" onClick={() => setCatalog("shader")}>{t("Найти шейдер…")}</button>
+        <button className="btn" onClick={() => onCatalog("shader", "")}>{t("Найти шейдер…")}</button>
       </div>
       {shaders && !shaders.shader_loader && (
         <div className="alert warn">

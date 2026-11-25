@@ -7,8 +7,10 @@ import { Modal } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
 
-export function ImportDialog({ onDone, dragging, dropped }: {
+export function ImportDialog({ onDone, dragging, dropped, pack }: {
   onDone: (i: Instance) => void;
+  /** Сборку выбрали на экране «Каталог»: сразу ставим её. */
+  pack?: { hit: SearchHit; n: number } | null;
   /** Над окном держат файл. */
   dragging: boolean;
   /** Файл или папку бросили в окно. */
@@ -38,6 +40,8 @@ export function ImportDialog({ onDone, dragging, dropped }: {
       else setResult(await importer.path(v.path!, [], h.project_id, v.version_id));
     } catch (e) { setError(errText(e)); } finally { setBusy(""); }
   };
+
+  useEffect(() => { if (pack) installPack(pack.hit); }, [pack?.n]);
 
   useEffect(() => { importer.sources().then(setSources).catch(() => setSources({ prism: [] })); }, []);
 

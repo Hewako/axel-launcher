@@ -319,6 +319,10 @@ export interface SearchHit { project_id: string; slug: string; title: string; de
 export type Channel = "auto" | "release" | "beta" | "alpha";
 export type CatalogSource = "modrinth" | "curseforge";
 export type ProjectKind = "mod" | "resourcepack" | "shader" | "datapack";
+export type CatalogSort = "relevance" | "downloads" | "newest" | "updated";
+/** Нужен ли проект на стороне клиента или сервера; пусто — любой. */
+export type CatalogSide = "" | "required" | "optional" | "unsupported";
+export type CatalogFilters = { category?: string | null; sort?: CatalogSort; client?: string | null; server?: string | null };
 export interface ImportResult { instance: Instance; manual: { project_id: number; file_id: number; url: string }[]; notes: string[] }
 export type CrashAction = { kind: "disable_mod"; file_name: string } | { kind: "increase_memory" } | { kind: "update_drivers" } | { kind: "open_mod_doctor" } | { kind: "safe_launch" };
 export interface CrashAnalysis { title: string; explanation: string; confidence: "high" | "medium" | "low"; confidence_label: string; evidence: string[]; suspects: string[]; actions: CrashAction[] }
@@ -329,8 +333,10 @@ export const mods = {
   remove: (id: string, file: string) => invoke<SnapshotInfo>("mods_remove", { id, file }),
   pin: (id: string, file: string, pinned: boolean) => invoke<void>("mods_pin", { id, file, pinned }),
   addFiles: (id: string, paths: string[]) => invoke<{ file_name: string; title: string; known: boolean }[]>("mods_add_files", { id, paths }),
-  search: (id: string, query: string, kind: ProjectKind, offset = 0, category = "", source: CatalogSource = "modrinth") =>
-    invoke<{ hits: SearchHit[]; total_hits: number }>("catalog_search", { id, query, kind, offset, category: category || null, source }),
+  search: (id: string, query: string, kind: ProjectKind, offset = 0, filters: CatalogFilters = {}, source: CatalogSource = "modrinth") =>
+    invoke<{ hits: SearchHit[]; total_hits: number }>("catalog_search", { id, query, kind, offset, filters, source }),
+  /** Что из каталога уже стоит в профиле (моды, ресурспаки, шейдеры). */
+  installed: (id: string, kind: ProjectKind) => invoke<SearchHit[]>("catalog_installed", { id, kind }),
   bisectStatus: (id: string) => invoke<Bisect | null>("bisect_status", { id }),
   bisectStep: (id: string, action: "start" | "answer" | "cancel", crashed?: boolean) =>
     invoke<{ kind: "next"; state: Bisect } | { kind: "found"; file: string } | null>("bisect_step", { id, action, crashed: crashed ?? null }),
@@ -359,7 +365,7 @@ export const importer = {
   sources: () => invoke<{ prism: [string, string][]; official?: string }>("import_sources"),
   path: (path: string, skipOptional: string[] = [], projectId?: string, versionId?: string) =>
     invoke<ImportResult>("import_path", { path, skipOptional, projectId: projectId ?? null, versionId: versionId ?? null }),
-  searchPacks: (query: string) => invoke<{ hits: SearchHit[]; total_hits: number }>("modpack_search", { query, offset: 0 }),
+  searchPacks: (query: string, offset = 0, filters: CatalogFilters = {}) => invoke<{ hits: SearchHit[]; total_hits: number }>("modpack_search", { query, offset, filters }),
   download: (projectId: string, versionId?: string, channel?: Channel) =>
     invoke<PackVersion>("pack_download", { projectId, versionId: versionId ?? null, channel: channel ?? null }),
   check: (id: string) => invoke<PackVersion | null>("pack_check", { id }),

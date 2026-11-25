@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CatalogKind } from "./Catalog";
 import { api, errText, loaderName, mods as modsApi, modsLabel, sizeText, snapshots, type Bisect, type DoctorReport, type Hooks, type JournalEntry, sourceName, type AccountRef, type Instance, type LaunchOverrides, type Resolved, type Source } from "../api";
 import { isActive, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
@@ -319,7 +320,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   );
 }
 
-export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor }: {
+export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor, onCatalog }: {
   inst: Instance;
   mods?: number;
   instances: Instance[];
@@ -332,6 +333,8 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   onLogs: () => void;
   onNew: () => void;
   onDoctor: (id: string, r: DoctorReport) => void;
+  /** Экран «Каталог» с этим профилем. */
+  onCatalog: (kind: CatalogKind, query: string) => void;
 }) {
   const dialog = useDialog();
   const [[main, sub], setPlace] = useState<[Main, Sub | undefined]>(() => place(initialTab ?? "overview"));
@@ -486,14 +489,14 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
       {main === "mods" && (
         <>
           {subOf("mods") !== "mods" && modTabs}
-          {subOf("mods") === "mods" && <ModsTab key={`${inst.id}-${reload}`} inst={inst} running={isActive(state)} tabs={modTabs} bisecting={!!bisect} onBisect={() => bisectStep("start")} />}
+          {subOf("mods") === "mods" && <ModsTab key={`${inst.id}-${reload}`} inst={inst} running={isActive(state)} tabs={modTabs} bisecting={!!bisect} onBisect={() => bisectStep("start")} onCatalog={onCatalog} />}
           {subOf("mods") === "resources" && (
             <div className="split2">
-              <ResourcesTab key={`r-${inst.id}`} inst={inst} running={isActive(state)} />
+              <ResourcesTab key={`r-${inst.id}`} inst={inst} running={isActive(state)} onCatalog={onCatalog} />
               <ConfigsTab key={`c-${inst.id}`} inst={inst} running={isActive(state)} />
             </div>
           )}
-          {subOf("mods") === "deps" && <DepsTab key={inst.id} inst={inst} running={isActive(state)} onChanged={() => setReload((n) => n + 1)} />}
+          {subOf("mods") === "deps" && <DepsTab key={inst.id} inst={inst} running={isActive(state)} onChanged={() => setReload((n) => n + 1)} onCatalog={onCatalog} />}
         </>
       )}
       {main === "rollback" && <SnapshotsTab inst={inst} running={isActive(state)} journal={doctor?.journal ?? []} onRestored={() => setReload((n) => n + 1)} />}
