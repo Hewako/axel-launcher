@@ -51,7 +51,7 @@ function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
         <section className="card">
           <h3>{t("Вернуть к {0}", when)}</h3>
           <ul className="facts">
-            <li>{t("Сначала сохраним новый снимок, потом вернём старый — откат можно отменить.")}</li>
+            <li>{t("Сначала сохраним новый снимок, потом вернём старый, так что откат можно отменить.")}</li>
             <li>{t("Миры не затрагиваются.")}</li>
           </ul>
           <div className="acts">
@@ -148,7 +148,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
                     <b>{tc(s.reason)}</b>
                     {s.id === working && <span className="tag ok">{t("последний рабочий")}</span>}
                     {s.auto && <span className="tag">{t("автоматически")}</span>}
-                    {s.pinned && <span className="tag warn" title={t("● закреплён — ротация его не удалит")}>{t("закреплён")}</span>}
+                    {s.pinned && <span className="tag warn" title={t("● закреплён, ротация его не удалит")}>{t("закреплён")}</span>}
                     <div className="muted small">
                       {s.id === working ? t("С ним игра запускалась {0}", relTime(ok!)) : s.auto ? `${relTime(s.created_at)}` : t("Создан вручную")}
                       {" "}{t("· модов")} {s.mods}{t(", конфигов")} {s.configs}

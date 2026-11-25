@@ -175,7 +175,7 @@ pub fn read(bytes: &[u8]) -> Result<Tag> {
     };
     let id = r.u8()?;
     if id != 10 {
-        return Err(Error::parse("NBT", "корень — не Compound"));
+        return Err(Error::parse("NBT", "корень не Compound"));
     }
     let _name = r.string()?;
     r.payload(10)

@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(
             store.list().unwrap().len(),
             2,
-            "одинаковый UUID у разных провайдеров — разные аккаунты"
+            "одинаковый UUID у разных провайдеров, разные аккаунты"
         );
         assert_eq!(
             store.tokens(&ms.key()).unwrap().unwrap().access_token,

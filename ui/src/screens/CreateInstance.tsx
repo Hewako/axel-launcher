@@ -40,7 +40,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
   useEffect(() => {
     if (!version) return;
     setJava("");
-    api.versionInfo(version).then((i) => setJava(t("Нужна Java {0} — Axel' скачает её сам.", i.java_major))).catch(() => setJava(""));
+    api.versionInfo(version).then((i) => setJava(t("Нужна Java {0}, Axel' скачает её сам.", i.java_major))).catch(() => setJava(""));
   }, [version]);
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function CreateInstance({ onCreated }: { onCreated: (i: Instance) => void
             {loaderVersions === null ? (
               <span className="muted small"><span className="spinner" /> {t("Проверяем совместимость…")}</span>
             ) : incompatible ? (
-              <span className="badge err">{loader === "forge" ? t("Forge в Axel' — для Minecraft 1.17 и новее") : <>{loaderName[loader]} {t("не поддерживает Minecraft")} {version}</>}</span>
+              <span className="badge err">{loader === "forge" ? t("Forge в Axel' работает с Minecraft 1.17 и новее") : <>{loaderName[loader]} {t("не поддерживает Minecraft")} {version}</>}</span>
             ) : (
               <select className="field" value={loaderVersion} onChange={(e) => setLoaderVersion(e.target.value)}>
                 {loaderVersions.map((v) => (

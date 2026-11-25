@@ -93,7 +93,7 @@ fn recover_safe_mode(game_dir: &std::path::Path) -> Option<String> {
     }
     if mods.exists() {
         return Some(format!(
-            "После прошлого безопасного запуска моды остались в {SAFE_MODE_DIR}, а в mods/ уже есть файлы — разберите вручную"
+            "После прошлого безопасного запуска моды остались в {SAFE_MODE_DIR}, а в mods/ уже есть файлы, разберите вручную"
         ));
     }
     std::fs::rename(&aside, &mods).ok()?;
@@ -207,7 +207,7 @@ async fn resolve_auth(
             let (acc, tokens) = account::session(&store, &acc).await?;
             if !acc.owns_java_edition {
                 return Err(Error::Auth(format!(
-                    "На аккаунте {} не куплена Minecraft: Java Edition — запуск невозможен.",
+                    "На аккаунте {} не куплена Minecraft: Java Edition, запуск невозможен.",
                     acc.name
                 )));
             }
@@ -274,7 +274,7 @@ async fn choose_java(
         let mut reason = format!("указана в настройках: {}", j.label());
         if !req.accepts(&j) {
             reason.push_str(&format!(
-                " — внимание: версии нужна Java {} ({}), игра может не запуститься",
+                "; внимание: версии нужна Java {} ({}), игра может не запуститься",
                 req.major, req.reason
             ));
         }
@@ -307,7 +307,7 @@ async fn choose_java(
         Err(e) => return Err(e),
     };
     let mut reason = format!(
-        "нужна Java {} ({}) — подходящей на компьютере нет, скачана {}",
+        "нужна Java {} ({}), подходящей на компьютере нет, скачана {}",
         req.major,
         req.reason,
         j.label()
@@ -317,7 +317,7 @@ async fn choose_java(
         reason.push_str(a);
     }
     if j.arch() != Some(req.arch) {
-        reason.push_str("; сборки для Apple Silicon нет — используется x64-версия через Rosetta 2");
+        reason.push_str("; сборки для Apple Silicon нет, используется x64-версия через Rosetta 2");
     }
     Ok(Choice { install: j, reason })
 }
@@ -645,7 +645,7 @@ async fn run(
         Some(h) if h.is_approved() => Some(h),
         Some(_) => {
             emit(LaunchEvent::Warning {
-                message: "Команды запуска изменены вне лаунчера и не выполнены — подтвердите их на вкладке «Запуск и память»".into(),
+                message: "Команды запуска изменены вне лаунчера и не выполнены, подтвердите их на вкладке «Запуск и память»".into(),
             });
             None
         }
@@ -709,7 +709,7 @@ async fn run(
             let saved = crate::snapshot::backup_world(&game_dir, &backups_dir, &w.folder).is_ok();
             emit(LaunchEvent::Warning {
                 message: format!(
-                    "Мир «{}» сохранён в более новой версии игры ({}), чем {}. Открывать его в старой версии рискованно — {}",
+                    "Мир «{}» сохранён в более новой версии игры ({}), чем {}. Открывать его в старой версии рискованно, {}",
                     w.name,
                     w.version_name.clone().unwrap_or_else(|| "?".into()),
                     inst.game_version,
@@ -779,7 +779,7 @@ async fn run(
     {
         emit(LaunchEvent::Warning {
             message: format!(
-                "Моды менялись после прошлой игры — сделан бэкап мира «{}»",
+                "Моды менялись после прошлой игры, сделан бэкап мира «{}»",
                 b.world
             ),
         });

@@ -39,7 +39,7 @@ function MicrosoftLogin({ onClose, onDone }: { onClose: () => void; onDone: (a: 
         <p className="muted"><span className="spinner" /> {t("Получаем код входа…")}</p>
       ) : (
         <div className="form">
-          <p style={{ margin: 0 }}>{t("Откройте страницу Microsoft в браузере и введите код. Пароль вводится только на сайте Microsoft — лаунчер его не видит.")}</p>
+          <p style={{ margin: 0 }}>{t("Откройте страницу Microsoft в браузере и введите код. Пароль вводится только на сайте Microsoft, лаунчер его не видит.")}</p>
           <div className="row">
             <span className="code">{code.user_code}</span>
             <button className="btn" onClick={async () => { await navigator.clipboard.writeText(code.user_code); setCopied(true); }}>{copied ? t("Скопирован") : t("Копировать код")}</button>
@@ -189,7 +189,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       {!info.microsoft_configured && (
         <div className="alert warn" style={{ marginTop: 14 }}>
           <div className="h">{t("Вход Microsoft не настроен в этой сборке")}</div>
-          <span className="small">{t("Нужен client ID приложения в Microsoft Azure, одобренный Mojang. Пошаговая инструкция — docs/MICROSOFT_SETUP.md в репозитории. До одобрения Minecraft Services отвечает 403 — это ожидаемо.")}</span>
+          <span className="small">{t("Нужен client ID приложения в Microsoft Azure, одобренный Mojang. Пошаговая инструкция лежит в репозитории: docs/MICROSOFT_SETUP.md. До одобрения Minecraft Services отвечает ошибкой 403, так и должно быть.")}</span>
         </div>
       )}
       {!verified && <p className="muted small">{t("Ely.by станет доступен после входа в Microsoft-аккаунт с купленной игрой.")}</p>}
@@ -220,7 +220,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
         <section className="card skincard" aria-label={t("Скин")}>
           <h3>{t("Скин")} {nick(selAcc.name, streamer)}</h3>
           {skin[selKey!] === undefined ? <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>
-            : skin[selKey!] ? <img className="skinfig" src={skin[selKey!]!} alt={t("Скин спереди и сзади")} /> : <p className="muted small">{t("Скина нет — в игре будет стандартный Steve или Alex.")}</p>}
+            : skin[selKey!] ? <img className="skinfig" src={skin[selKey!]!} alt={t("Скин спереди и сзади")} /> : <p className="muted small">{t("Скина нет, в игре будет стандартный Steve или Alex.")}</p>}
           <p className="muted small">{selAcc.provider === "elyby" ? t("Скин Ely.by виден только на серверах, которые используют Ely.by. Сменить его можно на ely.by.") : t("Сменить скин можно на minecraft.net.")}</p>
         </section>
       )}

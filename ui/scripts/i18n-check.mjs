@@ -85,9 +85,9 @@ const tr = coreTranslator(Object.fromEntries(coreDict));
 for (const [ru, en] of [
   ["Профиль «Мой мир» не найден", "Profile “Мой мир” not found"],
   ["Не удалось разобрать ответ Modrinth: expected value", "Could not parse Modrinth reply: expected value"],
-  ["{0} пока не поддерживается — такой инстанс импортировать нельзя".replace("{0}", "Forge"), "Forge is not supported yet — this instance cannot be imported"],
+  ["{0} пока не поддерживается, такой инстанс импортировать нельзя".replace("{0}", "Forge"), "Forge is not supported yet — this instance cannot be imported"],
   ["Обновлено\nМоды", "Updated\nMods"],
-  ["нужна Java 21 (21+) — найдена 17; Java для Apple Silicon не найдена — используется x64-версия через Rosetta 2", "Java 21 (21+) is needed — found 17; no Java for Apple Silicon found — using the x64 build through Rosetta 2"],
+  ["нужна Java 21 (21+), найдена 17; Java для Apple Silicon не найдена, используется x64-версия через Rosetta 2", "Java 21 (21+) is needed — found 17; no Java for Apple Silicon found — using the x64 build through Rosetta 2"],
   ["Просто текст игрока", "Просто текст игрока"],
 ]) if (tr(ru) !== en) missing.set(ru, `i18n.core.ts: перевёл как ${JSON.stringify(tr(ru))}, ждали ${JSON.stringify(en)}`);
 // Сохранённые уведомления переводятся при показе общим словарём интерфейса и ядра.

@@ -442,7 +442,7 @@ mod tests {
         assert_eq!(
             parse_reply(reply("K7M2Q", None).as_bytes(), "K7M2Q"),
             Some(Answer::Closed),
-            "мир не открыт — это ответ, а не тишина"
+            "мир не открыт, это ответ, а не тишина"
         );
         assert_eq!(parse_reply(r.as_bytes(), "AAAAA"), None, "чужой код");
     }

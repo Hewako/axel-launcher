@@ -263,7 +263,7 @@ fn update_instance(
             .flatten()
         {
             if c.chars().count() > 1000 || c.contains(['\n', '\r']) {
-                return Err("Команда — одна строка до 1000 символов".into());
+                return Err("Команда: одна строка до 1000 символов".into());
             }
         }
         h.approved = (!h.is_empty()).then(|| h.fingerprint());
@@ -285,7 +285,7 @@ fn update_instance(
             .as_ref()
             .is_some_and(|c| !c.starts_with('#') || !c[1..].chars().all(|c| c.is_ascii_hexdigit()))
         {
-            return Err("Цвет — в виде #RRGGBB".into());
+            return Err("Цвет нужен в виде #RRGGBB".into());
         }
         inst.favorite = m.favorite;
         inst.archived = m.archived;
@@ -1543,7 +1543,7 @@ fn options_layout_export(state: State<AppState>, id: String, path: String) -> Cm
         .map(|(k, v)| format!("{k}:{v}\n"))
         .collect();
     if keys.is_empty() {
-        return Err("Назначений клавиш пока нет — запустите игру хотя бы раз".into());
+        return Err("Назначений клавиш пока нет, запустите игру хотя бы раз".into());
     }
     std::fs::write(
         &path,

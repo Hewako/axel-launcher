@@ -148,7 +148,7 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
           {result.manual.length > 0 && (
             <div className="alert warn">
               <div className="h">{t("Скачайте вручную:")} {result.manual.length}</div>
-              <span className="small">{t("CurseForge разрешает скачивать эти моды только через свой сайт. Скачайте файлы и положите их в папку mods профиля — Mod Doctor проверит, всё ли на месте.")}</span>
+              <span className="small">{t("CurseForge разрешает скачивать эти моды только через свой сайт. Скачайте файлы и положите их в папку mods профиля, а Mod Doctor проверит, всё ли на месте.")}</span>
               <div style={{ maxHeight: 160, overflow: "auto" }} className="small mono">
                 {result.manual.map((m) => <div key={m.file_id}>{t("проект")} {m.project_id}{t(", файл")} {m.file_id}</div>)}
               </div>

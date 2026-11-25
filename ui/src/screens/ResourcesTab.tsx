@@ -72,7 +72,7 @@ export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; run
     setOrder([p.file_name, ...enabled]);
   };
   const remove = async (kind: ResKind, p: PackInfo) => {
-    const ok = await dialog.confirm({ title: t("Убрать {0}?", p.file_name), body: t("Файл переместится в корзину Axel' (папка trash в данных лаунчера) — его можно вернуть вручную."), confirm: t("Убрать"), danger: true });
+    const ok = await dialog.confirm({ title: t("Убрать {0}?", p.file_name), body: t("Файл переместится в корзину Axel' (папка trash в данных лаунчера), оттуда его можно вернуть вручную."), confirm: t("Убрать"), danger: true });
     if (ok) await act(() => api.removeResource(inst.id, kind, p.file_name, kind === "datapack" ? world : undefined));
     if (ok && kind === "datapack") loadDatapacks();
   };
@@ -139,7 +139,7 @@ export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; run
           )}
           <button className="btn" disabled={!world} onClick={() => setCatalog("datapack")}>{t("Найти датапак…")}</button>
         </div>
-        {worlds.length === 0 ? <p className="muted">{t("Датапаки ставятся в мир. Миров пока нет — создайте мир в игре.")}</p>
+        {worlds.length === 0 ? <p className="muted">{t("Датапаки ставятся в мир. Миров пока нет, сначала создайте мир в игре.")}</p>
           : datapacks === null ? <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>
           : datapacks.packs.length === 0 ? <p className="muted">{t("В этом мире датапаков нет. Новые игра включит сама при входе в мир.")}</p>
           : (

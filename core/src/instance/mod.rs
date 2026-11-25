@@ -469,7 +469,7 @@ mod tests {
         assert!(broken.is_empty());
         assert!(
             s.create("x", "1.12.2", LoaderKind::Forge, None).is_err(),
-            "старый Forge — нет"
+            "старый Forge, нет"
         );
         std::fs::remove_dir_all(&root).unwrap();
     }

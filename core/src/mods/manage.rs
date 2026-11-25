@@ -90,7 +90,7 @@ fn ctx(store: &InstanceStore, id: &str) -> Result<Ctx> {
     let loaders = catalog::loaders_for(instance.loader);
     if loaders.is_empty() {
         return Err(Error::invalid(
-            "В профиле без загрузчика моды не работают — выберите профиль с Fabric, Quilt, Forge или NeoForge",
+            "В профиле без загрузчика моды не работают, выберите профиль с Fabric, Quilt, Forge или NeoForge",
         ));
     }
     Ok(Ctx {
@@ -160,7 +160,7 @@ pub async fn plan_install(
                 let hint = if list.is_empty() {
                     ""
                 } else {
-                    " (есть только бета или альфа — выберите другой канал)"
+                    " (есть только бета или альфа, выберите другой канал)"
                 };
                 return Err(Error::invalid(format!(
                     "У {} нет подходящей версии для Minecraft {} и {}{hint}",
@@ -170,21 +170,22 @@ pub async fn plan_install(
                 )));
             }
             plan.notes.push(format!(
-                "Нужен «{}», но подходящей версии нет — проверьте вручную",
+                "Нужен «{}», но подходящей версии нет, проверьте вручную",
                 info.title
             ));
             continue;
         };
         for d in &v.dependencies {
             match (d.dependency_type.as_str(), &d.project_id) {
-                ("required", Some(p)) => queue.push((p.clone(), format!("нужен для {}", info.title))),
+                ("required", Some(p)) => {
+                    queue.push((p.clone(), format!("нужен для {}", info.title)))
+                }
                 ("optional", Some(p)) if !present.contains_key(p) && optional.len() < 5 => {
                     optional.push((p.clone(), info.title.clone()))
                 }
                 ("incompatible", Some(p)) if present.contains_key(p) => plan.notes.push(format!(
-                    "{} несовместим с уже установленным модом ({}) — Mod Doctor покажет подробности",
-                    info.title,
-                    present[p]
+                    "{} несовместим с уже установленным модом ({}), Mod Doctor покажет подробности",
+                    info.title, present[p]
                 )),
                 _ => {}
             }
@@ -212,7 +213,7 @@ pub async fn plan_install(
         }
         if let Ok(o) = catalog::project(&p).await {
             plan.notes.push(format!(
-                "Необязательно для {for_title}: «{}» — можно поставить отдельно из каталога",
+                "Необязательно для {for_title}: «{}», можно поставить отдельно из каталога",
                 o.title
             ));
         }
@@ -334,7 +335,7 @@ pub async fn check_updates(store: &InstanceStore, id: &str) -> Result<Plan> {
             .push(format!("Закреплённые версии не обновляются: {pinned}"));
     }
     if files.iter().any(|f| f.source.is_none()) {
-        plan.notes.push("Моды, которых нет на Modrinth, проверить на обновления нельзя — их нужно обновлять вручную".into());
+        plan.notes.push("Моды, которых нет на Modrinth, проверить на обновления нельзя, их нужно обновлять вручную".into());
     }
     Ok(plan)
 }
@@ -419,7 +420,7 @@ pub async fn add_files(
         let metas = super::meta::read_jar(p)?;
         if metas.is_empty() {
             return Err(Error::invalid(format!(
-                "{name} — не мод: в файле нет метаданных Fabric, Quilt, Forge или NeoForge"
+                "{name} не мод: в файле нет метаданных Fabric, Quilt, Forge или NeoForge"
             )));
         }
         let sha1 = crate::download::hash_file::<sha1::Sha1>(p)?;
@@ -520,7 +521,7 @@ pub async fn apply(
             // План приходит из интерфейса: скачиваем только с CDN Modrinth.
             if !f.url.starts_with("https://") || crate::net::host_of(&f.url) != "cdn.modrinth.com" {
                 return Err(Error::invalid(format!(
-                    "Файл {} предлагается скачать не с Modrinth — отменено",
+                    "Файл {} предлагается скачать не с Modrinth, отменено",
                     f.filename
                 )));
             }
@@ -539,7 +540,7 @@ pub async fn apply(
             // С CurseForge — только с его CDN и только с известным хэшем.
             let url = f.trusted_url().ok_or_else(|| {
                 Error::invalid(format!(
-                    "Файл {} предлагается скачать не с CurseForge — отменено",
+                    "Файл {} предлагается скачать не с CurseForge, отменено",
                     f.file_name
                 ))
             })?;
@@ -645,7 +646,7 @@ fn with_world_backup(
     }
     let backups = crate::worlds::backups_dir(store.data(), id);
     match crate::worlds::backup_latest(game_dir, &backups) {
-        Some(b) => format!("{reason}; мод меняет мир — сделан бэкап «{}»", b.world),
+        Some(b) => format!("{reason}; мод меняет мир, сделан бэкап «{}»", b.world),
         None => reason.to_string(),
     }
 }
@@ -784,7 +785,7 @@ mod tests {
         crate::mods::meta::tests::make_jar(&not_mod, &[("x/Y.class", b"x")]);
         assert!(
             add_files(&store, &inst.id, &[not_mod]).await.is_err(),
-            "не мод — не добавляется"
+            "не мод, не добавляется"
         );
         let txt = outside.join("readme.txt");
         std::fs::write(&txt, b"x").unwrap();
@@ -861,7 +862,7 @@ mod tests {
         }
         assert!(
             updates.changes.is_empty(),
-            "только что установленное — последняя версия"
+            "только что установленное, последняя версия"
         );
         std::fs::remove_dir_all(&root).unwrap();
     }

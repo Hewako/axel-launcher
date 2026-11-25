@@ -9,7 +9,7 @@ use std::path::PathBuf;
 /// Проверить скин: PNG 64×64 или 64×32 (старый формат).
 pub fn validate_skin(bytes: &[u8]) -> Result<DynamicImage> {
     let img = image::load_from_memory_with_format(bytes, ImageFormat::Png)
-        .map_err(|_| Error::invalid("Файл скина — не PNG"))?;
+        .map_err(|_| Error::invalid("Файл скина не в формате PNG"))?;
     match img.dimensions() {
         (64, 64) | (64, 32) => Ok(img),
         (w, h) => Err(Error::invalid(format!(

@@ -69,7 +69,7 @@ pub fn read(game_dir: &Path) -> Result<Vec<Server>> {
 pub fn write(game_dir: &Path, servers: &[Server]) -> Result<()> {
     for s in servers {
         if s.name.trim().is_empty() || s.name.chars().count() > 64 {
-            return Err(Error::invalid("Название сервера — от 1 до 64 символов"));
+            return Err(Error::invalid("Название сервера: от 1 до 64 символов"));
         }
         parse_address(&s.ip)?;
     }
@@ -454,7 +454,7 @@ mod tests {
         assert_eq!(
             srv_query("play.example.org:25565"),
             None,
-            "порт указан — SRV не нужен"
+            "порт указан, SRV не нужен"
         );
         assert_eq!(srv_query("1.2.3.4"), None);
         assert_eq!(srv_query("[::1]"), None);

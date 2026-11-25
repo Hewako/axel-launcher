@@ -71,7 +71,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
   }, [capture]);
 
   if (!view) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
-  if (view.entries.length === 0) return <div className="card empty"><p>{t("Файла настроек игры ещё нет — он появится после первого запуска этого профиля.")}</p></div>;
+  if (view.entries.length === 0) return <div className="card empty"><p>{t("Файла настроек игры ещё нет, он появится после первого запуска этого профиля.")}</p></div>;
 
   const act = async (f: () => Promise<unknown>, ok?: string) => {
     try { await f(); load(); if (ok) await dialog.alert(t("Готово"), ok); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
@@ -85,7 +85,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
     <div className="row small" style={{ marginBottom: 8 }}>
       {presets(c).length > 0 && (
         <select className="field auto mini" aria-label={t("Применить пресет")} value="" disabled={running || dirty}
-          onChange={(e) => e.target.value && act(() => gameOptions.applyPreset(inst.id, e.target.value), t("Пресет применён. Перед этим сохранён снимок — вернуть можно на вкладке «Откат»."))}>
+          onChange={(e) => e.target.value && act(() => gameOptions.applyPreset(inst.id, e.target.value), t("Пресет применён. Перед этим сохранён снимок, вернуть можно на вкладке «Откат»."))}>
           <option value="">{t("Применить пресет…")}</option>
           {presets(c).map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
         </select>
@@ -107,7 +107,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="btn pri" disabled={!dirty || running} onClick={() => act(() => gameOptions.set(inst.id, draft))}>{t("Сохранить изменения")}</button>
         <button className="btn" disabled={!dirty} onClick={() => setDraft({})}>{t("Отменить")}</button>
-        <span className="muted small">{t("Перед сохранением делается снимок — вернуть можно на вкладке «Откат».")}</span>
+        <span className="muted small">{t("Перед сохранением делается снимок, вернуть можно на вкладке «Откат».")}</span>
       </div>
 
       <h4>{t("Графика")}</h4>
@@ -173,7 +173,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
                 <td style={{ textAlign: "right" }}>
                   {conflictKeys.has(v) && <span className="badge warn" style={{ marginRight: 8 }}>{t("конфликт")}</span>}
                   <button className={`btn ${capture === k ? "pri" : ""}`} onClick={() => setCapture(capture === k ? null : k)}>
-                    {capture === k ? t("Нажмите клавишу… (Esc — снять)") : keyLabel(v)}
+                    {capture === k ? t("Нажмите клавишу… (Esc, чтобы снять)") : keyLabel(v)}
                   </button>
                 </td>
               </tr>
@@ -201,7 +201,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
 
       {naming && (
         <Modal title={t("Сохранить пресет")} onClose={() => setNaming(null)}>
-          <p className="small muted">{t("Пресет хранит")} {naming === "graphics" ? t("настройки графики") : naming === "sound" ? t("громкость") : t("управление")} {t("этого профиля — его можно применить к любому профилю.")}</p>
+          <p className="small muted">{t("Пресет хранит")} {naming === "graphics" ? t("настройки графики") : naming === "sound" ? t("громкость") : t("управление")} {t("этого профиля, его можно применить к любому профилю.")}</p>
           <input className="field" maxLength={48} placeholder={t("Например: Слабый ноутбук")} value={presetName} onChange={(e) => setPresetName(e.target.value)} data-autofocus />
           <div className="acts">
             <button className="btn" onClick={() => setNaming(null)}>{t("Отмена")}</button>
@@ -213,7 +213,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       <aside className="stack">
         <section className="card">
           <h3>{t("Откуда берутся значения")}</h3>
-          <p className="muted">{t("Здесь только то, что игра хранит в options.txt этого профиля. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна — на вкладке «Запуск и память».")}</p>
+          <p className="muted">{t("Здесь только то, что игра хранит в options.txt этого профиля. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна настраиваются на вкладке «Запуск и память».")}</p>
         </section>
       </aside>
     </div>

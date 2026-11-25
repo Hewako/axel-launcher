@@ -387,7 +387,7 @@ pub async fn run_processors(
         );
         if !out.status.success() {
             return Err(Error::invalid(format!(
-                "Процессор {} {} завершился с ошибкой (код {:?}). Подробности — {}",
+                "Процессор {} {} завершился с ошибкой (код {:?}). Подробности: {}",
                 f.name,
                 proc.jar,
                 out.status.code(),

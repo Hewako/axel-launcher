@@ -318,7 +318,7 @@ impl Requirement {
                 reason,
                 arch: Arch::X86_64,
                 arch_reason: Some(
-                    "в версии нет нативных библиотек для Apple Silicon — нужна x64-Java, она работает через Rosetta 2"
+                    "в версии нет нативных библиотек для Apple Silicon, нужна x64-Java, она работает через Rosetta 2"
                         .into(),
                 ),
                 fallback_arch: None,
@@ -361,7 +361,7 @@ pub fn choose(req: &Requirement, installs: &[JavaInstall]) -> Option<Choice> {
     ok.sort_by_key(|j| (j.arch() != Some(req.arch), j.source != JavaSource::Managed));
     let best = ok.first()?;
     let mut reason = format!(
-        "нужна Java {} ({}) — найдена {}",
+        "нужна Java {} ({}), найдена {}",
         req.major,
         req.reason,
         best.label()
@@ -372,7 +372,7 @@ pub fn choose(req: &Requirement, installs: &[JavaInstall]) -> Option<Choice> {
     }
     if best.arch() != Some(req.arch) {
         reason.push_str(
-            "; Java для Apple Silicon не найдена — используется x64-версия через Rosetta 2",
+            "; Java для Apple Silicon не найдена, используется x64-версия через Rosetta 2",
         );
     }
     Some(Choice {
@@ -574,7 +574,7 @@ mod tests {
         ];
         assert!(
             choose(&req, &installs).is_none(),
-            "новее нужной — не выбирается, скачиваем 21"
+            "новее нужной, не выбирается, скачиваем 21"
         );
         let mut with_exact = installs.to_vec();
         with_exact.push(java(21, "amd64", JavaSource::System));
@@ -584,7 +584,7 @@ mod tests {
         assert_eq!(
             c.install.source,
             JavaSource::Managed,
-            "скачанная лаунчером — первой"
+            "скачанная лаунчером, первой"
         );
     }
 

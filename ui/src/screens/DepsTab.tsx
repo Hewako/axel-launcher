@@ -217,7 +217,7 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
                 <dt>{t("Предупреждений")}</dt><dd>{warnings}</dd>
                 <dt>{t("Модов со связями")}</dt><dd>{g.nodes.length}</dd>
               </dl>
-              <p className="muted small">{t("Нажмите на мод в графе — здесь появятся его связи и что можно сделать. Узел можно перетащить мышью или стрелками, положение запомнится.")}</p>
+              <p className="muted small">{t("Нажмите на мод в графе, и здесь появятся его связи и что с ним можно сделать. Узел можно перетащить мышью или стрелками, положение запомнится.")}</p>
             </>
           ) : (
             <>
@@ -245,9 +245,9 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
         <span><i className="lg req" /> {t("требует")}</span>
         <span><i className="lg opt" /> {t("необязательно")}</span>
         <span><i className="lg bad" /> {t("конфликт")}</span>
-        <span>{t("серый узел — библиотека, поставлена как зависимость")}</span>
+        <span>{t("серый узел: библиотека, поставлена как зависимость")}</span>
       </p>
-      {running && <p className="small" style={{ color: "var(--warn)" }}>{t("Игра запущена — менять моды можно после её закрытия.")}</p>}
+      {running && <p className="small" style={{ color: "var(--warn)" }}>{t("Игра запущена. Моды можно менять, когда она закроется.")}</p>}
       {plan && <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, t("Перед: {0}", plan.title.toLowerCase())); setPlan(null); load(); onChanged(); }} />}
     </>
   );

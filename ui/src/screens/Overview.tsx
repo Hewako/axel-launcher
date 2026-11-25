@@ -141,7 +141,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         <div className="stack">
           <section className="verdict ok" aria-label={t("Игра запущена")}>
             <h3>{t("Игра запущена")}</h3>
-            {fixRun?.off.length ? <p>{t("Починка прошла: выключено — {0}.", fixRun.off.map(modName).join(", "))}{fixRun.warnings.length ? ` ${t("Осталось предупреждений: {0}, играть они не мешают.", fixRun.warnings.length)}` : ""}</p>
+            {fixRun?.off.length ? <p>{t("Починка прошла, выключены: {0}.", fixRun.off.map(modName).join(", "))}{fixRun.warnings.length ? ` ${t("Осталось предупреждений: {0}, играть они не мешают.", fixRun.warnings.length)}` : ""}</p>
               : <p>{t("Окно Minecraft открыто. Если игра упадёт, здесь появится причина.")}</p>}
             <div className="acts">
               <button className="btn" onClick={onLogs}>{t("Открыть лог")}</button>

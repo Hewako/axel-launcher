@@ -171,7 +171,7 @@ pub fn jvm_arg_forbidden(a: &str) -> Option<&'static str> {
     if a.starts_with("-javaagent") || a.starts_with("-agentpath") || a.starts_with("-agentlib") {
         Some("агенты подключает только лаунчер (authlib-injector для Ely.by)")
     } else if a.starts_with("-XX:OnError") || a.starts_with("-XX:OnOutOfMemoryError") {
-        Some("этот аргумент запускает команду — для своих команд есть «Команды до и после запуска»")
+        Some("этот аргумент запускает команду, для своих команд есть «Команды до и после запуска»")
     } else if a.starts_with("-Xbootclasspath") {
         Some("подмена системных классов Java запрещена")
     } else {
@@ -194,7 +194,7 @@ pub fn memory_advice(max_mb: u32, total_mb: Option<u64>, pack_mb: Option<u32>) -
         && u64::from(max_mb) * 4 > total * 3
     {
         out.push(format!(
-            "Отдано {} из {} ГБ памяти компьютера — системе и браузеру может не хватить, игра начнёт тормозить",
+            "Отдано {} из {} ГБ памяти компьютера, системе и браузеру может не хватить, игра начнёт тормозить",
             max_mb / 1024,
             total / 1024
         ));
@@ -206,7 +206,7 @@ pub fn memory_advice(max_mb: u32, total_mb: Option<u64>, pack_mb: Option<u32>) -
     }
     if max_mb < 2048 {
         out.push(
-            "Меньше 2 ГБ — мало для современных версий: возможны вылеты из-за нехватки памяти"
+            "Меньше 2 ГБ слишком мало для современных версий: возможны вылеты из-за нехватки памяти"
                 .into(),
         );
     }
@@ -251,7 +251,7 @@ pub fn validate(o: &LaunchOverrides) -> Result<()> {
             .find(|a| MANAGED_GAME_ARGS.contains(&a.as_str()))
     {
         return Err(Error::invalid(format!(
-            "Аргумент {a} задаёт сам лаунчер — его нельзя менять"
+            "Аргумент {a} задаёт сам лаунчер, его нельзя менять"
         )));
     }
     if let Some(env) = &o.env {

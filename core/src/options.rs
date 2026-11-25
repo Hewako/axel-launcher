@@ -191,7 +191,7 @@ pub fn save_preset(
         .collect();
     if picked.is_empty() {
         return Err(Error::invalid(
-            "В options.txt нет настроек этой категории — сначала запустите игру",
+            "В options.txt нет настроек этой категории, сначала запустите игру",
         ));
     }
     let mut text = format!("# quarry-preset: {}\n", category_name(category));

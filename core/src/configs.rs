@@ -192,7 +192,7 @@ pub fn read(game_dir: &Path, rel: &str) -> Result<String> {
     let meta = std::fs::metadata(&path).at(&path)?;
     if meta.len() > MAX_SIZE {
         return Err(Error::invalid(
-            "Файл больше 1 МБ — откройте его в текстовом редакторе",
+            "Файл больше 1 МБ, откройте его в текстовом редакторе",
         ));
     }
     String::from_utf8(std::fs::read(&path).at(&path)?)

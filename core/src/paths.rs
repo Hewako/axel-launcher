@@ -114,7 +114,7 @@ impl DataDir {
             }
             if new.exists() {
                 log.push(format!(
-                    "пропущено: {} — {} уже существует",
+                    "пропущено: {}, {} уже существует",
                     src.display(),
                     new.display()
                 ));

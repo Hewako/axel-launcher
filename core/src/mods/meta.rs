@@ -75,7 +75,7 @@ pub fn read_jar(path: &Path) -> Result<Vec<ModMeta>> {
     let file = std::fs::File::open(path).at(path)?;
     let mut zip = zip::ZipArchive::new(file).map_err(|_| {
         Error::invalid(format!(
-            "{} — не JAR-архив или файл повреждён",
+            "{} не JAR-архив или файл повреждён",
             path.display()
         ))
     })?;
@@ -545,7 +545,7 @@ side="CLIENT"
         make_jar(&lib, &[("a/B.class", b"x")]);
         assert!(
             read_jar(&lib).unwrap().is_empty(),
-            "библиотека без метаданных — пустой список"
+            "библиотека без метаданных, пустой список"
         );
         let broken = d.join("broken.jar");
         std::fs::write(&broken, b"not a zip").unwrap();

@@ -97,7 +97,7 @@ fn explain_token_error(status: u16, body: &str) -> Error {
             e.error_description.unwrap_or(e.error)
         )),
         Some(e) => Error::Auth(format!("Ely.by: {}", e.error_description.unwrap_or(e.error))),
-        None => Error::Auth(format!("Ely.by ответил HTTP {status}. Сервис может быть недоступен — попробуйте позже.")),
+        None => Error::Auth(format!("Ely.by ответил HTTP {status}. Сервис может быть недоступен, попробуйте позже.")),
     }
 }
 
@@ -281,7 +281,7 @@ pub async fn login_password(
         }
         Err((s, _)) => {
             return Err(Error::Auth(format!(
-                "Ely.by ответил HTTP {s}. Сервис может быть недоступен — попробуйте позже."
+                "Ely.by ответил HTTP {s}. Сервис может быть недоступен, попробуйте позже."
             )));
         }
     };

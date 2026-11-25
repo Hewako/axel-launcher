@@ -42,7 +42,7 @@ export function PlanDialog({ title, plan, onClose, onApply }: { title: string; p
         </div>
       )}
       {plan.notes.map((n, i) => <span key={i} className="muted small">• {tc(n)}</span>)}
-      <span className="muted small">{t("Перед изменением будет создан снимок — отменить можно на вкладке «Откат». Файлы скачиваются с Modrinth и проверяются по хэшу.")}</span>
+      <span className="muted small">{t("Перед изменением сохранится снимок, отменить можно на вкладке «Откат». Файлы скачиваются с Modrinth и проверяются по хэшу.")}</span>
       {error && <div className="alert err"><span>{error}</span></div>}
       <div className="acts">
         <button className="btn" onClick={onClose}>{t("Отмена")}</button>
@@ -268,7 +268,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
               t("Добавлено модов: {0}", added.length),
               unknown.length === 0
                 ? t("Все файлы опознаны в каталоге Modrinth. Перед добавлением создан снимок.")
-                : t("Не найдены в каталоге Modrinth: {0}. Происхождение этих файлов неизвестно — ставьте моды только из надёжных источников (через заражённые моды распространялся вирус Fractureiser). Перед добавлением создан снимок.", unknown.map((u) => u.title).join(", ")),
+                : t("Не найдены в каталоге Modrinth: {0}. Происхождение этих файлов неизвестно. Ставьте моды только из надёжных источников: через заражённые моды распространялся вирус Fractureiser. Перед добавлением создан снимок.", unknown.map((u) => u.title).join(", ")),
             );
           } catch (err) {
             await dialog.alert(t("Файлы не добавлены"), errText(err));
@@ -307,7 +307,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     const world = f.world_content
       ? t(" Этот мод добавляет в мир блоки, измерения или генерацию: без него часть построек и чанков может пропасть. Axel' сначала сделает бэкап последнего мира.")
       : "";
-    const ok = await dialog.confirm({ title: t("Удалить {0}?", f.mods[0]?.name ?? f.file_name), body: t("Перед удалением будет создан снимок — вернуть мод можно на вкладке «Откат». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
+    const ok = await dialog.confirm({ title: t("Удалить {0}?", f.mods[0]?.name ?? f.file_name), body: t("Перед удалением сохранится снимок, вернуть мод можно на вкладке «Откат». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
     if (!ok) return;
     try { await mods.remove(inst.id, f.file_name); load(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
   };
@@ -416,7 +416,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
 
   return (
     <>
-      {running && <div className="alert warn"><span className="small">{t("Игра запущена — менять моды можно после её закрытия.")}</span></div>}
+      {running && <div className="alert warn"><span className="small">{t("Игра запущена. Моды можно менять, когда она закроется.")}</span></div>}
       {dragging && <div className="alert info"><div className="h">{t("Отпустите, чтобы добавить моды в «")}{inst.name}»</div><span className="small">{t("Перед добавлением будет создан снимок.")}</span></div>}
       {/* Замечания без файла (например, не хватает мода) — над таблицей; остальные — в карточке мода. */}
       <div className="findings">
@@ -479,7 +479,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
         </div>
       )}
 
-      <p className="muted small">{t("Состояние — по метаданным модов (fabric.mod.json, quilt.mod.json, mods.toml), а не по имени файла. «Конфликтов не найдено» не гарантирует, что игра запустится: настоящую проверку даёт запуск.")}</p>
+      <p className="muted small">{t("Состояние определяется по метаданным модов (fabric.mod.json, quilt.mod.json, mods.toml), а не по имени файла. «Конфликтов не найдено» не гарантирует, что игра запустится: настоящую проверку даёт запуск.")}</p>
       {plan && (
         <PlanDialog title={plan.title} plan={plan.plan} onClose={() => setPlan(null)} onApply={async (p) => { await mods.apply(inst.id, p, plan.reason); setPlan(null); setPicked(new Set()); load(); refreshUpdates(); }} />
       )}

@@ -195,7 +195,7 @@ pub fn check(
             severity: Severity::Warning,
             title: "В профиле без загрузчика лежат моды".into(),
             detail: "Vanilla не загружает моды: они просто не будут работать.".into(),
-            evidence: "загрузчик профиля — Vanilla".into(),
+            evidence: "загрузчик профиля: Vanilla".into(),
             files: enabled.iter().map(|f| f.file_name.clone()).collect(),
             fixes: Vec::new(),
         });
@@ -227,7 +227,7 @@ pub fn check(
             if loader != LoaderKind::Vanilla && !loader_accepts(loader, m.loader) {
                 findings.push(Finding {
                     severity: Severity::Blocking,
-                    title: format!("{} — мод для другого загрузчика", m.name),
+                    title: format!("{}: мод для другого загрузчика", m.name),
                     detail: format!(
                         "Этот мод сделан для {:?}, а профиль использует {}. Найдите версию мода для {} или выключите его.",
                         m.loader,
@@ -270,7 +270,7 @@ pub fn check(
                                     m.name, d.id, d.range, v
                                 ),
                                 detail:
-                                    "Версии не подходят друг к другу — загрузчик остановит запуск."
+                                    "Версии не подходят друг к другу, загрузчик остановит запуск."
                                         .into(),
                                 evidence: format!(
                                     "{}: зависимость {} {}",
@@ -288,7 +288,7 @@ pub fn check(
                                     d.id, m.name
                                 ),
                                 detail: format!(
-                                    "Нужна «{}», стоит {} — формат версии непонятен лаунчеру.",
+                                    "Нужна «{}», стоит {}, формат версии непонятен лаунчеру.",
                                     d.range, v
                                 ),
                                 evidence: format!(
@@ -343,7 +343,7 @@ pub fn check(
                                 format!("{} плохо работает вместе с «{}»", m.name, d.id)
                             },
                             detail: if hard {
-                                "Автор мода сам указал, что вместе они не работают: загрузчик не запустит игру. Выключите один из них — файл останется в профиле.".into()
+                                "Автор мода сам указал, что вместе они не работают: загрузчик не запустит игру. Выключите один из них, файл останется в профиле.".into()
                             } else {
                                 "Автор мода предупреждает о проблемах. Игра запустится.".into()
                             },
@@ -514,7 +514,7 @@ mod tests {
         assert!(macos_icon_fix(LoaderKind::Fabric, "1.18.2", &none).is_none());
         assert!(
             macos_icon_fix(LoaderKind::Vanilla, "1.16.5", &none).is_none(),
-            "для vanilla — запрет запуска, не Mod Doctor"
+            "для vanilla, запрет запуска, не Mod Doctor"
         );
     }
 

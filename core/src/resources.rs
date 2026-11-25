@@ -443,9 +443,7 @@ async fn modrinth_file(project: &str, kind: Kind, game_version: &str) -> Result<
         .primary_file()
         .ok_or_else(|| Error::invalid(format!("У версии {} нет файла", v.name)))?;
     if !f.url.starts_with("https://") || crate::net::host_of(&f.url) != "cdn.modrinth.com" {
-        return Err(Error::invalid(
-            "Файл не с CDN Modrinth — установка отменена",
-        ));
+        return Err(Error::invalid("Файл не с CDN Modrinth, установка отменена"));
     }
     Ok(Picked {
         url: f.url.clone(),
@@ -472,7 +470,7 @@ async fn curseforge_file(project: &str, game_version: &str) -> Result<Picked> {
     let (title, f) = crate::curseforge::resource_file(mod_id, game_version).await?;
     let url = f.trusted_url().ok_or_else(|| {
         Error::invalid(format!(
-            "Автор «{title}» запретил скачивание в сторонних лаунчерах — скачайте файл вручную на сайте CurseForge"
+            "Автор «{title}» запретил скачивание в сторонних лаунчерах, скачайте файл вручную на сайте CurseForge"
         ))
     })?;
     Ok(Picked {

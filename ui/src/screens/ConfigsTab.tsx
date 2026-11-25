@@ -100,7 +100,7 @@ export function ConfigsTab({ inst, running }: { inst: Instance; running: boolean
         {shown.map((f) => (
           <button key={f.path} className={`cfgitem ${f.path === path ? "on" : ""}`} aria-current={f.path === path ? "true" : undefined} onClick={() => open(f.path)} title={f.path}>
             <span className="mono">{f.path.replace(/^config\//, "")}</span>
-            {f.user_edited && <span className="tag ok" title={t("Правили вы — обновление сборки этот файл не заменит")}>{t("изменён вами")}</span>}
+            {f.user_edited && <span className="tag ok" title={t("Вы правили этот файл, обновление сборки его не заменит")}>{t("изменён вами")}</span>}
           </button>
         ))}
         {contentHits.length > 0 && <p className="muted small" style={{ margin: "10px 8px 4px" }}>{t("В содержимом:")}</p>}
@@ -145,7 +145,7 @@ export function ConfigsTab({ inst, running }: { inst: Instance; running: boolean
         <Modal title={t("Сохранить {0}?", path)} onClose={() => setPreview(null)} wide>
           {preview.error && <div className="alert err"><span>{tc(preview.error)}</span></div>}
           <Diff lines={preview.diff} />
-          <p className="muted small">{t("Прежняя версия сохранится в историю. Файл отметится как ваш — обновление сборки его не заменит.")}</p>
+          <p className="muted small">{t("Прежняя версия сохранится в историю. Файл отметится как ваш, и обновление сборки его не заменит.")}</p>
           <div className="acts">
             <button className="btn" onClick={() => setPreview(null)}>{t("Вернуться к правке")}</button>
             <button className="btn pri" disabled={!!preview.error} onClick={save}>{t("Сохранить")}</button>

@@ -103,7 +103,7 @@ function CopyFromDialog({ inst, instances, onClose, onChanged }: { inst: Instanc
       // Настройки запуска лежат в самом профиле — берём его свежую копию.
       if (items.includes("launch")) { const fresh = (await api.listInstances()).instances.find((i) => i.id === inst.id); if (fresh) onChanged(fresh); }
       onClose();
-      await dialog.alert(t("Перенесено"), t("Перед переносом сохранён снимок — вернуть как было можно на вкладке «Откат»."));
+      await dialog.alert(t("Перенесено"), t("Перед переносом сохранён снимок, вернуть как было можно на вкладке «Откат»."));
     } catch (e) { await dialog.alert(t("Не перенесено"), errText(e)); } finally { setBusy(false); }
   };
   return (
@@ -168,7 +168,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       const r = await importer.exportMrpack(inst.id, path, inst.pack?.name ?? inst.name, inst.pack?.version ?? "1.0");
       await dialog.alert(t("Сборка сохранена"), <>
         <p>{t("Модов ссылками на Modrinth: {0}. Рядом сохранён отчёт с лицензиями:", r.linked)} <span className="mono small">{r.report_path}</span></p>
-        {r.bundled.length > 0 && <p className="small" style={{ color: "var(--warn)" }}>{t("Внутрь архива вложены файлы без источника — перед публикацией проверьте их лицензии:")} {r.bundled.map((b) => b.split("/").pop()).join(", ")}</p>}
+        {r.bundled.length > 0 && <p className="small" style={{ color: "var(--warn)" }}>{t("В архиве есть файлы без источника. Перед публикацией проверьте их лицензии:")} {r.bundled.map((b) => b.split("/").pop()).join(", ")}</p>}
       </>);
     } catch (e) { await dialog.alert(t("Не сохранено"), errText(e)); }
   };
@@ -188,7 +188,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       await importer.updateApply(inst.id, update.path, update.off, update.versionId);
       setUpdate(null);
       onChanged({ ...inst, pack: inst.pack && { ...inst.pack, version: update.plan.to, version_id: update.versionId ?? inst.pack.version_id } });
-      await dialog.alert(t("Сборка обновлена"), t("Перед обновлением сохранён снимок — вернуть как было можно на вкладке «Откат»."));
+      await dialog.alert(t("Сборка обновлена"), t("Перед обновлением сохранён снимок, вернуть как было можно на вкладке «Откат»."));
     } catch (e) { await dialog.alert(t("Сборку не обновить"), errText(e)); } finally { setUpdating(false); }
   };
   const streamer = useStreamer();
@@ -380,7 +380,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     <aside className="stack">
       <section className="card">
         <h3>{t("Что входит в экспорт")}</h3>
-        <p className="muted">{t("Моды (ссылками на Modrinth, остальные — файлами) и настройки модов из папки config. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
+        <p className="muted">{t("Моды (с Modrinth ссылками, остальные файлами) и настройки модов из папки config. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
       </section>
     </aside>
     </div>

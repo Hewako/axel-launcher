@@ -65,7 +65,7 @@ export const metaOf = (i: Instance): ProfileMeta => ({ group: i.group, descripti
 /** Что можно перенести между профилями (совпадает с ядром, instance::ops::SHARABLE). */
 export const SHARABLE: [string, string][] = [
   ["mods", t("Моды (только при том же загрузчике; уже имеющиеся не заменяются)")],
-  ["launch", t("Настройки запуска (память, окно, аргументы; Java — при той же версии игры)")],
+  ["launch", t("Настройки запуска (память, окно, аргументы; Java, если версия игры та же)")],
   ["options.txt", t("Настройки игры (управление, графика, звук)")],
   ["servers.dat", t("Список серверов")],
   ["resourcepacks", t("Ресурспаки")],

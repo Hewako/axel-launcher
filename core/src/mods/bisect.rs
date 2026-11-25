@@ -111,7 +111,7 @@ fn next_round(store: &InstanceStore, id: &str, mut b: Bisect) -> Result<Bisect> 
 pub fn start(store: &InstanceStore, id: &str) -> Result<Bisect> {
     if load(store, id)?.is_some() {
         return Err(Error::invalid(
-            "Поиск виновника уже идёт — ответьте на вопрос или прекратите его",
+            "Поиск виновника уже идёт, ответьте на вопрос или прекратите его",
         ));
     }
     let game = store.game_dir(id)?;

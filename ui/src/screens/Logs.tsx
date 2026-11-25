@@ -90,7 +90,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
             <div className="alert err">
               <div className="h">{t("Игра упала")}{run.exit_code != null ? t(" с кодом {0}", run.exit_code) : ""}</div>
               {run.message && <span>{tc(run.message)}</span>}
-              <span className="small">{t("Подробный разбор виден сразу после краша. Здесь — сохранённый лог: посмотрите вкладку «Ошибки», обычно причина в первой строке «Caused by».")}</span>
+              <span className="small">{t("Подробный разбор виден сразу после краша, а здесь сохранённый лог. Посмотрите вкладку «Ошибки», обычно причина в первой строке «Caused by».")}</span>
             </div>
           )}
           {run?.outcome === "failed_to_start" && !live && (
@@ -109,7 +109,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
                 <button className="btn" onClick={() => api.openFolder(inst.id, "crash-reports")}>{t("Открыть crash-reports")}</button>
               </div>
             )}
-            <p className="muted small">{t("В отчёте скрыты токены, путь к домашней папке и IP-адреса (в режиме стримера — и ник).")}</p>
+            <p className="muted small">{t("В отчёте скрыты токены, путь к домашней папке и IP-адреса (в режиме стримера и ник).")}</p>
           </section>
         {inst && crashes.length > 0 && (
           <>
@@ -141,7 +141,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
       )}
       {report && inst && (
         <Modal title={t("Отчёт для поддержки")} onClose={() => setReport(null)} wide>
-          <p className="small muted" style={{ marginTop: 0 }}>{t("Вот что попадёт в архив — проверьте перед отправкой. Токены, путь к домашней папке и IP-адреса уже скрыты")}{" "}{t("(в режиме стримера — и ник).")}</p>
+          <p className="small muted" style={{ marginTop: 0 }}>{t("Вот что попадёт в архив, проверьте перед отправкой. Токены, путь к домашней папке и IP-адреса уже скрыты")}{" "}{t("(в режиме стримера и ник).")}</p>
           <div className="seg" role="tablist" style={{ flexWrap: "wrap" }}>
             {report.map((f, i) => <button key={f.name} role="tab" aria-selected={part === i} className={part === i ? "on" : ""} onClick={() => setPart(i)}>{f.name}</button>)}
           </div>

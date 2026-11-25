@@ -130,7 +130,7 @@ mod tests {
         );
         assert!(
             l.find("mods/renamed.jar", "abc").is_some(),
-            "переименованный — по хэшу"
+            "переименованный, по хэшу"
         );
         assert!(PackLock::load(&d.join("missing")).unwrap().files.is_empty());
         std::fs::remove_dir_all(&d).unwrap();

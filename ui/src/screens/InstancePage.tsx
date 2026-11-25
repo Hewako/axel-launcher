@@ -211,7 +211,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <SourceTag source={max.source} onReset={() => setDraft({ ...draft, max_memory_mb: undefined, min_memory_mb: undefined })} />
           </div>
           <div className="setting">
-            <div className="lbl">Java<span className="hint">{t("по умолчанию — по javaVersion из JSON версии")}</span></div>
+            <div className="lbl">Java<span className="hint">{t("по умолчанию берётся из javaVersion в JSON версии")}</span></div>
             <div className="stack tight">
               <select className="field" aria-label="Java" value={customJava ? "custom" : draft.java_path ?? ""}
                 onChange={(e) => { const v = e.target.value; setCustomJava(v === "custom"); if (v !== "custom") setDraft({ ...draft, java_path: v || undefined }); }}>
@@ -224,7 +224,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <SourceTag source={javaEff.source} onReset={() => setDraft({ ...draft, java_path: undefined })} />
           </div>
           <div className="setting">
-            <div className="lbl">{t("Размер окна игры")}<span className="hint">{t("пусто — как решит игра")}</span></div>
+            <div className="lbl">{t("Размер окна игры")}<span className="hint">{t("пусто: как решит игра")}</span></div>
             <div className="row" style={{ flexWrap: "nowrap" }}>
               <input className="field" type="number" min={320} aria-label={t("Ширина окна")} placeholder={t("ширина")} value={draft.resolution?.[0] ?? ""}
                 onChange={(e) => setDraft({ ...draft, resolution: e.target.value ? [Number(e.target.value), draft.resolution?.[1] ?? 720] : undefined })} />
@@ -235,13 +235,13 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <SourceTag source={draft.resolution ? "profile" : inst.pack_settings.resolution ? "pack" : data.global.resolution ? "global" : "default"} onReset={() => setDraft({ ...draft, resolution: undefined })} />
           </div>
           <div className="setting">
-            <div className="lbl">{t("Вход")}<span className="hint">{t("Ely.by — только при Microsoft-аккаунте с купленной игрой")}</span></div>
+            <div className="lbl">{t("Вход")}<span className="hint">{t("Ely.by работает вместе с Microsoft-аккаунтом, на котором куплена игра")}</span></div>
             <select className="field" value={inst.auth_mode} onChange={async (e) => {
               try { onChanged(await api.updateInstance(inst.id, { authMode: e.target.value as Instance["auth_mode"] })); }
               catch (err) { await dialog.alert(t("Нельзя переключить вход"), errText(err)); }
             }}>
-              <option value="microsoft">{t("Microsoft — официальные серверы")}</option>
-              <option value="ely_by" disabled={ely.length === 0}>{t("Ely.by — только совместимые серверы")}</option>
+              <option value="microsoft">{t("Microsoft: официальные серверы")}</option>
+              <option value="ely_by" disabled={ely.length === 0}>{t("Ely.by: только совместимые серверы")}</option>
             </select>
             <span />
           </div>

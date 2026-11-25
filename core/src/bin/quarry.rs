@@ -16,7 +16,7 @@ use std::sync::Arc;
 #[command(
     name = "quarry",
     version,
-    about = "Axel' — открытый лаунчер Minecraft Java Edition"
+    about = "Axel', открытый лаунчер Minecraft Java Edition"
 )]
 struct Cli {
     /// Папка данных (по умолчанию ~/.quarry)
@@ -192,7 +192,7 @@ fn cli_events() -> launch::LaunchEventFn {
             "Игра завершилась: код {:?}, {} с{}",
             info.code,
             info.duration_secs,
-            if info.crashed { " — краш" } else { "" }
+            if info.crashed { ", краш" } else { "" }
         ),
     })
 }
@@ -209,7 +209,7 @@ async fn main() -> Result<()> {
         } => {
             let (m, fresh) = quarry_core::metadata::manifest(&data).await?;
             if fresh == quarry_core::metadata::Freshness::Cached {
-                eprintln!("Нет сети — показан сохранённый список.");
+                eprintln!("Нет сети, показан сохранённый список.");
             }
             println!("{:<24} {:<10} Дата", "Версия", "Тип");
             let list = m.filtered(snapshots, old);
@@ -369,7 +369,7 @@ async fn main() -> Result<()> {
             }
             for m in r.manual {
                 println!(
-                    "  скачать вручную: проект {} файл {} — {}",
+                    "  скачать вручную: проект {} файл {}, {}",
                     m.project_id, m.file_id, m.url
                 );
             }
@@ -561,7 +561,7 @@ async fn main() -> Result<()> {
                     )
                     .await?;
                     println!(
-                        "Вход выполнен: {} — {}",
+                        "Вход выполнен: {}, {}",
                         acc.name,
                         if acc.owns_java_edition {
                             "Java Edition куплена"

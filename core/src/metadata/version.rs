@@ -364,7 +364,7 @@ impl VersionJson {
             // 21.10.2026); все они рассчитаны на Java 8 и ниже.
             None => (
                 8,
-                "в JSON версии нет javaVersion — для таких старых версий нужна Java 8".to_string(),
+                "в JSON версии нет javaVersion, для таких старых версий нужна Java 8".to_string(),
             ),
         }
     }

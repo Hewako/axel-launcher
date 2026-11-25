@@ -29,7 +29,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         {step === 0 && (
           <>
             <h3 id="wiz-title">{t("Добро пожаловать в Axel'")}</h3>
-            <p>{t("Пара коротких шагов — и можно играть. Всё это потом меняется в настройках.")}</p>
+            <p>{t("Пара коротких шагов, и можно играть. Всё это потом можно поменять в настройках.")}</p>
             <label className="small muted" htmlFor="wiz-lang">{t("Язык интерфейса")}</label>
             <select id="wiz-lang" className="field" value={lang} onChange={(e) => setLang(e.target.value)} data-autofocus>
               <option value="ru">{t("Русский")}</option>
@@ -44,7 +44,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
             <p className="mono small" style={{ userSelect: "text" }}>{info?.data_dir || "…"}</p>
             <div className="row"><DataDirButton /></div>
             {info?.free_bytes !== undefined && <p>{t("Свободно на диске:")} <b>{sizeText(info.free_bytes)}</b>.</p>}
-            {lowSpace && <div className="alert warn"><span>{t("Места мало. Одна версия игры с модами занимает 1–3 ГБ — освободите место заранее.")}</span></div>}
+            {lowSpace && <div className="alert warn"><span>{t("Места мало. Одна версия игры с модами занимает 1–3 ГБ, освободите место заранее.")}</span></div>}
           </>
         )}
         {step === 2 && (
@@ -56,13 +56,13 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
                 <ul className="small">{info.javas.slice(0, 5).map((j) => <li key={j.path}>Java {j.major} ({j.arch})</li>)}</ul>
                 <p className="muted small">{t("Для каждой версии игры Axel' подберёт Java сам.")}</p>
               </>
-            ) : <p>{t("Java не нашлась — ничего страшного: Axel' скачает нужную при первом запуске игры.")}</p>}
+            ) : <p>{t("Java не нашлась, ничего страшного: Axel' скачает нужную при первом запуске игры.")}</p>}
           </>
         )}
         {step === 3 && (
           <>
             <h3 id="wiz-title">{t("Вход")}</h3>
-            <p>{t("Чтобы играть, нужен аккаунт Microsoft, на котором куплена Minecraft: Java Edition. Пароль вводится на сайте Microsoft — Axel' его не видит.")}</p>
+            <p>{t("Чтобы играть, нужен аккаунт Microsoft, на котором куплена Minecraft: Java Edition. Пароль вводится на сайте Microsoft, Axel' его не видит.")}</p>
             <div className="row">
               <button className={`btn ${next === "accounts" ? "pri" : ""}`} onClick={() => { setNext("accounts"); setStep(4); }}>{t("Войти после мастера")}</button>
               <button className="btn" onClick={() => setStep(4)}>{t("Войти позже")}</button>
@@ -72,7 +72,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         {step === 4 && (
           <>
             <h3 id="wiz-title">{t("Первый профиль")}</h3>
-            <p>{t("Профиль — это отдельная игра со своей версией, модами и мирами. Профилей может быть сколько угодно, и они не мешают друг другу.")}</p>
+            <p>{t("Каждый профиль как отдельная игра: своя версия, моды и миры. Профилей может быть сколько угодно, и они не мешают друг другу.")}</p>
             <div className="row">
               <button className={`btn ${next === "create" ? "pri" : ""}`} onClick={() => { setNext("create"); setStep(5); }}>{t("Создать профиль")}</button>
               <button className={`btn ${next === "import" ? "pri" : ""}`} onClick={() => { setNext("import"); setStep(5); }}>{t("Импортировать сборку")}</button>

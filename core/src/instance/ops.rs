@@ -143,7 +143,7 @@ pub const SHARABLE: [(&str, &str); 9] = [
     ),
     (
         "launch",
-        "Настройки запуска (память, окно, аргументы; Java — при той же версии игры)",
+        "Настройки запуска (память, окно, аргументы; Java, если версия игры та же)",
     ),
     ("options.txt", "Настройки игры (управление, графика, звук)"),
     ("servers.dat", "Список серверов"),
@@ -283,7 +283,7 @@ pub fn move_game_dir(
             .is_some_and(|n| n == ".minecraft" || n == "minecraft")
     {
         return Err(Error::invalid(
-            "Это папка официального лаунчера — переносить её нельзя",
+            "Это папка официального лаунчера, переносить её нельзя",
         ));
     }
     let internal = store.dir(id)?.join("game");
@@ -303,7 +303,7 @@ pub fn move_game_dir(
     }
     if to.exists() {
         return Err(Error::invalid(format!(
-            "Папка {} уже существует — выберите другое место",
+            "Папка {} уже существует, выберите другое место",
             to.display()
         )));
     }
@@ -325,7 +325,7 @@ fn copy_then_remove(from: &Path, to: &Path) -> Result<()> {
     if dir_size(from) != dir_size(to) {
         let _ = std::fs::remove_dir_all(to);
         return Err(Error::invalid(
-            "Копия получилась неполной — перенос отменён, исходная папка не тронута",
+            "Копия получилась неполной, перенос отменён, исходная папка не тронута",
         ));
     }
     std::fs::remove_dir_all(from).at(from)

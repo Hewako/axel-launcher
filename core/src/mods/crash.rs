@@ -160,7 +160,7 @@ pub fn analyze(
     if let Some(l) = text_has("Regular windows do not have icons on macOS") {
         return Analysis {
             title: "Старая версия игры не открывает окно на macOS".into(),
-            explanation: "Версии 1.13–1.17 ставят иконку окна, а современная macOS это запрещает (ошибка игры MCL-15163). Профилю Fabric 1.14–1.17 помогает мод MacOS LWJGL Fix — Mod Doctor предложит его поставить. Без модов работают версии 1.12.2 и старше или 1.18 и новее.".into(),
+            explanation: "Версии 1.13–1.17 ставят иконку окна, а современная macOS это запрещает (ошибка игры MCL-15163). Профилю Fabric 1.14–1.17 помогает мод MacOS LWJGL Fix, Mod Doctor предложит его поставить. Без модов работают версии 1.12.2 и старше или 1.18 и новее.".into(),
             confidence: Confidence::High,
             confidence_label: Confidence::High.label(),
             evidence: vec![l],
@@ -214,7 +214,7 @@ pub fn analyze(
                 .find(|f| f.mods.iter().any(|m| m.mixins.iter().any(|x| x == cfg)))
             {
                 return Analysis {
-                    title: format!("Вероятный виновник — {}", f.display_name()),
+                    title: format!("Вероятный виновник: {}", f.display_name()),
                     explanation: format!(
                         "В ошибке упомянут mixin-конфиг «{cfg}», он принадлежит этому моду."
                     ),
@@ -246,7 +246,7 @@ pub fn analyze(
                     .map(|f| f.display_name())
                     .unwrap_or_else(|| file.clone());
                 return Analysis {
-                    title: format!("Вероятный виновник — {name}"),
+                    title: format!("Вероятный виновник: {name}"),
                     explanation: "Ошибка произошла внутри кода этого мода. Это сильный признак, но не доказательство: иногда мод падает из-за другого мода или неподходящей версии.".into(),
                     confidence: Confidence::Medium,
                     confidence_label: Confidence::Medium.label(),
@@ -269,7 +269,7 @@ pub fn analyze(
         if let Some(l) = text_has(needle) {
             return Analysis {
                 title: "Похоже на проблему драйвера видеокарты".into(),
-                explanation: "Игра упала в коде графического драйвера. Обновите драйвер видеокарты; если не поможет — попробуйте запуск без шейдеров и модов графики.".into(),
+                explanation: "Игра упала в коде графического драйвера. Обновите драйвер видеокарты; если не поможет, попробуйте запуск без шейдеров и модов графики.".into(),
                 confidence: Confidence::Low,
                 confidence_label: Confidence::Low.label(),
                 evidence: vec![l],

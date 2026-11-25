@@ -29,7 +29,7 @@ const SCOPE: &str = "XboxLive.signin offline_access";
 pub fn client_id() -> Result<&'static str> {
     CLIENT_ID.filter(|s| !s.trim().is_empty()).ok_or_else(|| {
         Error::Auth(
-            "Вход Microsoft не настроен в этой сборке: нет client ID приложения Azure. Инструкция — docs/MICROSOFT_SETUP.md."
+            "Вход Microsoft не настроен в этой сборке: нет client ID приложения Azure. Инструкция: docs/MICROSOFT_SETUP.md."
                 .into(),
         )
     })
@@ -132,7 +132,7 @@ impl McProfile {
 /// Объяснение кода XSTS для пользователя (план, 5.8; коды — неофициальные).
 pub fn xsts_message(xerr: u64) -> String {
     match xerr {
-        2148916227 => "Аккаунт заблокирован в Xbox. Подробности — в поддержке Xbox.".into(),
+        2148916227 => "Аккаунт заблокирован в Xbox. Подробности в поддержке Xbox.".into(),
         2148916233 => "У этой учётной записи Microsoft нет профиля Xbox. Создайте его на xbox.com (или войдите один раз на minecraft.net) и повторите вход.".into(),
         2148916235 => "Xbox Live недоступен в стране, указанной в учётной записи Microsoft.".into(),
         2148916236 | 2148916237 => "Нужно подтвердить возраст на странице Xbox (требование для Южной Кореи), затем повторить вход.".into(),
@@ -329,7 +329,7 @@ async fn minecraft_chain(ms: MsToken) -> Result<Chain> {
         Ok(l) => l,
         Err((403, _)) => {
             return Err(Error::Auth(
-                "Minecraft Services ответил 403: приложение Axel' ещё не одобрено Mojang (Invalid app registration). Вход заработает после одобрения client ID — см. docs/MICROSOFT_SETUP.md."
+                "Minecraft Services ответил 403: приложение Axel' ещё не одобрено Mojang (Invalid app registration). Вход заработает после одобрения client ID, см. docs/MICROSOFT_SETUP.md."
                     .into(),
             ));
         }

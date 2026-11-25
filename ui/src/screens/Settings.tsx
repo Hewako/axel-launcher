@@ -41,7 +41,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
   return (
     <>
       <h2>{t("Настройки Axel'")}</h2>
-      <p className="sub">{t("Глобальные значения — нижний уровень наследования: профиль и сборка их переопределяют.")}</p>
+      <p className="sub">{t("Эти значения действуют во всех профилях, если в профиле или сборке не задано своё.")}</p>
       <div className="settings">
         <nav className="secnav" aria-label={t("Разделы настроек")}>
           {SECTIONS.map(([k, l]) => <button key={k} className={sec === k ? "on" : ""} aria-current={sec === k ? "page" : undefined} onClick={() => setSec(k)}>{l}</button>)}
@@ -81,7 +81,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           <span className="muted small">{t("МБ")}</span>
         </div>
         <div className="setting">
-          <div className="lbl">{t("Сообщать о новой версии Axel'")}<span className="hint">{t("проверка на GitHub при запуске; скачивание — только по вашему нажатию")}</span></div>
+          <div className="lbl">{t("Сообщать о новой версии Axel'")}<span className="hint">{t("проверка на GitHub при запуске, скачивание только по вашему нажатию")}</span></div>
           <label className="row"><input type="checkbox" checked={s.check_launcher_updates} onChange={(e) => setS({ ...s, check_launcher_updates: e.target.checked })} /></label>
           <span />
         </div>
@@ -120,14 +120,14 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           <span />
         </div>
         <div className="setting">
-          <div className="lbl">{t("Компактный режим")}<span className="hint">{t("меньше отступов — больше строк на экране")}</span></div>
+          <div className="lbl">{t("Компактный режим")}<span className="hint">{t("меньше отступов, больше строк на экране")}</span></div>
           <label className="row"><input type="checkbox" checked={s.compact} onChange={(e) => { const n = { ...s, compact: e.target.checked }; setS(n); onAppearance(n); }} /></label>
           <span />
         </div>
           </>}
           {sec === "game" && <>
         <div className="setting">
-          <div className="lbl">{t("Java по умолчанию")}<span className="hint">{t("пусто — подбор по версии игры")}</span></div>
+          <div className="lbl">{t("Java по умолчанию")}<span className="hint">{t("пусто: подбор по версии игры")}</span></div>
           <input className="field mono" placeholder={t("Авто")} value={s.launch.java_path ?? ""}
             onChange={(e) => setS({ ...s, launch: { ...s.launch, java_path: e.target.value || undefined } })} />
           <span />

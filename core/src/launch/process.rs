@@ -409,7 +409,7 @@ mod tests {
         });
         let info = p.wait().await.unwrap();
         assert!(info.killed);
-        assert!(!info.crashed, "остановка пользователем — не краш");
+        assert!(!info.crashed, "остановка пользователем, не краш");
         assert!(info.duration_secs < 10);
         std::fs::remove_dir_all(&d).unwrap();
     }

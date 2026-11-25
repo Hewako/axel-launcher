@@ -146,7 +146,7 @@ pub fn import_mmc(store: &InstanceStore, dir: &Path) -> Result<ImportResult> {
     let detected = detect_mmc(dir)?;
     if !detected.loader.supports(&detected.game_version) {
         return Err(Error::invalid(format!(
-            "{} для Minecraft {} пока не поддерживается — такой инстанс импортировать нельзя",
+            "{} для Minecraft {} пока не поддерживается, такой инстанс импортировать нельзя",
             detected.loader.display(),
             detected.game_version
         )));
@@ -495,7 +495,7 @@ pub async fn import_mrpack(
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
     if !loader.supports(&game) {
         return Err(Error::invalid(format!(
-            "Сборка на {} для Minecraft {game} — так пока не поддерживается",
+            "Сборка на {} для Minecraft {game}, так пока не поддерживается",
             loader.display()
         )));
     }
@@ -584,7 +584,7 @@ fn plan_with(
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
     if loader != inst.loader {
         return Err(Error::invalid(format!(
-            "Новая версия сборки на {}, а профиль на {} — создайте для неё новый профиль",
+            "Новая версия сборки на {}, а профиль на {}, создайте для неё новый профиль",
             loader.display(),
             inst.loader.display()
         )));
@@ -808,7 +808,7 @@ pub async fn download_pack(
         || crate::net::host_of(&f.url) != "cdn.modrinth.com"
         || !f.filename.ends_with(".mrpack")
     {
-        return Err(Error::invalid("Файл сборки не с CDN Modrinth — отменено"));
+        return Err(Error::invalid("Файл сборки не с CDN Modrinth, отменено"));
     }
     let sha1 = f
         .hashes
@@ -896,7 +896,7 @@ pub fn export_mrpack(
     deps.insert("minecraft".into(), inst.game_version.clone().into());
     if !loader_key.is_empty() {
         let v = inst.loader_version.clone().ok_or_else(|| {
-            Error::invalid("Версия загрузчика ещё неизвестна — запустите профиль один раз")
+            Error::invalid("Версия загрузчика ещё неизвестна, запустите профиль один раз")
         })?;
         deps.insert(loader_key.into(), v.into());
     }
@@ -1106,7 +1106,7 @@ pub fn import_curseforge(store: &InstanceStore, path: &Path) -> Result<ImportRes
         .unwrap_or((LoaderKind::Vanilla, None));
     if !loader.supports(&m.minecraft.version) {
         return Err(Error::invalid(format!(
-            "Сборка на {} для Minecraft {} — так пока не поддерживается",
+            "Сборка на {} для Minecraft {}, так пока не поддерживается",
             loader.display(),
             m.minecraft.version
         )));
@@ -1151,7 +1151,7 @@ pub fn import_curseforge(store: &InstanceStore, path: &Path) -> Result<ImportRes
             notes: vec![
                 format!("Из архива: {n} файлов (конфиги и прочее)"),
                 format!(
-                    "Модов CurseForge для ручной загрузки: {} — без API-ключа CurseForge лаунчер не может скачать их сам",
+                    "Модов CurseForge для ручной загрузки: {}, без API-ключа CurseForge лаунчер не может скачать их сам",
                     manual.len()
                 ),
             ],
@@ -1193,7 +1193,7 @@ pub fn link_existing(
             instance: inst.clone(),
             manual: Vec::new(),
             notes: vec![format!(
-                "Профиль работает прямо в {} — файлы не копировались",
+                "Профиль работает прямо в {}, файлы не копировались",
                 game_dir.display()
             )],
         })
@@ -1568,7 +1568,7 @@ mod tests {
         assert_eq!(
             std::fs::read_to_string(dir.join("pack-base/config/x.toml")).unwrap(),
             "a = 10\nb = 2\n",
-            "основа для следующего обновления — новая версия автора"
+            "основа для следующего обновления, новая версия автора"
         );
         std::fs::remove_dir_all(&root).unwrap();
     }

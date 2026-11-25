@@ -130,7 +130,7 @@ pub fn set_enabled(game_dir: &Path, file_name: &str, enabled: bool) -> Result<()
     }
     if to.exists() {
         return Err(Error::invalid(format!(
-            "Есть и включённая, и выключенная копия {file_name} — оставьте одну"
+            "Есть и включённая, и выключенная копия {file_name}, оставьте одну"
         )));
     }
     std::fs::rename(from, to).at(from)
