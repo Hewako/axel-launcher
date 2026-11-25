@@ -70,7 +70,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
     <>
       <div className="shead">
         <div>
-          <h2>{t("Все профили")}</h2>
+          <h2>{t("Сборки")}</h2>
           <p className="sub">{t("Профилей: {0}", counts.all)}{total ? `, ${t("{0} на диске", sizeText(total))}` : ""}</p>
         </div>
         <button className="btn cta" onClick={onNew}><Icon name="plus" size={16} /> {t("Новый профиль")}</button>
@@ -120,7 +120,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
           </tbody>
         </table>
       </div>
-      <p className="muted small">{t("Архивные профили остаются на диске и показываются в конце рельсы слева, приглушёнными. Чтобы вернуть профиль, снимите «Архив» в «Игра → О профиле».")}</p>
+      <p className="muted small">{t("Архивные профили остаются на диске, их видно в фильтре «Архив». Чтобы вернуть профиль, снимите «Архив» в «Игра → О профиле».")}</p>
     </>
   );
 }

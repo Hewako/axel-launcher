@@ -1,6 +1,8 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "видна в списке сборок": "shown in the list of profiles",
+  "Архивные профили остаются на диске, их видно в фильтре «Архив». Чтобы вернуть профиль, снимите «Архив» в «Игра → О профиле».": "Archived profiles stay on disk and are listed under the “Archive” filter. To bring one back, turn off “Archive” in “Game → About profile”.",
   "По этому коду зайдут и друзья из другой сети, через интернет.": "Friends on other networks can join with this code too, over the internet.",
   "Через интернет комната сейчас недоступна, зайти можно только из этой же сети.": "The room isn’t reachable over the internet right now; friends can join only from this network.",
   "Мир «{0}» ждёт вас в игре: «Сетевая игра». Связь через интернет.": "World “{0}” is waiting for you in the game: “Multiplayer”. Connected over the internet.",
@@ -994,7 +996,6 @@ export const EN: Record<string, string> = {
   "Расширенные": "Advanced",
   "аргументы JVM": "JVM arguments",
   "аргументы игры": "game arguments",
-  "видна в подсказке значка на рельсе": "shown in the rail icon tooltip",
   "команды": "commands",
   "переменные окружения": "environment variables",
   "Бэкапы миров": "World backups",
@@ -1156,7 +1157,6 @@ export const EN: Record<string, string> = {
   "не запускался": "never launched",
   "В архиве пусто.": "The archive is empty.",
   "Здесь пока никого.": "Nothing here yet.",
-  "Архивные профили остаются на диске и показываются в конце рельсы слева, приглушёнными. Чтобы вернуть профиль, снимите «Архив» в «Игра → О профиле».": "Archived profiles stay on disk and appear dimmed at the end of the rail on the left. To bring one back, turn off “Archive” in “Game → About profile”.",
   "Без ошибок, {0}": "No errors, {0}",
   "Без ошибок": "No errors",
   "Падение через {0}": "Crashed after {0}",

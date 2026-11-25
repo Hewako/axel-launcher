@@ -13,7 +13,7 @@ import { Logs } from "./screens/Logs";
 import { Settings } from "./screens/Settings";
 import { FirstRun } from "./screens/FirstRun";
 import { Avatar } from "./ui/Avatar";
-import { PauseButton, ProfileIcon, progressOf } from "./ui/common";
+import { PauseButton, progressOf } from "./ui/common";
 import { Icon } from "./ui/icons";
 import { UpdateNotice } from "./ui/UpdateNotice";
 import { DialogProvider } from "./ui/Dialog";
@@ -213,9 +213,6 @@ function Shell() {
     setCatalogFromProfile(!!id);
     setScreen("catalog");
   };
-  // Рельса: сначала избранные, потом по последнему запуску; архивные — в самом конце, приглушённые.
-  const rail = [...instances].sort((a, b) =>
-    Number(!!a.archived) - Number(!!b.archived) || Number(!!b.favorite) - Number(!!a.favorite) || (b.last_launch?.at ?? 0) - (a.last_launch?.at ?? 0));
   const status = (i: Instance) => {
     const st = states.get(i.id);
     const s = statusOf(i, isActive(st) ? st!.phase : undefined);
@@ -235,28 +232,14 @@ function Shell() {
       <a href="#main" className="skip">{t("Перейти к содержимому")}</a>
       <nav className="rail" aria-label={t("Профили и разделы")}>
         <div className="rail-logo" title={`Axel' ${info.version}`}><img src="/logo.png" alt="" width={34} height={34} /></div>
-        <button className={`rail-btn ${screen === "all" ? "on" : ""}`} aria-label={t("Все профили")} title={t("Все профили")} aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /></button>
+        <div className="rail-div" aria-hidden />
+        {/* Сборки (профили) — отдельным экраном, на рельсе их больше нет. */}
+        <button className={`rail-btn ${screen === "all" || screen === "profile" || screen === "new" ? "on" : ""}`} aria-label={t("Сборки")} title={t("Сборки")}
+          aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /></button>
         <button className={`rail-btn ${screen === "catalog" ? "on" : ""}`} aria-label={t("Каталог")} title={t("Каталог")} aria-current={screen === "catalog" ? "page" : undefined}
           onClick={() => { setCatalogFromProfile(false); setScreen("catalog"); }}><Icon name="search" size={20} /></button>
+        <div className="rail-space" />
         <div className="rail-div" aria-hidden />
-        <div className="rail-list">
-          {rail.map((i, n) => {
-            const s = status(i);
-            const prev = rail[n - 1];
-            const sep = n > 0 && ((prev.favorite && !i.favorite) || (!prev.archived && i.archived));
-            return (
-              <div key={i.id} className={sep ? "rail-sep" : undefined}>
-                <button className={`tile ${screen === "profile" && i.id === selectedId ? "on" : ""} ${i.archived ? "archived" : ""}`}
-                  aria-label={`${i.name}, ${i.archived ? `${t("в архиве")}, ` : ""}${s.text}`} title={`${i.name} · ${i.archived ? `${t("в архиве")} · ` : ""}${s.text}`}
-                  aria-current={screen === "profile" && i.id === selectedId ? "page" : undefined} onClick={() => open(i.id)}>
-                  <ProfileIcon id={i.id} color={i.color} size={34} />
-                  <span className={`sdot ${s.cls}`} aria-hidden />
-                </button>
-              </div>
-            );
-          })}
-          <button className={`tile add ${screen === "new" ? "on" : ""}`} aria-label={t("Новый профиль")} title={t("Новый профиль")} onClick={() => setScreen("new")}>+</button>
-        </div>
         <div className="rail-tools">
           <button aria-current={screen === "logs" ? "page" : undefined} className={`rail-btn ${screen === "logs" ? "on" : ""}`} aria-label={t("Логи и краши{0}", notes.unread ? t(": новых {0}", notes.unread) : "")} title={t("Логи и краши")}
             onClick={() => { markRead(); setScreen("logs"); }}>

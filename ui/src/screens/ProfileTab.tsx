@@ -249,7 +249,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
           <span />
         </div>
         <div className="setting">
-          <div className="lbl">{t("Группа")}<span className="hint">{t("видна в подсказке значка на рельсе")}</span></div>
+          <div className="lbl">{t("Группа")}<span className="hint">{t("видна в списке сборок")}</span></div>
           <input className="field" list="groups" placeholder={t("Без группы")} value={meta.group ?? ""} maxLength={40}
             onChange={(e) => setMeta({ ...meta, group: e.target.value })} onBlur={() => save()} />
           <datalist id="groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
