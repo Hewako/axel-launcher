@@ -168,7 +168,7 @@ pub fn restore(game_dir: &Path, backups_dir: &Path, backup_file: &Path) -> Resul
     let backup_file = std::fs::canonicalize(backup_file).at(backup_file)?;
     let base = std::fs::canonicalize(backups_dir).at(backups_dir)?;
     if backup_file.parent() != Some(base.as_path()) {
-        return Err(Error::invalid("Бэкап не из папки бэкапов этого профиля"));
+        return Err(Error::invalid("Бэкап не из папки бэкапов этой сборки"));
     }
     let file = std::fs::File::open(&backup_file).at(&backup_file)?;
     let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("бэкап мира", e))?;

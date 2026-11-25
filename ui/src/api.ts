@@ -261,7 +261,7 @@ export const loaderName: Record<LoaderKind, string> = {
 };
 
 export const sourceName: Record<Source, string> = {
-  profile: t("профиль"), pack: t("сборка"), global: t("глобально"), default: t("по умолчанию"),
+  profile: t("сборка"), pack: t("модпак"), global: t("глобально"), default: t("по умолчанию"),
 };
 
 export function relTime(unix: number): string {

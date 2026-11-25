@@ -249,12 +249,12 @@ pub fn storage(data: &crate::paths::DataDir) -> Vec<StoragePart> {
     let safe: u64 = safe_dirs(data).iter().map(|d| dir_size(d)).sum();
     let mut parts = vec![
         StoragePart {
-            label: "Профили (миры, моды, настройки)".into(),
+            label: "Сборки (миры, моды, настройки)".into(),
             size: dir_size(&data.instances()),
             cleanable: false,
         },
         StoragePart {
-            label: "Библиотеки и ресурсы игры (общие для профилей)".into(),
+            label: "Библиотеки и ресурсы игры (общие для сборок)".into(),
             size: dir_size(&data.libraries())
                 + dir_size(&data.assets())
                 + dir_size(&data.versions()),
@@ -271,7 +271,7 @@ pub fn storage(data: &crate::paths::DataDir) -> Vec<StoragePart> {
             cleanable: false,
         },
         StoragePart {
-            label: "Корзина (удалённые профили и файлы)".into(),
+            label: "Корзина (удалённые сборки и файлы)".into(),
             size: dir_size(&data.trash()),
             cleanable: false,
         },
@@ -343,7 +343,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store
-            .create("Сборка", "26.3", LoaderKind::Fabric, Some("0.19".into()))
+            .create("Модпак", "26.3", LoaderKind::Fabric, Some("0.19".into()))
             .unwrap();
         let game = store.game_dir(&inst.id).unwrap();
         std::fs::create_dir_all(game.join("crash-reports")).unwrap();

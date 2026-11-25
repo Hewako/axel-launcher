@@ -148,7 +148,7 @@ pub fn analyze(
     if let Some(l) = text_has("java.lang.OutOfMemoryError") {
         return Analysis {
             title: "Игре не хватило памяти".into(),
-            explanation: "Java сообщила, что выделенная память закончилась. Увеличьте память профиля на вкладке «Запуск и память» (обычно на 1–2 ГБ).".into(),
+            explanation: "Java сообщила, что выделенная память закончилась. Увеличьте память сборки на вкладке «Запуск и память» (обычно на 1–2 ГБ).".into(),
             confidence: Confidence::High,
             confidence_label: Confidence::High.label(),
             evidence: vec![l],
@@ -160,7 +160,7 @@ pub fn analyze(
     if let Some(l) = text_has("Regular windows do not have icons on macOS") {
         return Analysis {
             title: "Старая версия игры не открывает окно на macOS".into(),
-            explanation: "Версии 1.13–1.17 ставят иконку окна, а современная macOS это запрещает (ошибка игры MCL-15163). Профилю Fabric 1.14–1.17 помогает мод MacOS LWJGL Fix, Mod Doctor предложит его поставить. Без модов работают версии 1.12.2 и старше или 1.18 и новее.".into(),
+            explanation: "Версии 1.13–1.17 ставят иконку окна, а современная macOS это запрещает (ошибка игры MCL-15163). Сборке на Fabric 1.14–1.17 помогает мод MacOS LWJGL Fix, Mod Doctor предложит его поставить. Без модов работают версии 1.12.2 и старше или 1.18 и новее.".into(),
             confidence: Confidence::High,
             confidence_label: Confidence::High.label(),
             evidence: vec![l],
@@ -286,7 +286,7 @@ pub fn analyze(
         .collect();
     Analysis {
         title: "Причину определить не удалось".into(),
-        explanation: "В логе нет явных признаков. Посмотрите первую строку «Caused by» на вкладке «Ошибки» или запустите профиль без модов, чтобы понять, виноваты ли моды.".into(),
+        explanation: "В логе нет явных признаков. Посмотрите первую строку «Caused by» на вкладке «Ошибки» или запустите сборку без модов, чтобы понять, виноваты ли моды.".into(),
         confidence: Confidence::Low,
         confidence_label: Confidence::Low.label(),
         evidence,

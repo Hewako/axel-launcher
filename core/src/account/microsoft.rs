@@ -29,7 +29,7 @@ const SCOPE: &str = "XboxLive.signin offline_access";
 pub fn client_id() -> Result<&'static str> {
     CLIENT_ID.filter(|s| !s.trim().is_empty()).ok_or_else(|| {
         Error::Auth(
-            "Вход Microsoft не настроен в этой сборке: нет client ID приложения Azure. Инструкция: docs/MICROSOFT_SETUP.md."
+            "Вход Microsoft не настроен в этой версии Axel': нет client ID приложения Azure. Инструкция: docs/MICROSOFT_SETUP.md."
                 .into(),
         )
     })
@@ -216,7 +216,7 @@ fn device_code_error(body: &str) -> Error {
     match err {
         // Проверено 21.10.2026: на неизвестный ID приходит unauthorized_client (AADSTS700038/700016).
         Some(e) if e.error == "unauthorized_client" || e.error == "invalid_client" => Error::Auth(
-            "Microsoft не принял client ID этой сборки: приложение не найдено или для него не разрешены public client flows. См. docs/MICROSOFT_SETUP.md, шаги 1.5–1.6."
+            "Microsoft не принял client ID этой версии Axel': приложение не найдено или для него не разрешены public client flows. См. docs/MICROSOFT_SETUP.md, шаги 1.5–1.6."
                 .into(),
         ),
         Some(e) => Error::Auth(format!("Microsoft: {}", e.error_description.unwrap_or(e.error))),

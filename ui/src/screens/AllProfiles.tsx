@@ -71,18 +71,18 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
       <div className="shead">
         <div>
           <h2>{t("Сборки")}</h2>
-          <p className="sub">{t("Профилей: {0}", counts.all)}{total ? `, ${t("{0} на диске", sizeText(total))}` : ""}</p>
+          <p className="sub">{t("Сборок: {0}", counts.all)}{total ? `, ${t("{0} на диске", sizeText(total))}` : ""}</p>
         </div>
-        <button className="btn cta" onClick={onNew}><Icon name="plus" size={16} /> {t("Новый профиль")}</button>
+        <button className="btn cta" onClick={onNew}><Icon name="plus" size={16} /> {t("Новая сборка")}</button>
       </div>
       <div className="modbar">
-        <div className="chips" role="group" aria-label={t("Какие профили показывать")}>
+        <div className="chips" role="group" aria-label={t("Какие сборки показывать")}>
           {CHIPS.map(([k, l]) => <button key={k} className={`fchip ${chip === k ? "on" : ""}`} aria-pressed={chip === k} onClick={() => setChip(k)}>{l} <span className="muted">{counts[k]}</span></button>)}
         </div>
         <span style={{ flex: 1 }} />
         <span className="searchbox">
           <Icon name="search" size={16} />
-          <input className="field" type="search" placeholder={t("Найти профиль")} aria-label={t("Найти профиль")} value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input className="field" type="search" placeholder={t("Найти сборку")} aria-label={t("Найти сборку")} value={query} onChange={(e) => setQuery(e.target.value)} />
         </span>
         <select className="field auto" aria-label={t("Сортировка")} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="launch">{t("Сортировка: по запуску")}</option>
@@ -93,7 +93,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
       </div>
       <div className="card" style={{ padding: 0, overflow: "auto" }}>
         <table className="modtable proftable">
-          <thead><tr><th>{t("Профиль")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("Моды")}</th><th className="num">{t("На диске")}</th><th>{t("Состояние")}</th><th>{t("Запуск")}</th><th /></tr></thead>
+          <thead><tr><th>{t("Сборка")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("Моды")}</th><th className="num">{t("На диске")}</th><th>{t("Состояние")}</th><th>{t("Запуск")}</th><th /></tr></thead>
           <tbody>
             {shown.map((i) => {
               const s = status(i);
@@ -120,7 +120,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
           </tbody>
         </table>
       </div>
-      <p className="muted small">{t("Архивные профили остаются на диске, их видно в фильтре «Архив». Чтобы вернуть профиль, снимите «Архив» в «Игра → О профиле».")}</p>
+      <p className="muted small">{t("Архивные сборки остаются на диске, их видно в фильтре «Архив». Чтобы вернуть сборку, снимите «Архив» в «Игра → О сборке».")}</p>
     </>
   );
 }

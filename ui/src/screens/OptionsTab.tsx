@@ -106,7 +106,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
   }, [capture]);
 
   if (!view) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
-  if (view.entries.length === 0) return <div className="card empty"><p>{t("Файла настроек игры ещё нет, он появится после первого запуска этого профиля.")}</p></div>;
+  if (view.entries.length === 0) return <div className="card empty"><p>{t("Файла настроек игры ещё нет, он появится после первого запуска этой сборки.")}</p></div>;
 
   const act = async (f: () => Promise<unknown>, ok?: string) => {
     try { await f(); load(); if (ok) await dialog.alert(t("Готово"), ok); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
@@ -236,7 +236,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
 
       {naming && (
         <Modal title={t("Сохранить пресет")} onClose={() => setNaming(null)}>
-          <p className="small muted">{t("Пресет хранит")} {naming === "graphics" ? t("настройки графики") : naming === "sound" ? t("громкость") : t("управление")} {t("этого профиля, его можно применить к любому профилю.")}</p>
+          <p className="small muted">{t("Пресет хранит")} {naming === "graphics" ? t("настройки графики") : naming === "sound" ? t("громкость") : t("управление")} {t("этой сборки, его можно применить к любой сборке.")}</p>
           <input className="field" maxLength={48} placeholder={t("Например: Слабый ноутбук")} value={presetName} onChange={(e) => setPresetName(e.target.value)} data-autofocus />
           <div className="acts">
             <button className="btn" onClick={() => setNaming(null)}>{t("Отмена")}</button>
@@ -248,7 +248,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       <aside className="stack">
         <section className="card">
           <h3>{t("Откуда берутся значения")}</h3>
-          <p className="muted">{t("Здесь только то, что игра хранит в options.txt этого профиля. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна настраиваются на вкладке «Запуск и память».")}</p>
+          <p className="muted">{t("Здесь только то, что игра хранит в options.txt этой сборки. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна настраиваются на вкладке «Запуск и память».")}</p>
         </section>
       </aside>
     </div>

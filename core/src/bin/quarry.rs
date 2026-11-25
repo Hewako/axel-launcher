@@ -272,7 +272,7 @@ async fn main() -> Result<()> {
                         loader::resolve_version(kind, &version, loader_version.as_deref()).await?;
                     let i = store.create(&name, &version, kind, lv)?;
                     println!(
-                        "Создан профиль «{}» (ID {}): Minecraft {} · {}{}",
+                        "Создана сборка «{}» (ID {}): Minecraft {} · {}{}",
                         i.name,
                         i.id,
                         i.game_version,
@@ -285,7 +285,7 @@ async fn main() -> Result<()> {
                 InstanceAction::List => {
                     let (list, broken) = store.list()?;
                     if list.is_empty() && broken.is_empty() {
-                        println!("Профилей нет.");
+                        println!("Сборок нет.");
                     }
                     for i in list {
                         let last = i
@@ -307,7 +307,7 @@ async fn main() -> Result<()> {
                 }
                 InstanceAction::Trash { id } => {
                     let to = store.trash(&id)?;
-                    println!("Профиль убран в корзину: {}", to.display());
+                    println!("Сборка убрана в корзину: {}", to.display());
                 }
             }
         }
@@ -358,7 +358,7 @@ async fn main() -> Result<()> {
                 quarry_core::import::import_curseforge(&store, &path)?
             };
             println!(
-                "Импортирован профиль «{}» (ID {}): {} · {}",
+                "Импортирована сборка «{}» (ID {}): {} · {}",
                 r.instance.name,
                 r.instance.id,
                 r.instance.game_version,

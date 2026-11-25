@@ -276,7 +276,7 @@ fn loader_from_deps(
     let game = deps
         .get("minecraft")
         .cloned()
-        .ok_or_else(|| Error::invalid("В сборке не указана версия Minecraft"))?;
+        .ok_or_else(|| Error::invalid("В модпаке не указана версия Minecraft"))?;
     let (loader, v) = if let Some(v) = deps.get("fabric-loader") {
         (LoaderKind::Fabric, Some(v.clone()))
     } else if let Some(v) = deps.get("quilt-loader") {
@@ -300,12 +300,12 @@ fn extract_prefix(
     keep: impl Fn(&str) -> bool,
 ) -> Result<u64> {
     let file = std::fs::File::open(zip_path).at(zip_path)?;
-    let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("архив сборки", e))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("архив модпака", e))?;
     let mut n = 0;
     for i in 0..zip.len() {
         let mut e = zip
             .by_index(i)
-            .map_err(|e| Error::parse("архив сборки", e))?;
+            .map_err(|e| Error::parse("архив модпака", e))?;
         let name = e.name().unwrap_or_default().to_string();
         let Some(rel) = name.strip_prefix(prefix) else {
             continue;
@@ -314,7 +314,7 @@ fn extract_prefix(
             continue;
         }
         let target = safe_join(dest, rel)
-            .ok_or_else(|| Error::invalid(format!("Сборка содержит недопустимый путь: {name}")))?;
+            .ok_or_else(|| Error::invalid(format!("Модпак содержит недопустимый путь: {name}")))?;
         if let Some(p) = target.parent() {
             std::fs::create_dir_all(p).at(p)?;
         }
@@ -363,7 +363,7 @@ fn merged_config(
 fn read_zip_entry(zip_path: &Path, name: &str) -> Result<String> {
     let file = std::fs::File::open(zip_path).at(zip_path)?;
     let mut zip = zip::ZipArchive::new(file)
-        .map_err(|_| Error::invalid("Файл не является архивом сборки"))?;
+        .map_err(|_| Error::invalid("Файл не является архивом модпака"))?;
     let mut e = zip
         .by_name(name)
         .map_err(|_| Error::invalid(format!("В архиве нет {name}")))?;
@@ -377,7 +377,7 @@ fn read_index(path: &Path) -> Result<MrIndex> {
         .map_err(|e| Error::parse("modrinth.index.json", e))?;
     if index.format_version != 1 || (index.game != "minecraft" && !index.game.is_empty()) {
         return Err(Error::invalid(format!(
-            "Неподдерживаемый формат сборки (formatVersion {})",
+            "Неподдерживаемый формат модпака (formatVersion {})",
             index.format_version
         )));
     }
@@ -407,7 +407,7 @@ fn client_files<'a>(index: &'a MrIndex, skip_optional: &[String]) -> Vec<&'a MrF
 /// Задача загрузки и запись pack.lock для файла сборки (с проверкой пути, сайта и хэша).
 fn file_entry(f: &MrFile, game_dir: &Path) -> Result<(Task, LockEntry)> {
     let dest = safe_join(game_dir, &f.path)
-        .ok_or_else(|| Error::invalid(format!("Сборка содержит недопустимый путь: {}", f.path)))?;
+        .ok_or_else(|| Error::invalid(format!("Модпак содержит недопустимый путь: {}", f.path)))?;
     let url = f
         .downloads
         .iter()
@@ -495,7 +495,7 @@ pub async fn import_mrpack(
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
     if !loader.supports(&game) {
         return Err(Error::invalid(format!(
-            "Сборка на {} для Minecraft {game}, так пока не поддерживается",
+            "Модпак на {} для Minecraft {game}, так пока не поддерживается",
             loader.display()
         )));
     }
@@ -529,7 +529,7 @@ pub async fn import_mrpack(
         save_pack_base(path, &store.dir(&id)?)?;
         lock.save(&store.dir(&id)?)?;
         let mut notes = vec![format!(
-            "Файлов сборки: {}, из архива: {overrides}",
+            "Файлов модпака: {}, из архива: {overrides}",
             index.files.len() - skipped
         )];
         if skipped > 0 {
@@ -569,7 +569,7 @@ pub struct PackUpdatePlan {
 
 fn zip_names(path: &Path) -> Result<Vec<String>> {
     let file = std::fs::File::open(path).at(path)?;
-    let zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("архив сборки", e))?;
+    let zip = zip::ZipArchive::new(file).map_err(|e| Error::parse("архив модпака", e))?;
     Ok(zip.file_names().flatten().map(|n| n.to_string()).collect())
 }
 
@@ -584,7 +584,7 @@ fn plan_with(
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
     if loader != inst.loader {
         return Err(Error::invalid(format!(
-            "Новая версия сборки на {}, а профиль на {}, создайте для неё новый профиль",
+            "Новая версия модпака на {}, а сборка на {}, создайте для неё новую сборку",
             loader.display(),
             inst.loader.display()
         )));
@@ -702,7 +702,7 @@ pub async fn apply_pack_update(
     let snap = crate::snapshot::create(
         &dir,
         &game_dir,
-        &format!("Перед обновлением сборки до {}", plan.to),
+        &format!("Перед обновлением модпака до {}", plan.to),
         true,
     )?;
     let mut lock = PackLock::load(&dir)?;
@@ -766,7 +766,7 @@ pub async fn apply_pack_update(
         &crate::mods::manage::JournalEntry {
             at: now(),
             action: "Обновлено".into(),
-            what: format!("сборка {} {} → {}", index.name, plan.from, plan.to),
+            what: format!("модпак {} {} → {}", index.name, plan.from, plan.to),
             reason: format!(
                 "добавлено {}, обновлено {}, убрано {}; свои моды и конфиги сохранены",
                 plan.add.len(),
@@ -797,18 +797,18 @@ pub async fn download_pack(
             crate::catalog::pick(&list, channel)
                 .cloned()
                 .ok_or_else(|| {
-                    Error::invalid("У сборки нет подходящей версии в выбранном канале")
+                    Error::invalid("У модпака нет подходящей версии в выбранном канале")
                 })?
         }
     };
     let f = v
         .primary_file()
-        .ok_or_else(|| Error::invalid("У версии сборки нет файла"))?;
+        .ok_or_else(|| Error::invalid("У версии модпака нет файла"))?;
     if !f.url.starts_with("https://")
         || crate::net::host_of(&f.url) != "cdn.modrinth.com"
         || !f.filename.ends_with(".mrpack")
     {
-        return Err(Error::invalid("Файл сборки не с CDN Modrinth, отменено"));
+        return Err(Error::invalid("Файл модпака не с CDN Modrinth, отменено"));
     }
     let sha1 = f
         .hashes
@@ -896,7 +896,7 @@ pub fn export_mrpack(
     deps.insert("minecraft".into(), inst.game_version.clone().into());
     if !loader_key.is_empty() {
         let v = inst.loader_version.clone().ok_or_else(|| {
-            Error::invalid("Версия загрузчика ещё неизвестна, запустите профиль один раз")
+            Error::invalid("Версия загрузчика ещё неизвестна, запустите сборку один раз")
         })?;
         deps.insert(loader_key.into(), v.into());
     }
@@ -952,7 +952,7 @@ pub fn export_mrpack(
     let f = std::fs::File::create(out).at(out)?;
     let mut z = zip::ZipWriter::new(f);
     let opts = zip::write::SimpleFileOptions::default();
-    let zerr = |e: zip::result::ZipError| Error::parse("архив сборки", e);
+    let zerr = |e: zip::result::ZipError| Error::parse("архив модпака", e);
     z.start_file("modrinth.index.json", opts).map_err(zerr)?;
     z.write_all(
         serde_json::to_string_pretty(&index)
@@ -996,7 +996,7 @@ pub fn modpack_report(
     licenses: &BTreeMap<String, String>,
 ) -> String {
     let mut md = format!(
-        "# Сборка «{name}» {version}\n\nМодов: {}. Ссылками на Modrinth: {}. Вложено в архив: {}.\n\n",
+        "# Модпак «{name}» {version}\n\nМодов: {}. Ссылками на Modrinth: {}. Вложено в архив: {}.\n\n",
         r.mods.len(),
         r.linked,
         r.bundled.len()
@@ -1021,7 +1021,7 @@ pub fn modpack_report(
         ));
     }
     if !r.bundled.is_empty() {
-        md.push_str("\n## Файлы внутри архива\n\nЭти файлы распространяются вместе со сборкой. Перед публикацией проверьте лицензию каждого и разрешение автора:\n\n");
+        md.push_str("\n## Файлы внутри архива\n\nЭти файлы распространяются вместе с модпаком. Перед публикацией проверьте лицензию каждого и разрешение автора:\n\n");
         for b in &r.bundled {
             md.push_str(&format!("- `{b}`\n"));
         }
@@ -1106,7 +1106,7 @@ pub fn import_curseforge(store: &InstanceStore, path: &Path) -> Result<ImportRes
         .unwrap_or((LoaderKind::Vanilla, None));
     if !loader.supports(&m.minecraft.version) {
         return Err(Error::invalid(format!(
-            "Сборка на {} для Minecraft {}, так пока не поддерживается",
+            "Модпак на {} для Minecraft {}, так пока не поддерживается",
             loader.display(),
             m.minecraft.version
         )));
@@ -1193,7 +1193,7 @@ pub fn link_existing(
             instance: inst.clone(),
             manual: Vec::new(),
             notes: vec![format!(
-                "Профиль работает прямо в {}, файлы не копировались",
+                "Сборка работает прямо в {}, файлы не копировались",
                 game_dir.display()
             )],
         })
@@ -1311,7 +1311,7 @@ mod tests {
         ]);
         // Архив с путём наружу отклоняется целиком.
         assert!(import_curseforge(&s, &z).is_err());
-        assert!(s.list().unwrap().0.is_empty(), "недоделанный профиль убран");
+        assert!(s.list().unwrap().0.is_empty(), "недоделанная сборка убрана");
         zip_with(&z, &[
             ("manifest.json", br#"{"minecraft":{"version":"1.21.1","modLoaders":[{"id":"neoforge-21.1.77","primary":true}]},"name":"ATM","version":"1.0","files":[{"projectID":238222,"fileID":5000000,"required":true}],"overrides":"overrides"}"#),
             ("overrides/config/jei.toml", b"x=1"),
@@ -1593,7 +1593,7 @@ mod tests {
         });
         lock.save(&dir).unwrap();
         let out = root.join("export.mrpack");
-        let r = export_mrpack(&store, &id, &out, "Моя сборка", "1.0").unwrap();
+        let r = export_mrpack(&store, &id, &out, "Мой модпак", "1.0").unwrap();
         // a.jar — с Modrinth (ссылкой), b.jar и mine.jar без проекта — в overrides.
         assert_eq!(r.linked, 1);
         assert_eq!(r.bundled, ["mods/b.jar", "mods/mine.jar"]);
@@ -1612,7 +1612,7 @@ mod tests {
                 && names.contains(&"overrides/mods/b.jar".to_string())
         );
         let md = modpack_report(
-            "Моя сборка",
+            "Мой модпак",
             "1.0",
             &r,
             &[("AAA".into(), "MIT".into())].into(),

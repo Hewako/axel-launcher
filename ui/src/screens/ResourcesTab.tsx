@@ -113,7 +113,7 @@ export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; run
       </div>
       {shaders && !shaders.shader_loader && (
         <div className="alert warn">
-          <span>{t("Шейдеры работают только с модом Iris (Fabric, Quilt) или Oculus (NeoForge).")} {inst.loader === "vanilla" ? t("В профиле без загрузчика модов шейдеры не запустятся.") : t("Установите Iris на вкладке «Моды».")}</span>
+          <span>{t("Шейдеры работают только с модом Iris (Fabric, Quilt) или Oculus (NeoForge).")} {inst.loader === "vanilla" ? t("В сборке без загрузчика модов шейдеры не запустятся.") : t("Установите Iris на вкладке «Моды».")}</span>
         </div>
       )}
       {shaders === null ? <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p> : shaders.packs.length === 0 ? (

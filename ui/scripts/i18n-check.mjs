@@ -83,7 +83,7 @@ for (const [s, p] of core) if (!coreDict.has(s)) missing.set(s, p);
 const { coreTranslator } = await import("../src/i18n.core.ts");
 const tr = coreTranslator(Object.fromEntries(coreDict));
 for (const [ru, en] of [
-  ["Профиль «Мой мир» не найден", "Profile “Мой мир” not found"],
+  ["Сборка «Мой мир» не найдена", "Profile “Мой мир” not found"],
   ["Не удалось разобрать ответ Modrinth: expected value", "Could not parse Modrinth reply: expected value"],
   ["{0} пока не поддерживается, такой инстанс импортировать нельзя".replace("{0}", "Forge"), "Forge is not supported yet — this instance cannot be imported"],
   ["Обновлено\nМоды", "Updated\nMods"],

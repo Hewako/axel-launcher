@@ -6,7 +6,7 @@ import { api, sizeText } from "../api";
 import { currentLang, switchLang, t } from "../i18n";
 
 type Info = Awaited<ReturnType<typeof api.firstRunInfo>>;
-const STEPS = [t("Язык"), t("Папка"), "Java", t("Вход"), t("Профиль"), t("Приватность")];
+const STEPS = [t("Язык"), t("Папка"), "Java", t("Вход"), t("Сборка"), t("Приватность")];
 
 export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "import" | "home") => void }) {
   const [step, setStep] = useState(0);
@@ -71,11 +71,11 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 4 && (
           <>
-            <h3 id="wiz-title">{t("Первый профиль")}</h3>
-            <p>{t("Каждый профиль как отдельная игра: своя версия, моды и миры. Профилей может быть сколько угодно, и они не мешают друг другу.")}</p>
+            <h3 id="wiz-title">{t("Первая сборка")}</h3>
+            <p>{t("Каждая сборка как отдельная игра: своя версия, моды и миры. Сборок может быть сколько угодно, и они не мешают друг другу.")}</p>
             <div className="row">
-              <button className={`btn ${next === "create" ? "pri" : ""}`} onClick={() => { setNext("create"); setStep(5); }}>{t("Создать профиль")}</button>
-              <button className={`btn ${next === "import" ? "pri" : ""}`} onClick={() => { setNext("import"); setStep(5); }}>{t("Импортировать сборку")}</button>
+              <button className={`btn ${next === "create" ? "pri" : ""}`} onClick={() => { setNext("create"); setStep(5); }}>{t("Создать сборку")}</button>
+              <button className={`btn ${next === "import" ? "pri" : ""}`} onClick={() => { setNext("import"); setStep(5); }}>{t("Импортировать модпак")}</button>
               <button className="btn" onClick={() => setStep(5)}>{t("Позже")}</button>
             </div>
           </>

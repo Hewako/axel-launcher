@@ -37,8 +37,8 @@ function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
     <div className="ov">
       <section className="card">
         <button className="btn link small back" onClick={onBack}><Icon name="chevron" size={14} /> {t("Все снимки")}</button>
-        <h3>{t("Снимок {0} и профиль сейчас", when)}</h3>
-        <p className="muted small">{tc(s.reason)}. {t("Что изменилось в профиле после этого снимка.")}</p>
+        <h3>{t("Снимок {0} и сборка сейчас", when)}</h3>
+        <p className="muted small">{tc(s.reason)}. {t("Что изменилось в сборке после этого снимка.")}</p>
         <h4 className="subhead">{t("Моды")} <span className="muted">{t("отличий: {0}", modCount)}</span></h4>
         <DiffRows d={d} keep={isMod} />
         <h4 className="subhead">{t("Конфиги")} <span className="muted">{t("отличий: {0}", cfgCount)}</span></h4>
@@ -186,7 +186,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
           <h3>{t("Если вернуть снимок {0}", when(focus.created_at))}</h3>
           <ul className="facts">
             <li>{t("Вернутся моды, настройки модов и options.txt.")}</li>
-            {fd && <li>{fd.added.length + fd.removed.length + fd.changed.length + fd.options.length === 0 ? t("Профиль сейчас такой же, как в снимке.")
+            {fd && <li>{fd.added.length + fd.removed.length + fd.changed.length + fd.options.length === 0 ? t("Сборка сейчас такая же, как в снимке.")
               : t("Сейчас отличается: модов {0}, конфигов {1}, настроек игры {2}.", [...fd.added, ...fd.removed, ...fd.changed].filter(isMod).length, [...fd.added, ...fd.removed, ...fd.changed].filter((p) => !isMod(p)).length, fd.options.length)}</li>}
             <li>{t("Перед возвратом Axel' сам сделает новый снимок, так что откат можно отменить.")}</li>
             <li>{t("Миры не затрагиваются: их бэкапы ниже.")}</li>
@@ -199,7 +199,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
         <p className="muted small" style={{ margin: "0 0 10px" }}>
           {t("Axel' сам делает бэкап последнего мира, если моды менялись после прошлой игры, и перед удалением мода, который добавляет блоки или измерения. Хранятся 5 последних бэкапов каждого мира.")}
         </p>
-        {worlds.length === 0 ? <p className="muted" style={{ margin: 0 }}>{t("Миров в профиле пока нет.")}</p> : (
+        {worlds.length === 0 ? <p className="muted" style={{ margin: 0 }}>{t("Миров в сборке пока нет.")}</p> : (
           <div className="worlds">
             {worlds.map((w) => (
               <Fragment key={w.folder}>

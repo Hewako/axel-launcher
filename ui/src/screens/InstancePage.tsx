@@ -31,7 +31,7 @@ type Sub = "mods" | "resources" | "deps" | "launch" | "options" | "servers" | "p
 const MAIN: [Main, string][] = [["overview", t("Обзор")], ["mods", t("Моды")], ["rollback", t("Откат")], ["game", t("Игра")]];
 const SUBS: Record<"mods" | "game", [Sub, string][]> = {
   mods: [["mods", t("Моды")], ["resources", t("Ресурсы и конфиги")], ["deps", t("Зависимости")]],
-  game: [["launch", t("Запуск и память")], ["options", t("Настройки игры")], ["servers", t("Серверы")], ["profile", t("О профиле")]],
+  game: [["launch", t("Запуск и память")], ["options", t("Настройки игры")], ["servers", t("Серверы")], ["profile", t("О сборке")]],
 };
 function place(tab: Tab): [Main, Sub | undefined] {
   switch (tab) {
@@ -111,6 +111,9 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   const streamer = useStreamer();
   const [data, setData] = useState<Awaited<ReturnType<typeof api.launchSettings>> | null>(null);
   const [draft, setDraft] = useState<LaunchOverrides>(inst.settings);
+  // В сборке разработчика Ely.by работает и без Microsoft-аккаунта — подсказка это учитывает.
+  const [devLaunch, setDevLaunch] = useState(false);
+  useEffect(() => { api.appInfo().then((i) => setDevLaunch(i.dev_launch)).catch(() => {}); }, []);
   const [args, setArgs] = useState((inst.settings.jvm_args ?? []).join(" "));
   const [gameArgs, setGameArgs] = useState((inst.settings.game_args ?? []).join(" "));
   const [envText, setEnvText] = useState(Object.entries(inst.settings.env ?? {}).map(([k, v]) => `${k}=${v}`).join("\n"));
@@ -121,7 +124,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
     const lines = Object.entries(clean).map(([k, v]) => `${{ pre: t("до запуска"), post_exit: t("после выхода"), post_crash: t("после краша"), wrapper: t("обёртка") }[k]}: ${v}`);
     if (lines.length && !(await dialog.confirm({
       title: t("Разрешить эти команды?"),
-      body: <><p style={{ marginTop: 0 }}>{t("Они будут выполняться на этом компьютере от вашего имени при каждом запуске профиля. Добавляйте только то, что понимаете.")}</p><pre className="cfgdiff" style={{ userSelect: "text" }}>{lines.join("\n")}</pre></>,
+      body: <><p style={{ marginTop: 0 }}>{t("Они будут выполняться на этом компьютере от вашего имени при каждом запуске сборки. Добавляйте только то, что понимаете.")}</p><pre className="cfgdiff" style={{ userSelect: "text" }}>{lines.join("\n")}</pre></>,
       confirm: t("Разрешить"),
       danger: true,
     }))) return;
@@ -205,7 +208,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
                 {data.memory_range && <span className="muted small">{t("Без предупреждений: {0}–{1} ГБ (зелёная полоса)", Math.round(data.memory_range[0] / 1024), Math.round(data.memory_range[1] / 1024))}</span>}
               </div>
               <MemSlider value={Math.min(max.value, ceiling)} max={ceiling} band={data.memory_range} onChange={(mb) => setDraft({ ...draft, max_memory_mb: mb, min_memory_mb: undefined })} />
-              {inst.pack_settings.max_memory_mb ? <span className="muted small">{t(" Сборка рекомендует {0} МБ.", inst.pack_settings.max_memory_mb).trim()}</span> : null}
+              {inst.pack_settings.max_memory_mb ? <span className="muted small">{t(" Модпак рекомендует {0} МБ.", inst.pack_settings.max_memory_mb).trim()}</span> : null}
               {advice.map((a) => <span key={a} className="small" style={{ color: "var(--warn)" }}><Icon name="warn" size={14} /> {tc(a)}</span>)}
             </div>
             <SourceTag source={max.source} onReset={() => setDraft({ ...draft, max_memory_mb: undefined, min_memory_mb: undefined })} />
@@ -235,7 +238,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <SourceTag source={draft.resolution ? "profile" : inst.pack_settings.resolution ? "pack" : data.global.resolution ? "global" : "default"} onReset={() => setDraft({ ...draft, resolution: undefined })} />
           </div>
           <div className="setting">
-            <div className="lbl">{t("Вход")}<span className="hint">{t("Ely.by работает вместе с Microsoft-аккаунтом, на котором куплена игра")}</span></div>
+            <div className="lbl">{t("Вход")}{!devLaunch && <span className="hint">{t("Ely.by работает вместе с Microsoft-аккаунтом, на котором куплена игра")}</span>}</div>
             <select className="field" value={inst.auth_mode} onChange={async (e) => {
               try { onChanged(await api.updateInstance(inst.id, { authMode: e.target.value as Instance["auth_mode"] })); }
               catch (err) { await dialog.alert(t("Нельзя переключить вход"), errText(err)); }
@@ -247,7 +250,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
           </div>
           {(inst.auth_mode === "microsoft" ? ms : ely).length > 1 && (
             <div className="setting">
-              <div className="lbl">{t("Аккаунт")}<span className="hint">{t("для этого профиля")}</span></div>
+              <div className="lbl">{t("Аккаунт")}<span className="hint">{t("для этой сборки")}</span></div>
               <select className="field" value={inst.account ?? ""} onChange={async (e) => {
                 try { onChanged(await api.updateInstance(inst.id, { account: e.target.value || null })); }
                 catch (err) { await dialog.alert(t("Не удалось сменить аккаунт"), errText(err)); }
@@ -312,7 +315,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
         </section>
         <section className="card">
           <h3>{t("Откуда берутся значения")}</h3>
-          <p className="muted">{t("Значение профиля важнее значения сборки, а оно важнее общих настроек. Метка рядом показывает, откуда значение, «сбросить» возвращает общее.")}</p>
+          <p className="muted">{t("Значение сборки важнее значения модпака, а оно важнее общих настроек. Метка рядом показывает, откуда значение, «сбросить» возвращает общее.")}</p>
         </section>
       </div>
     </div>
@@ -425,7 +428,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   const trash = async () => {
     const ok = await dialog.confirm({
       title: t("Убрать «{0}» в корзину?", inst.name),
-      body: <>{t("Профиль вместе с мирами, модами и конфигами переместится в папку")} <span className="mono">trash/</span> {t("внутри папки данных Axel'. Ничего не удаляется: чтобы вернуть, перенесите папку обратно в")} <span className="mono">instances/</span>.</>,
+      body: <>{t("Сборка вместе с мирами, модами и конфигами переместится в папку")} <span className="mono">trash/</span> {t("внутри папки данных Axel'. Ничего не удаляется: чтобы вернуть, перенесите папку обратно в")} <span className="mono">instances/</span>.</>,
       confirm: t("Убрать в корзину"),
       danger: true,
     });
@@ -454,7 +457,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
             {more && (
               <div className="menu" role="menu" onKeyDown={(e) => { if (e.key === "Escape") setMore(false); }}>
                 <button role="menuitem" className="narrow-only" onClick={() => { setMore(false); api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e))); }}>{t("Папка")}</button>
-                <button role="menuitem" onClick={() => ask("clone")}>{t("Сделать копию профиля…")}</button>
+                <button role="menuitem" onClick={() => ask("clone")}>{t("Сделать копию сборки…")}</button>
                 <button role="menuitem" onClick={() => ask("export")}>{t("Экспорт в .mrpack…")}</button>
                 <button role="menuitem" className="danger" disabled={isActive(state)} onClick={() => { setMore(false); trash(); }}>{t("В корзину")}</button>
               </div>
@@ -475,7 +478,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
         </div>
       )}
       <div className="tabsrow">
-        <TabStrip className="mtabs" label={t("Вкладки профиля")} items={tabs} value={main} onPick={(m) => setPlace([m, undefined])} />
+        <TabStrip className="mtabs" label={t("Вкладки сборки")} items={tabs} value={main} onPick={(m) => setPlace([m, undefined])} />
       </div>
       {state && isActive(state) && !(main === "overview" && state.phase === "running") && <LaunchProgress state={state} />}
       {main === "overview" && (

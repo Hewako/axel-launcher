@@ -84,21 +84,21 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
           </ul>
         </section>
       )}
-      <p className="sub">{history && history.length === 0 ? t("Запусков пока нет") : `${t("Запуски всех профилей.")}${latestBad ? ` ${t("Последний закончился ошибкой.")}` : ""}`}</p>
+      <p className="sub">{history && history.length === 0 ? t("Запусков пока нет") : `${t("Запуски всех сборок.")}${latestBad ? ` ${t("Последний закончился ошибкой.")}` : ""}`}</p>
       {history && history.length === 0 ? (
         <div className="logsgrid">
           <div className="card cempty"><b>{t("Запусков ещё не было")}</b><span>{t("Когда вы запустите игру, она появится здесь.")}</span></div>
-          <div className="card cempty" style={{ padding: "40px 16px" }}><Icon name="file" size={18} /><b>{t("Лог первого запуска появится здесь")}</b><span>{t("Если игра упадёт, Axel' покажет вероятную причину и предложит починить профиль.")}</span></div>
+          <div className="card cempty" style={{ padding: "40px 16px" }}><Icon name="file" size={18} /><b>{t("Лог первого запуска появится здесь")}</b><span>{t("Если игра упадёт, Axel' покажет вероятную причину и предложит починить сборку.")}</span></div>
         </div>
       ) : (
       <div className="logsgrid">
         <nav className="card runs" aria-label={t("Запуски")}>
           <select className="field" aria-label={t("Чьи запуски показывать")} value={filter} onChange={(e) => { setFilter(e.target.value); setSel(""); if (e.target.value) onPick(e.target.value); }}>
-            <option value="">{t("Все профили")}</option>
-            {instances.map((i) => <option key={i.id} value={i.id}>{t("Запуски профиля «{0}»", i.name)}</option>)}
+            <option value="">{t("Все сборки")}</option>
+            {instances.map((i) => <option key={i.id} value={i.id}>{t("Запуски сборки «{0}»", i.name)}</option>)}
           </select>
           {history === null && <p className="muted small"><span className="spinner" /> {t("Загружаем…")}</p>}
-          {history !== null && runs.length === 0 && <p className="muted small">{t("Этот профиль ещё не запускали.")}</p>}
+          {history !== null && runs.length === 0 && <p className="muted small">{t("Эту сборку ещё не запускали.")}</p>}
           {runs.map((r) => (
             <button key={key(r)} className={`run ${toneOf(r)} ${run && key(r) === key(run) ? "on" : ""}`} aria-current={run && key(r) === key(run) ? "true" : undefined} onClick={() => setSel(key(r))}>
               <span className="muted small">{relTime(r.at)}</span>

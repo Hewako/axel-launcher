@@ -53,7 +53,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
   return (
     <>
       <h2>{t("Настройки Axel'")}</h2>
-      <p className="sub">{t("Настройки лаунчера и значения по умолчанию для профилей.")}</p>
+      <p className="sub">{t("Настройки лаунчера и значения по умолчанию для сборок.")}</p>
       <div className="settings">
         <nav className="secnav" aria-label={t("Разделы настроек")}>
           {SECTIONS.map(([k, l]) => <button key={k} className={sec === k ? "on" : ""} aria-current={sec === k ? "page" : undefined} onClick={() => setSec(k)}>{l}</button>)}
@@ -87,7 +87,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           <DataDirButton />
         </div>
         <div className="setting">
-          <div className="lbl">{t("Память по умолчанию")}<span className="hint">{t("для профилей без своего значения")}</span></div>
+          <div className="lbl">{t("Память по умолчанию")}<span className="hint">{t("для сборок без своего значения")}</span></div>
           <input className="field" type="number" min={1024} step={512} placeholder="4096" value={s.launch.max_memory_mb ?? ""}
             onChange={(e) => setS({ ...s, launch: { ...s.launch, max_memory_mb: e.target.value ? Number(e.target.value) : undefined, min_memory_mb: undefined } })} />
           <span className="muted small">{t("МБ")}</span>

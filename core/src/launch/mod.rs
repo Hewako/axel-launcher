@@ -257,7 +257,7 @@ async fn resolve_auth(
             "Нет аккаунта Microsoft. Войдите на экране «Аккаунты»: запуск возможен только с купленной Minecraft: Java Edition.".into(),
         )),
         (Provider::ElyBy, None) => Err(Error::Auth(
-            "Профиль настроен на Ely.by, но аккаунта Ely.by нет. Войдите через Ely.by или переключите профиль на Microsoft.".into(),
+            "Сборка настроена на Ely.by, но аккаунта Ely.by нет. Войдите через Ely.by или переключите сборку на Microsoft.".into(),
         )),
     }
 }
@@ -580,7 +580,7 @@ async fn run(
                 .map(|f| format!("• {}", f.title))
                 .collect();
             return Err(Error::invalid(format!(
-                "Mod Doctor нашёл проблемы, из-за которых игра не запустится:\n{}\nИсправьте их на вкладке «Моды» или запустите профиль без модов.",
+                "Mod Doctor нашёл проблемы, из-за которых игра не запустится:\n{}\nИсправьте их на вкладке «Моды» или запустите сборку без модов.",
                 list.join("\n")
             )));
         }
@@ -991,7 +991,7 @@ mod tests {
         ));
         assert!(
             reg.claim("other", Cancel::new()).is_ok(),
-            "другой профиль запускается параллельно"
+            "другая сборка запускается параллельно"
         );
         assert!(reg.is_running("p"));
         drop(g);

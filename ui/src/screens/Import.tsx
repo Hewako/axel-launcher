@@ -57,7 +57,7 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
     else await run("file", () => importer.path(path));
   };
   const pickFile = async () => {
-    const path = await open({ multiple: false, directory: false, filters: [{ name: t("Сборка"), extensions: ["mrpack", "zip"] }] });
+    const path = await open({ multiple: false, directory: false, filters: [{ name: t("Модпак"), extensions: ["mrpack", "zip"] }] });
     if (typeof path === "string") await importFile(path);
   };
   useEffect(() => { if (dropped) importFile(dropped.path); }, [dropped]);
@@ -70,17 +70,17 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
   return (
     <div className="stack">
       <div className={`dropzone ${dragging ? "on" : ""}`}>
-        <b>{t("Перетащите сборку сюда")}</b>
+        <b>{t("Перетащите модпак сюда")}</b>
         <div className="row" style={{ justifyContent: "center" }}>
-          <button className="btn" disabled={busy !== ""} onClick={pickFile}>{busy === "file" ? t("Скачиваем моды сборки…") : t("Выбрать .mrpack или .zip CurseForge…")}</button>
+          <button className="btn" disabled={busy !== ""} onClick={pickFile}>{busy === "file" ? t("Скачиваем моды модпака…") : t("Выбрать .mrpack или .zip CurseForge…")}</button>
           <button className="btn" disabled={busy !== ""} onClick={pickFolder}>{t("Выбрать папку инстанса…")}</button>
         </div>
       </div>
       {error && <div className="alert err"><span style={{ userSelect: "text" }}>{error}</span></div>}
 
-      <section className="card panel" aria-label={t("Сборка из каталога Modrinth")}>
-        <h3>{t("Сборка из каталога Modrinth")}</h3>
-        <input className="field" type="search" aria-label={t("Найти сборку")} placeholder={t("Найти сборку…")} value={packQuery} onChange={(e) => setPackQuery(e.target.value)} />
+      <section className="card panel" aria-label={t("Модпак из каталога Modrinth")}>
+        <h3>{t("Модпак из каталога Modrinth")}</h3>
+        <input className="field" type="search" aria-label={t("Найти модпак")} placeholder={t("Найти модпак…")} value={packQuery} onChange={(e) => setPackQuery(e.target.value)} />
         {packs.map((h) => (
           <div className="hit" key={h.project_id}>
             {h.icon_url ? <img src={h.icon_url} alt="" /> : <div className="noicon" />}
@@ -112,7 +112,7 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
           </div>
         {link && (
           <form className="form" onSubmit={(e) => { e.preventDefault(); run("link", () => importer.link(link.path, link.name, link.version, link.loader)); }}>
-            <span className="muted small">{t("Профиль будет работать прямо в этой папке: миры и настройки общие с официальным лаунчером. Корзина Axel' эту папку не трогает.")}</span>
+            <span className="muted small">{t("Сборка будет работать прямо в этой папке: миры и настройки общие с официальным лаунчером. Корзина Axel' эту папку не трогает.")}</span>
             <div className="row">
               <input className="field" style={{ flex: 2 }} value={link.name} onChange={(e) => setLink({ ...link, name: e.target.value })} aria-label={t("Название")} />
               <input className="field" style={{ flex: 1 }} placeholder={t("Версия, например 26.3")} value={link.version} onChange={(e) => setLink({ ...link, version: e.target.value.trim() })} aria-label={t("Версия")} />
@@ -127,8 +127,8 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
       )}
 
       {o && (
-        <Modal title={t("Дополнительные компоненты сборки")} onClose={() => setOptional(null)}>
-          <p className="small muted" style={{ marginTop: 0 }}>{t("Автор сборки сделал эти файлы необязательными. Снимите галочки с тех, что не нужны.")}</p>
+        <Modal title={t("Дополнительные компоненты модпака")} onClose={() => setOptional(null)}>
+          <p className="small muted" style={{ marginTop: 0 }}>{t("Автор модпака сделал эти файлы необязательными. Снимите галочки с тех, что не нужны.")}</p>
           {o.files.map((f) => (
             <label key={f} className="row small">
               <input type="checkbox" checked={!o.off.includes(f)} onChange={(e) => setOptional({ ...o, off: e.target.checked ? o.off.filter((x) => x !== f) : [...o.off, f] })} />
@@ -143,19 +143,19 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
       )}
       {result && (
         <Modal title={t("Импорт завершён")} onClose={() => onDone(result.instance)}>
-          <p style={{ margin: 0 }}>{t("Профиль «")}{result.instance.name}» — Minecraft {result.instance.game_version} · {result.instance.loader}.</p>
+          <p style={{ margin: 0 }}>{t("Сборка «")}{result.instance.name}» — Minecraft {result.instance.game_version} · {result.instance.loader}.</p>
           {result.notes.map((n, i) => <span key={i} className="muted small">• {tc(n)}</span>)}
           {result.manual.length > 0 && (
             <div className="alert warn">
               <div className="h">{t("Скачайте вручную:")} {result.manual.length}</div>
-              <span className="small">{t("CurseForge разрешает скачивать эти моды только через свой сайт. Скачайте файлы и положите их в папку mods профиля, а Mod Doctor проверит, всё ли на месте.")}</span>
+              <span className="small">{t("CurseForge разрешает скачивать эти моды только через свой сайт. Скачайте файлы и положите их в папку mods сборки, а Mod Doctor проверит, всё ли на месте.")}</span>
               <div style={{ maxHeight: 160, overflow: "auto" }} className="small mono">
                 {result.manual.map((m) => <div key={m.file_id}>{t("проект")} {m.project_id}{t(", файл")} {m.file_id}</div>)}
               </div>
               <div className="acts"><button className="btn" onClick={() => api.openFolder(result.instance.id, "mods")}>{t("Открыть папку mods")}</button></div>
             </div>
           )}
-          <div className="acts"><button className="btn pri" data-autofocus onClick={() => onDone(result.instance)}>{t("Открыть профиль")}</button></div>
+          <div className="acts"><button className="btn pri" data-autofocus onClick={() => onDone(result.instance)}>{t("Открыть сборку")}</button></div>
         </Modal>
       )}
     </div>

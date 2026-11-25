@@ -24,7 +24,7 @@ function CloneDialog({ inst, onClose, onDone }: { inst: Instance; onClose: () =>
     try { onDone(await api.cloneInstance(inst.id, name, parts)); } catch (e) { await dialog.alert(t("Копия не создана"), errText(e)); } finally { setBusy(false); }
   };
   return (
-    <Modal title={t("Копия профиля")} onClose={onClose}>
+    <Modal title={t("Копия сборки")} onClose={onClose}>
       <label className="small muted" htmlFor="clone-name">{t("Имя новой копии")}</label>
       <input id="clone-name" className="field" style={{ width: "100%" }} value={name} onChange={(e) => setName(e.target.value)} />
       <p className="small muted">{t("Версия игры, загрузчик и настройки запуска копируются всегда. Что ещё взять:")}</p>
@@ -64,15 +64,15 @@ function CompareDialog({ inst, instances, onClose }: { inst: Instance; instances
   const list = (title: string, items: string[]) => items.length > 0 && <><h4 className="subhead">{title}</h4><p className="small">{items.join(", ")}</p></>;
   const same = d && !d.basics.length && !d.only_a.length && !d.only_b.length && !d.versions.length && !d.settings.length && !d.options.length;
   return (
-    <Modal title={t("Сравнить «{0}» с другим профилем", inst.name)} onClose={onClose} wide>
-      {others.length === 0 ? <p className="muted">{t("Других профилей нет.")}</p> : (
+    <Modal title={t("Сравнить «{0}» с другой сборкой", inst.name)} onClose={onClose} wide>
+      {others.length === 0 ? <p className="muted">{t("Других сборок нет.")}</p> : (
         <>
-          <select className="field" aria-label={t("С каким профилем сравнить")} value={other} onChange={(e) => setOther(e.target.value)}>
+          <select className="field" aria-label={t("С какой сборкой сравнить")} value={other} onChange={(e) => setOther(e.target.value)}>
             {others.map((i) => <option key={i.id} value={i.id}>{i.name} · {i.game_version}</option>)}
           </select>
           {error && <div className="alert err"><span>{error}</span></div>}
           {!d && !error && <p className="muted"><span className="spinner" /> {t("Сравниваем…")}</p>}
-          {same && <p className="muted">{t("Профили одинаковые: версия, моды и настройки совпадают.")}</p>}
+          {same && <p className="muted">{t("Сборки одинаковые: версия, моды и настройки совпадают.")}</p>}
           {d && (
             <div style={{ maxHeight: "60vh", overflow: "auto" }}>
               {table(t("Версия"), d.basics)}
@@ -108,9 +108,9 @@ function CopyFromDialog({ inst, instances, onClose, onChanged }: { inst: Instanc
   };
   return (
     <Modal title={t("Перенести в «{0}»", inst.name)} onClose={onClose}>
-      {others.length === 0 ? <p className="muted">{t("Других профилей нет.")}</p> : (
+      {others.length === 0 ? <p className="muted">{t("Других сборок нет.")}</p> : (
         <>
-          <label className="small muted" htmlFor="copy-from">{t("Из профиля")}</label>
+          <label className="small muted" htmlFor="copy-from">{t("Из сборки")}</label>
           <select id="copy-from" className="field" style={{ width: "100%" }} value={from} onChange={(e) => setFrom(e.target.value)}>
             {others.map((i) => <option key={i.id} value={i.id}>{i.name} · {i.game_version} · {loaderName[i.loader]}</option>)}
           </select>
@@ -152,10 +152,10 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     setChecking(true);
     try {
       const v = await importer.check(inst.id);
-      if (!v) { await dialog.alert(t("Обновлений нет"), t("Установлена последняя версия сборки в выбранном канале.")); return; }
+      if (!v) { await dialog.alert(t("Обновлений нет"), t("Установлена последняя версия модпака в выбранном канале.")); return; }
       const d = await importer.download(inst.pack!.project_id!, v.version_id);
       setUpdate({ path: d.path!, plan: await importer.updatePlan(inst.id, d.path!), off: [], versionId: v.version_id, changelog: v.changelog });
-    } catch (e) { await dialog.alert(t("Сборку не обновить"), errText(e)); } finally { setChecking(false); }
+    } catch (e) { await dialog.alert(t("Модпак не обновить"), errText(e)); } finally { setChecking(false); }
   };
   const packSettings = async (channel: Channel, pinned: boolean) => {
     try { onChanged(await importer.settings(inst.id, channel, pinned)); } catch (e) { await dialog.alert(t("Не сохранено"), errText(e)); }
@@ -166,7 +166,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     if (!path) return;
     try {
       const r = await importer.exportMrpack(inst.id, path, inst.pack?.name ?? inst.name, inst.pack?.version ?? "1.0");
-      await dialog.alert(t("Сборка сохранена"), <>
+      await dialog.alert(t("Модпак сохранён"), <>
         <p>{t("Модов ссылками на Modrinth: {0}. Рядом сохранён отчёт с лицензиями:", r.linked)} <span className="mono small">{r.report_path}</span></p>
         {r.bundled.length > 0 && <p className="small" style={{ color: "var(--warn)" }}>{t("В архиве есть файлы без источника. Перед публикацией проверьте их лицензии:")} {r.bundled.map((b) => b.split("/").pop()).join(", ")}</p>}
       </>);
@@ -177,9 +177,9 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     else if (action?.kind === "export") exportPack();
   }, [action?.n]);
   const pickUpdate = async () => {
-    const path = await open({ title: t("Новая версия сборки"), filters: [{ name: ".mrpack", extensions: ["mrpack"] }] }).catch(() => null);
+    const path = await open({ title: t("Новая версия модпака"), filters: [{ name: ".mrpack", extensions: ["mrpack"] }] }).catch(() => null);
     if (typeof path !== "string") return;
-    try { setUpdate({ path, plan: await importer.updatePlan(inst.id, path), off: [] }); } catch (e) { await dialog.alert(t("Сборку не обновить"), errText(e)); }
+    try { setUpdate({ path, plan: await importer.updatePlan(inst.id, path), off: [] }); } catch (e) { await dialog.alert(t("Модпак не обновить"), errText(e)); }
   };
   const applyUpdate = async () => {
     if (!update) return;
@@ -188,8 +188,8 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       await importer.updateApply(inst.id, update.path, update.off, update.versionId);
       setUpdate(null);
       onChanged({ ...inst, pack: inst.pack && { ...inst.pack, version: update.plan.to, version_id: update.versionId ?? inst.pack.version_id } });
-      await dialog.alert(t("Сборка обновлена"), t("Перед обновлением сохранён снимок, вернуть как было можно на вкладке «Откат»."));
-    } catch (e) { await dialog.alert(t("Сборку не обновить"), errText(e)); } finally { setUpdating(false); }
+      await dialog.alert(t("Модпак обновлён"), t("Перед обновлением сохранён снимок, вернуть как было можно на вкладке «Откат»."));
+    } catch (e) { await dialog.alert(t("Модпак не обновить"), errText(e)); } finally { setUpdating(false); }
   };
   const streamer = useStreamer();
   const groups = [...new Set(instances.map((i) => i.group).filter(Boolean))] as string[];
@@ -233,16 +233,16 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     <div className="ov">
     <div className="stack">
       <section className="card psec" aria-labelledby="ps-about">
-        <h3 id="ps-about">{t("О профиле «{0}»", inst.name)}</h3>
+        <h3 id="ps-about">{t("О сборке «{0}»", inst.name)}</h3>
         <dl className="kv">
-          <dt>{t("Создан")}</dt><dd>{inst.created_at ? new Date(inst.created_at * 1000).toLocaleDateString() : "—"}{inst.pack ? `, ${t("сборка {0}", inst.pack.name)}` : ""}</dd>
+          <dt>{t("Создан")}</dt><dd>{inst.created_at ? new Date(inst.created_at * 1000).toLocaleDateString() : "—"}{inst.pack ? `, ${t("модпак {0}", inst.pack.name)}` : ""}</dd>
           <dt>{t("Игра и загрузчик")}</dt><dd>Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}</dd>
           <dt>{t("Размер на диске")}</dt><dd>{usage ? sizeText(usage.total) : "—"}</dd>
           <dt>{t("Снимков")}</dt><dd>{snapCount ?? "—"}</dd>
         </dl>
       </section>
       <section className="card psec" aria-labelledby="ps-profile">
-        <h3 id="ps-profile">{t("Профиль")}</h3>
+        <h3 id="ps-profile">{t("Сборка")}</h3>
         <div className="setting">
           <div className="lbl">{t("Название")}</div>
           <input className="field" value={name} maxLength={64} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== inst.name && save()} />
@@ -280,7 +280,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
 
       <section className="card psec" aria-labelledby="ps-disk">
         <h3 id="ps-disk">{t("Место на диске")}{usage ? ` · ${sizeText(usage.total)}` : ""}</h3>
-        {!usage ? <p className="muted" style={{ margin: 0 }}><span className="spinner" /> {t("Считаем…")}</p> : usage.parts.length === 0 ? <p className="muted" style={{ margin: 0 }}>{t("Профиль пока пустой.")}</p> : (
+        {!usage ? <p className="muted" style={{ margin: 0 }}><span className="spinner" /> {t("Считаем…")}</p> : usage.parts.length === 0 ? <p className="muted" style={{ margin: 0 }}>{t("Сборка пока пустая.")}</p> : (
           <div className="usage">
             {usage.parts.map((p) => (
               <div key={p.label} className="urow">
@@ -295,13 +295,13 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
 
       {inst.pack && (
         <section className="card psec" aria-labelledby="ps-pack">
-          <h3 id="ps-pack">{t("Сборка")}</h3>
+          <h3 id="ps-pack">{t("Модпак")}</h3>
           <div className="row">
             <span><b>{inst.pack.name}</b> {inst.pack.version}</span>
             <span style={{ flex: 1 }} />
             {inst.pack.project_id && (
               <>
-                <select className="field auto" aria-label={t("Какие версии сборки предлагать")} value={inst.pack.channel ?? "auto"} onChange={(e) => packSettings(e.target.value as Channel, !!inst.pack?.pinned)}>
+                <select className="field auto" aria-label={t("Какие версии модпака предлагать")} value={inst.pack.channel ?? "auto"} onChange={(e) => packSettings(e.target.value as Channel, !!inst.pack?.pinned)}>
                   <option value="auto">{t("Стабильная, если есть")}</option>
                   <option value="release">{t("Только стабильные")}</option>
                   <option value="beta">{t("Бета и стабильные")}</option>
@@ -318,10 +318,10 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       <section className="card psec" aria-labelledby="ps-copy">
         <h3 id="ps-copy">{t("Копия и перенос")}</h3>
         <div className="row" style={{ margin: "8px 0 14px" }}>
-          <button className="btn" onClick={() => setModal("clone")}>{t("Сделать копию профиля…")}</button>
+          <button className="btn" onClick={() => setModal("clone")}>{t("Сделать копию сборки…")}</button>
           <button className="btn" onClick={exportPack}>{t("Экспорт в .mrpack…")}</button>
-          <button className="btn" disabled={running} onClick={() => setModal("copy")}>{t("Перенести настройки из другого профиля…")}</button>
-          <button className="btn" onClick={() => setModal("compare")}>{t("Сравнить с другим профилем…")}</button>
+          <button className="btn" disabled={running} onClick={() => setModal("copy")}>{t("Перенести настройки из другой сборки…")}</button>
+          <button className="btn" onClick={() => setModal("compare")}>{t("Сравнить с другой сборкой…")}</button>
         </div>
         <div className="lbl" style={{ fontWeight: 500 }}>{t("Где лежит папка игры")}</div>
         <p className="small" style={{ marginTop: 0 }}>
@@ -336,22 +336,22 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       <section className="card psec danger" aria-labelledby="ps-danger">
         <h3 id="ps-danger">{t("Архив и удаление")}</h3>
         <div className="setting">
-          <div className="lbl">{t("Архив")}<span className="hint">{t("Профиль уйдёт в конец списка, файлы останутся")}</span></div>
+          <div className="lbl">{t("Архив")}<span className="hint">{t("Сборка уйдёт в конец списка, файлы останутся")}</span></div>
           <label className="row"><input type="checkbox" checked={meta.archived} onChange={(e) => save({ archived: e.target.checked })} /></label>
           <span />
         </div>
         <div className="setting">
-          <div className="lbl">{t("В корзину")}<span className="hint">{t("Профиль вместе с мирами можно будет вернуть")}</span></div>
+          <div className="lbl">{t("В корзину")}<span className="hint">{t("Сборку вместе с мирами можно будет вернуть")}</span></div>
           <span />
           <button className="btn danger" disabled={running} onClick={onTrash}>{t("В корзину")}</button>
         </div>
       </section>
       {update && (
-        <Modal title={t("Обновить сборку {0} → {1}?", update.plan.from || "?", update.plan.to)} onClose={() => setUpdate(null)} wide>
+        <Modal title={t("Обновить модпак {0} → {1}?", update.plan.from || "?", update.plan.to)} onClose={() => setUpdate(null)} wide>
           {update.changelog && (
             <details open><summary>{t("Что нового в версии")}</summary><pre className="cfgdiff" style={{ whiteSpace: "pre-wrap", userSelect: "text" }}>{update.changelog}</pre></details>
           )}
-          {update.plan.game_change && <div className="alert warn"><span>{t("Сборка меняет версию:")} {tc(update.plan.game_change)}</span></div>}
+          {update.plan.game_change && <div className="alert warn"><span>{t("Модпак меняет версию:")} {tc(update.plan.game_change)}</span></div>}
           <div className="diff cfgdiff">
             {update.plan.add.map((f) => <span key={f} className="add">+ {f}</span>)}
             {update.plan.update.map((f) => <span key={f} className="chg">~ {f}</span>)}

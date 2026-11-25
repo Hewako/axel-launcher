@@ -90,7 +90,7 @@ fn ctx(store: &InstanceStore, id: &str) -> Result<Ctx> {
     let loaders = catalog::loaders_for(instance.loader);
     if loaders.is_empty() {
         return Err(Error::invalid(
-            "В профиле без загрузчика моды не работают, выберите профиль с Fabric, Quilt, Forge или NeoForge",
+            "В сборке без загрузчика моды не работают, выберите сборку с Fabric, Quilt, Forge или NeoForge",
         ));
     }
     Ok(Ctx {

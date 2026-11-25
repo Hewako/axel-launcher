@@ -10,7 +10,7 @@ export type CatalogKind = "mod" | "resourcepack" | "shader" | "modpack";
 export type CatalogTarget = { id?: string; kind: CatalogKind; query: string; n: number };
 
 const PAGE = 20;
-const KINDS: [CatalogKind, string][] = [["mod", t("Моды")], ["resourcepack", t("Ресурспаки")], ["shader", t("Шейдеры")], ["modpack", t("Сборки")]];
+const KINDS: [CatalogKind, string][] = [["mod", t("Моды")], ["resourcepack", t("Ресурспаки")], ["shader", t("Шейдеры")], ["modpack", t("Модпаки")]];
 const PACK_CATS: [string, string][] = [["adventure", t("Приключения")], ["technology", t("Техника")], ["magic", t("Магия")], ["quests", t("Квесты")], ["kitchen-sink", t("Всё сразу")], ["lightweight", t("Лёгкие")], ["optimization", t("Оптимизация")], ["multiplayer", t("Для сервера")], ["combat", t("Сражения")], ["challenging", t("Сложные")]];
 const SORTS: [CatalogSort, string][] = [["relevance", t("Подходящие")], ["downloads", t("Популярные")], ["newest", t("Новые")], ["updated", t("Обновлённые")]];
 const SIDES: [CatalogSide, string][] = [["", t("Любой")], ["required", t("Обязательно")], ["optional", t("Можно")], ["unsupported", t("Не нужен")]];
@@ -138,7 +138,7 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
   const pages = Math.max(1, Math.ceil((shown?.total ?? 0) / PAGE));
 
   const button = (h: SearchHit) => {
-    if (kind === "modpack") return <button className="btn" onClick={() => onPack(h)}>{t("Создать профиль")}</button>;
+    if (kind === "modpack") return <button className="btn" onClick={() => onPack(h)}>{t("Создать сборку")}</button>;
     const st = status[key(h)];
     if (st === "done" || (!st && installedIds.has(h.project_id))) return <button className="btn" disabled>{t("Установлено")}</button>;
     return (
@@ -153,9 +153,9 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
       <div className="shead">
         <div>
           <h2>{t("Каталог")}</h2>
-          <p className="sub">{kind === "modpack" ? t("Сборка станет новым профилем.") : t("Показано то, что подходит к выбранному профилю.")}</p>
+          <p className="sub">{kind === "modpack" ? t("Модпак станет новой сборкой.") : t("Показано то, что подходит к выбранной сборке.")}</p>
         </div>
-        {onBack && <button className="btn" onClick={onBack}>{t("К профилю")}</button>}
+        {onBack && <button className="btn" onClick={onBack}>{t("К сборке")}</button>}
       </div>
 
       <div className="cattools">
@@ -166,8 +166,8 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
         </div>
         {forProfile && usable.length > 0 && (
           <label className="pill catprofile">
-            <span className="muted">{t("Профиль")}</span>
-            <select aria-label={t("Профиль")} value={inst?.id} onChange={(e) => { setProfileId(e.target.value); setPage(0); }}>
+            <span className="muted">{t("Сборка")}</span>
+            <select aria-label={t("Сборка")} value={inst?.id} onChange={(e) => { setProfileId(e.target.value); setPage(0); }}>
               {usable.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
             </select>
             {inst && <span>Minecraft {inst.game_version}{inst.loader !== "vanilla" ? ` · ${loaderName[inst.loader]}` : ""}</span>}
@@ -177,7 +177,7 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
 
       <div className="cattools">
         <input className="field grow" type="search" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} aria-label={t("Поиск в каталоге")}
-          placeholder={{ mod: t("Найти мод…"), resourcepack: t("Найти ресурспак…"), shader: t("Найти шейдер…"), modpack: t("Найти сборку…") }[kind]} data-autofocus />
+          placeholder={{ mod: t("Найти мод…"), resourcepack: t("Найти ресурспак…"), shader: t("Найти шейдер…"), modpack: t("Найти модпак…") }[kind]} data-autofocus />
         {cf && kind !== "modpack" && (
           <div className="seg" role="group" aria-label={t("Источник")}>
             <button className={source === "modrinth" ? "on" : ""} aria-pressed={source === "modrinth"} onClick={() => { setSource("modrinth"); setPage(0); }}>Modrinth</button>
@@ -192,10 +192,10 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
 
       {forProfile && usable.length === 0 ? (
         <div className="card empty">
-          <p>{t("Чтобы ставить моды, ресурспаки и шейдеры, нужен профиль.")}</p>
+          <p>{t("Чтобы ставить моды, ресурспаки и шейдеры, нужна сборка.")}</p>
           <div className="row" style={{ justifyContent: "center" }}>
-            <button className="btn pri" onClick={onNew}>{t("+ Новый профиль")}</button>
-            <button className="btn" onClick={() => setKind("modpack")}>{t("Выбрать сборку")}</button>
+            <button className="btn pri" onClick={onNew}>{t("+ Новая сборка")}</button>
+            <button className="btn" onClick={() => setKind("modpack")}>{t("Выбрать модпак")}</button>
           </div>
         </div>
       ) : (
@@ -245,7 +245,7 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
           </aside>
 
           <section className="stack" aria-label={t("Результаты")}>
-            {needsLoader && <div className="alert warn"><span>{t("В профиле «{0}» нет загрузчика модов. Выберите профиль с Fabric, Quilt, Forge или NeoForge.", inst!.name)}</span></div>}
+            {needsLoader && <div className="alert warn"><span>{t("В сборке «{0}» нет загрузчика модов. Выберите сборку с Fabric, Quilt, Forge или NeoForge.", inst!.name)}</span></div>}
             {kind === "shader" && <span className="muted small">{t("Шейдеры работают с модом Iris (Fabric/Quilt) или Oculus (NeoForge). После установки шейдер можно выбрать в разделе «Ресурсы и конфиги».")}</span>}
             {error && <div className="alert err"><span>{error}</span></div>}
             <div className={`card hits page ${view === "tiles" ? "tiles" : ""}`} aria-busy={shown === null}>

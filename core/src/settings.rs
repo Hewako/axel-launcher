@@ -202,7 +202,7 @@ pub fn memory_advice(max_mb: u32, total_mb: Option<u64>, pack_mb: Option<u32>) -
     if let Some(p) = pack_mb
         && max_mb < p
     {
-        out.push(format!("Сборка рекомендует не меньше {p} МБ"));
+        out.push(format!("Модпак рекомендует не меньше {p} МБ"));
     }
     if max_mb < 2048 {
         out.push(

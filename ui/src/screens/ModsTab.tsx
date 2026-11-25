@@ -144,7 +144,7 @@ export function CatalogDialog({ inst, initial, onClose, kinds = ["mod", "resourc
           {CATS[kind].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>}
         {/* Для какой игры и загрузчика ищем: всё в каталоге уже отфильтровано по ним. */}
-        <span className="pill" title={t("Показано только то, что подходит к этому профилю")}>Minecraft {inst.game_version}{kind === "mod" && inst.loader !== "vanilla" ? ` · ${loaderName[inst.loader]}` : ""}</span>
+        <span className="pill" title={t("Показано только то, что подходит к этой сборке")}>Minecraft {inst.game_version}{kind === "mod" && inst.loader !== "vanilla" ? ` · ${loaderName[inst.loader]}` : ""}</span>
       </div>
       {kind === "shader" && <span className="muted small">{t("Шейдеры работают с модом Iris (Fabric/Quilt) или Oculus (NeoForge). После установки шейдер можно выбрать в разделе «Ресурсы и конфиги».")}</span>}
       {error && <div className="alert err"><span>{error}</span></div>}
@@ -191,7 +191,7 @@ export function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; file
           )}
         </div>
       )}
-      {f.fixes.some((x) => x.kind === "disable" || x.kind === "keep_one") && <span className="muted small">{t("Выключенный мод остаётся в профиле, запись попадает в журнал.")}</span>}
+      {f.fixes.some((x) => x.kind === "disable" || x.kind === "keep_one") && <span className="muted small">{t("Выключенный мод остаётся в сборке, запись попадает в журнал.")}</span>}
     </div>
   );
 }
@@ -286,7 +286,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     return (data?.files ?? []).filter((f) => !q || f.file_name.toLowerCase().includes(q) || f.mods.some((m) => m.name.toLowerCase().includes(q) || m.id.includes(q)));
   }, [data, filter]);
 
-  if (inst.loader === "vanilla") return <>{tabs}<div className="card empty"><p>{t("В профиле без загрузчика моды не работают. Создайте профиль с Fabric, Quilt, Forge или NeoForge.")}</p></div></>;
+  if (inst.loader === "vanilla") return <>{tabs}<div className="card empty"><p>{t("В сборке без загрузчика моды не работают. Создайте сборку с Fabric, Quilt, Forge или NeoForge.")}</p></div></>;
   if (error) return <>{tabs}<div className="alert err"><span>{error}</span></div></>;
   if (!data) return <>{tabs}<p className="muted"><span className="spinner" /> {t("Проверяем моды…")}</p></>;
 
@@ -387,7 +387,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
         <dl className="kv">
           <dt>{t("Источник")}</dt><dd>{f.source ? sourceName[f.source.source] : t("вручную")}</dd>
           <dt>{t("Сторона")}</dt><dd>{sideName[m?.side ?? "unknown"]}</dd>
-          <dt>{t("Слой")}</dt><dd>{f.source?.layer === "base" ? t("сборка") : t("мои моды")}</dd>
+          <dt>{t("Слой")}</dt><dd>{f.source?.layer === "base" ? t("модпак") : t("мои моды")}</dd>
           {needs.length > 0 && <><dt>{t("Нужен для")}</dt><dd>{needs.join(", ")}</dd></>}
           <dt>{t("Размер")}</dt><dd>{sizeText(f.size)}</dd>
           <dt>{t("Группа")}</dt>

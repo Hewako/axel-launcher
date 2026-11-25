@@ -111,7 +111,7 @@ pub fn vanilla_icon_crash(game_version: &str) -> Option<String> {
     let way = if game_version.starts_with("1.13") {
         "Выберите версию 1.12.2 или старше либо 1.18 и новее."
     } else {
-        "Создайте профиль Fabric той же версии (Mod Doctor предложит мод-исправление) или выберите версию 1.18 и новее."
+        "Создайте сборку на Fabric той же версии (Mod Doctor предложит мод-исправление) или выберите версию 1.18 и новее."
     };
     Some(format!(
         "Minecraft {game_version} без модов не откроет окно на современной macOS: игра ставит иконку окна, а macOS это запрещает (ошибка игры MCL-15163). {way}"

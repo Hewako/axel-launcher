@@ -11,7 +11,7 @@ export function UpdateNotice({ release, variant, onLater }: { release: LauncherR
       <Icon name="info" size={18} />
       <div className="txt">
         <b>{t("Вышла новая версия Axel' {0}", release.version)}</b>
-        <span>{release.download_url ? t("Установите поверх, миры и профили останутся.") : t("Её можно скачать на странице релизов.")}</span>
+        <span>{release.download_url ? t("Установите поверх, миры и сборки останутся.") : t("Её можно скачать на странице релизов.")}</span>
       </div>
       <div className="acts">
         {release.download_url && <button className="btn get" onClick={() => open(release.download_url!)}><Icon name="download" size={15} /> {t("Скачать")}</button>}

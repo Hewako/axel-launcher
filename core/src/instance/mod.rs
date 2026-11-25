@@ -250,7 +250,7 @@ impl InstanceStore {
         let text = match std::fs::read_to_string(&path) {
             Ok(t) => t,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Err(Error::NotFound(format!("Профиль «{id}» не найден")));
+                return Err(Error::NotFound(format!("Сборка «{id}» не найдена")));
             }
             Err(e) => return Err(Error::io(&path, e)),
         };
@@ -302,10 +302,10 @@ impl InstanceStore {
     ) -> Result<Instance> {
         let name = name.trim();
         if name.is_empty() {
-            return Err(Error::invalid("Имя профиля не может быть пустым"));
+            return Err(Error::invalid("Название сборки не может быть пустым"));
         }
         if name.chars().count() > 64 {
-            return Err(Error::invalid("Имя профиля длиннее 64 символов"));
+            return Err(Error::invalid("Название сборки длиннее 64 символов"));
         }
         crate::metadata::file_safe(game_version)?;
         if !loader.supports(game_version) {
@@ -360,7 +360,7 @@ impl InstanceStore {
     pub fn trash(&self, id: &str) -> Result<PathBuf> {
         let dir = self.dir(id)?;
         if !dir.is_dir() {
-            return Err(Error::NotFound(format!("Профиль «{id}» не найден")));
+            return Err(Error::NotFound(format!("Сборка «{id}» не найдена")));
         }
         let trash = self.data.trash();
         std::fs::create_dir_all(&trash).at(&trash)?;
@@ -387,7 +387,7 @@ pub fn validate_id(id: &str) -> Result<()> {
     if ok {
         Ok(())
     } else {
-        Err(Error::invalid(format!("Недопустимый ID профиля: {id:?}")))
+        Err(Error::invalid(format!("Недопустимый ID сборки: {id:?}")))
     }
 }
 

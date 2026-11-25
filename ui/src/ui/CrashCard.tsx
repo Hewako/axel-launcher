@@ -29,7 +29,7 @@ export function CrashCard({ inst, a, code, onOpenTab, onReport }: {
     x.kind === "disable_mod" ? {
       key: `off-${x.file_name}`,
       title: t("Выключить {0}", x.file_name),
-      hint: t("Мод останется в профиле выключенным, включить обратно можно на вкладке «Моды»."),
+      hint: t("Мод останется в сборке выключенным, включить обратно можно на вкладке «Моды»."),
       run: async () => { await snapshots.create(inst.id, t("Перед починкой краша")); await mods.toggle(inst.id, x.file_name, false); return t("{0} выключен, создан снимок «до починки»", x.file_name); },
     } : x.kind === "increase_memory" ? {
       key: "mem", title: t("Увеличить память"), hint: t("Откроется вкладка «Запуск и память»."),
@@ -44,7 +44,7 @@ export function CrashCard({ inst, a, code, onOpenTab, onReport }: {
       key: "rollback",
       title: t("Откатиться к снимку «{0}»", tc(snap.reason)),
       hint: t("Моды и настройки вернутся к {0}; изменения после этого пропадут (текущее состояние сохранится отдельным снимком).", new Date(snap.created_at * 1000).toLocaleString()),
-      run: async () => { await snapshots.restore(inst.id, snap.id); return t("профиль возвращён к снимку «{0}»", tc(snap.reason)); },
+      run: async () => { await snapshots.restore(inst.id, snap.id); return t("сборка возвращена к снимку «{0}»", tc(snap.reason)); },
     }] : []),
     { key: "none", title: t("Не чинить"), hint: t("Ничего не менять. Разбор останется в журнале, запуск, скорее всего, снова упадёт."), run: async () => t("ничего не меняли") },
   ];

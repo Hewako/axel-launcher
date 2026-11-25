@@ -178,7 +178,7 @@ export function PlayButton({ inst, state, compact, fix }: { inst: Instance; stat
           <button role="menuitem" onClick={() => setQuick("multiplayer")}>{t("Сразу на сервер…")}<small>{t("Quick Play или --server для старых версий")}</small></button>
           <button role="menuitem" onClick={() => go(undefined, true)}>{t("Проверить файлы и играть")}<small>{t("Пересчитать хэши всех файлов и докачать повреждённые")}</small></button>
           {inst.loader !== "vanilla" && <button role="menuitem" onClick={() => go(undefined, false, true)}>{t("Безопасный запуск")}<small>{t("Без модов; моды вернутся после выхода из игры")}</small></button>}
-          <button role="menuitem" onClick={() => { setMenu(false); api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e))); }}>{t("Открыть папку профиля")}</button>
+          <button role="menuitem" onClick={() => { setMenu(false); api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e))); }}>{t("Открыть папку сборки")}</button>
         </div>
       )}
       {quick && <QuickPlayDialog kind={quick} onClose={() => setQuick(null)} onGo={(q) => go(q)} />}

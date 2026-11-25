@@ -158,7 +158,7 @@ pub const SHARABLE: [(&str, &str); 9] = [
 /// а заменяемые папки ресурсов не удаляются — новые файлы добавляются к ним.
 pub fn copy_between(store: &InstanceStore, from: &str, to: &str, items: &[String]) -> Result<()> {
     if from == to {
-        return Err(Error::invalid("Нужно выбрать другой профиль"));
+        return Err(Error::invalid("Нужно выбрать другую сборку"));
     }
     let src = store.game_dir(from)?;
     let dst = store.game_dir(to)?;
@@ -172,7 +172,7 @@ pub fn copy_between(store: &InstanceStore, from: &str, to: &str, items: &[String
     // Моды загрузчика, отличного от нашего, не запустятся — переносить их бессмысленно.
     if items.iter().any(|i| i == "mods") && source.loader != target.loader {
         return Err(Error::invalid(format!(
-            "Моды из профиля с {} не подойдут к профилю с {}",
+            "Моды из сборки с {} не подойдут к сборке с {}",
             source.loader.display(),
             target.loader.display()
         )));

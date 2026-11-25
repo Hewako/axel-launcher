@@ -230,7 +230,7 @@ function Shell() {
   return (
     <div className="app">
       <a href="#main" className="skip">{t("Перейти к содержимому")}</a>
-      <nav className="rail" aria-label={t("Профили и разделы")}>
+      <nav className="rail" aria-label={t("Разделы")}>
         <div className="rail-logo" title={`Axel' ${info.version}`}><img src="/logo.png" alt="" width={34} height={34} /></div>
         <div className="rail-div" aria-hidden />
         {/* Сборки (профили) — отдельным экраном, на рельсе их больше нет. */}
@@ -254,9 +254,9 @@ function Shell() {
 
       <div className="main">
         <main className="content" id="main" tabIndex={-1}>
-          {loadError && <div className="alert err"><div className="h">{t("Не удалось прочитать профили")}</div><span>{loadError}</span></div>}
+          {loadError && <div className="alert err"><div className="h">{t("Не удалось прочитать сборки")}</div><span>{loadError}</span></div>}
           {broken.length > 0 && (
-            <div className="alert warn"><div className="h">{t("Не удалось прочитать профили:")} {broken.length}</div>
+            <div className="alert warn"><div className="h">{t("Не удалось прочитать сборки:")} {broken.length}</div>
               {broken.map((b) => <span key={b.dir} className="small mono">{path(b.dir, streamer)}</span>)}
             </div>
           )}
@@ -268,9 +268,9 @@ function Shell() {
               onCatalog={(kind, query) => openCatalog(selected.id, kind, query)} />
           ) : (
             <div className="card empty">
-              <p>{t("Профилей нет.")}</p>
+              <p>{t("Сборок нет.")}</p>
               <div className="row" style={{ justifyContent: "center" }}>
-                <button className="btn pri" onClick={() => setScreen("new")}>{t("+ Новый профиль")}</button>
+                <button className="btn pri" onClick={() => setScreen("new")}>{t("+ Новая сборка")}</button>
               </div>
             </div>
           ))}
@@ -286,8 +286,8 @@ function Shell() {
             <>
               <div className="shead">
                 <div>
-                  <h2>{t("Новый профиль")}</h2>
-                  <p className="sub">{t("Создать с нуля или импортировать готовую сборку.")}</p>
+                  <h2>{t("Новая сборка")}</h2>
+                  <p className="sub">{t("Создать с нуля или из готового модпака.")}</p>
                 </div>
                 {/* Главная кнопка экрана — в шапке; отправляет форму «Создать с нуля». */}
                 <button type="submit" form="create-form" className="btn cta"><Icon name="plus" size={16} /> {t("Создать")}</button>
@@ -299,7 +299,7 @@ function Shell() {
                   <section className="card">
                     <h3>{t("Что появится")}</h3>
                     <ul className="facts">
-                      <li>{t("Папка профиля появится сразу, а файлы игры скачаются при первом запуске.")}</li>
+                      <li>{t("Папка сборки появится сразу, а файлы игры скачаются при первом запуске.")}</li>
                       <li>{t("Java подберётся по версии игры, при необходимости скачается.")}</li>
                       <li>{t("Первый снимок сохранится сам перед первым изменением модов.")}</li>
                     </ul>
@@ -328,9 +328,9 @@ function Shell() {
                 <span className="mono">{Math.round(dlPct)}%</span>
               </span>
             )}
-            {screen === "profile" && selected && selStatus ? t("Профиль «{0}»: {1}", selected.name, selStatus.text)
-              : runningCount > 0 ? t("Запущено профилей: {0}", runningCount)
-              : t("Профилей: {0}, требуют внимания: {1}", instances.filter((i) => !i.archived).length, instances.filter((i) => !i.archived && ["err", "warn"].includes(status(i).cls ?? "")).length)}
+            {screen === "profile" && selected && selStatus ? t("Сборка «{0}»: {1}", selected.name, selStatus.text)
+              : runningCount > 0 ? t("Запущено сборок: {0}", runningCount)
+              : t("Сборок: {0}, требуют внимания: {1}", instances.filter((i) => !i.archived).length, instances.filter((i) => !i.archived && ["err", "warn"].includes(status(i).cls ?? "")).length)}
             <PauseButton downloading={progressOf(downloading?.s).downloading} />
           </span>
         </footer>

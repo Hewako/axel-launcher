@@ -447,7 +447,7 @@ pub async fn install_temurin(
     let assets: Vec<AdoptiumAsset> = crate::net::get_json(&api).await?;
     let asset = assets.into_iter().next().ok_or_else(|| {
         Error::Java(format!(
-            "У Adoptium нет Java {major} для {} {}. Установите её вручную и укажите путь в настройках профиля.",
+            "У Adoptium нет Java {major} для {} {}. Установите её вручную и укажите путь в настройках сборки.",
             adoptium_os(os),
             adoptium_arch(arch)
         ))

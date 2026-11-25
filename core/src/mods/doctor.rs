@@ -193,9 +193,9 @@ pub fn check(
     if loader == LoaderKind::Vanilla && !enabled.is_empty() {
         findings.push(Finding {
             severity: Severity::Warning,
-            title: "В профиле без загрузчика лежат моды".into(),
+            title: "В сборке без загрузчика лежат моды".into(),
             detail: "Vanilla не загружает моды: они просто не будут работать.".into(),
-            evidence: "загрузчик профиля: Vanilla".into(),
+            evidence: "загрузчик сборки: Vanilla".into(),
             files: enabled.iter().map(|f| f.file_name.clone()).collect(),
             fixes: Vec::new(),
         });
@@ -229,7 +229,7 @@ pub fn check(
                     severity: Severity::Blocking,
                     title: format!("{}: мод для другого загрузчика", m.name),
                     detail: format!(
-                        "Этот мод сделан для {:?}, а профиль использует {}. Найдите версию мода для {} или выключите его.",
+                        "Этот мод сделан для {:?}, а сборка использует {}. Найдите версию мода для {} или выключите его.",
                         m.loader,
                         loader.display(),
                         loader.display()
@@ -343,7 +343,7 @@ pub fn check(
                                 format!("{} плохо работает вместе с «{}»", m.name, d.id)
                             },
                             detail: if hard {
-                                "Автор мода сам указал, что вместе они не работают: загрузчик не запустит игру. Выключите один из них, файл останется в профиле.".into()
+                                "Автор мода сам указал, что вместе они не работают: загрузчик не запустит игру. Выключите один из них, файл останется в сборке.".into()
                             } else {
                                 "Автор мода предупреждает о проблемах. Игра запустится.".into()
                             },

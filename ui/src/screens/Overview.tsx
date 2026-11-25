@@ -96,14 +96,14 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
   if (fixRun && state?.phase !== "running") {
     const steps: [string, string][] = [
       [t("Сохраняем снимок перед починкой"), t("Вернуться можно на вкладке «Откат»")],
-      [fixRun.off.length ? t("Выключаем: {0}", fixRun.off.map(modName).join(", ")) : t("Выключаем мешающие моды"), t("Файлы остаются в профиле, моды можно включить обратно")],
-      [t("Проверяем, что моды совместимы"), fixRun.step > 2 && fixRun.warnings.length ? t("Остались предупреждения: {0}", fixRun.warnings.map((w) => tc(w)).join("; ")) : t("Mod Doctor проверяет профиль ещё раз")],
+      [fixRun.off.length ? t("Выключаем: {0}", fixRun.off.map(modName).join(", ")) : t("Выключаем мешающие моды"), t("Файлы остаются в сборке, моды можно включить обратно")],
+      [t("Проверяем, что моды совместимы"), fixRun.step > 2 && fixRun.warnings.length ? t("Остались предупреждения: {0}", fixRun.warnings.map((w) => tc(w)).join("; ")) : t("Mod Doctor проверяет сборку ещё раз")],
       [t("Запускаем игру"), mem ? t("Minecraft {0}, {1} ГБ памяти", inst.game_version, gb(mem)) : `Minecraft ${inst.game_version}`],
     ];
     return (
       <div className="ov">
         <section className="card">
-          <h3>{t("Чиним профиль, шаг {0} из {1}", Math.min(fixRun.step + 1, steps.length), steps.length)}</h3>
+          <h3>{t("Чиним сборку, шаг {0} из {1}", Math.min(fixRun.step + 1, steps.length), steps.length)}</h3>
           <p className="muted">{t("Окно можно не держать открытым. Если что-то пойдёт не так, ничего не потеряется: снимок уже сохранён.")}</p>
           <ol className="fixsteps" aria-live="polite">
             {steps.map(([title, hint], i) => {
@@ -211,11 +211,11 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         )}
         {r && empty && !crashed && (
           <section className="verdict info" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Профиль пока пустой")}</h3>
+            <h3>{t("Сборка пока пустая")}</h3>
             <p>{t("Minecraft {0} и {1} установлены, модов нет. Игра запустится без модов.", inst.game_version, loaderName[inst.loader])}</p>
             <div className="acts">
               <button className="btn pri" onClick={() => onGo("mods")}><Icon name="plus" size={16} /> {t("Найти моды")}</button>
-              <button className="btn" onClick={onNew}>{t("Импортировать сборку")}</button>
+              <button className="btn" onClick={onNew}>{t("Импортировать модпак")}</button>
             </div>
           </section>
         )}
@@ -223,7 +223,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
           <section className="verdict ok" aria-label={t("Вердикт Mod Doctor")}>
             <h3>{t("Всё готово к запуску")}</h3>
             <p>
-              {inst.loader === "vanilla" ? t("Профиль без модов.") : t("Замечаний нет: Mod Doctor проверил моды ({0}).", r.total)}
+              {inst.loader === "vanilla" ? t("Сборка без модов.") : t("Замечаний нет: Mod Doctor проверил моды ({0}).", r.total)}
               {worked ? ` ${t("Последний запуск {0} прошёл без ошибок.", relTime(last.at))}` : ""}
             </p>
           </section>
@@ -299,7 +299,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
             <dt>{t("Снимков")}</dt><dd>{snaps.length ? t("{0}, последний {1}", snaps.length, relTime(Math.max(...snaps.map((s) => s.created_at)))) : "0"}</dd>
             <dt>{t("Миры")}</dt><dd>{worlds.length}</dd>
             {inst.pack && <>
-              <dt>{t("Сборка")}</dt>
+              <dt>{t("Модпак")}</dt>
               <dd>
                 {inst.pack.name} {inst.pack.version}
                 {newPack && <button className="btn link small upd" onClick={() => onGo("profile")}>{t("вышла {0}", newPack)}</button>}

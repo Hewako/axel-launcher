@@ -212,7 +212,7 @@ async fn create_instance(
 #[tauri::command]
 fn trash_instance(state: State<AppState>, id: String) -> CmdResult<String> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     InstanceStore::new(state.data.clone())
         .trash(&id)
@@ -239,7 +239,7 @@ fn update_instance(
     if let Some(n) = name {
         let n = n.trim();
         if n.is_empty() {
-            return Err("Имя профиля не может быть пустым".into());
+            return Err("Название сборки не может быть пустым".into());
         }
         inst.name = n.to_string();
     }
@@ -342,7 +342,7 @@ fn copy_between(
     items: Vec<String>,
 ) -> CmdResult<()> {
     if state.registry.is_running(&to) {
-        return Err("Сначала закройте игру в профиле, куда переносите".into());
+        return Err("Сначала закройте игру в сборке, куда переносите".into());
     }
     quarry_core::instance::ops::copy_between(
         &InstanceStore::new(state.data.clone()),
@@ -497,7 +497,7 @@ fn launch_instance(
     safe_mode: Option<bool>,
 ) -> CmdResult<()> {
     if state.registry.is_running(&id) {
-        return Err(format!("Профиль «{id}» уже запускается или запущен"));
+        return Err(format!("Сборка «{id}» уже запускается или запущена"));
     }
     let data = state.data.clone();
     let registry = state.registry.clone();
@@ -600,7 +600,7 @@ fn read_log_file(
         }
         None => {
             let mut files: Vec<_> = std::fs::read_dir(&logs)
-                .map_err(|_| "Логов этого профиля пока нет".to_string())?
+                .map_err(|_| "Логов этой сборки пока нет".to_string())?
                 .flatten()
                 .map(|e| e.path())
                 .filter(|p| {
@@ -609,7 +609,7 @@ fn read_log_file(
                 })
                 .collect();
             files.sort();
-            files.pop().ok_or("Логов этого профиля пока нет")?
+            files.pop().ok_or("Логов этой сборки пока нет")?
         }
     };
     let text = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
@@ -832,7 +832,7 @@ fn profiles_compare(
 #[tauri::command]
 fn mods_toggle(state: State<AppState>, id: String, file: String, enabled: bool) -> CmdResult<()> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     quarry_core::mods::manage::toggle(&store, &id, &file, enabled, "вручную").map_err(err)
@@ -845,7 +845,7 @@ fn mods_remove(
     file: String,
 ) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     quarry_core::mods::manage::remove(&store, &id, &file, "вручную").map_err(err)
@@ -864,7 +864,7 @@ async fn mods_add_files(
     paths: Vec<String>,
 ) -> CmdResult<Vec<quarry_core::mods::manage::AddedFile>> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     let paths: Vec<std::path::PathBuf> = paths.into_iter().map(std::path::PathBuf::from).collect();
@@ -1018,7 +1018,7 @@ async fn mods_apply(
     reason: String,
 ) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     quarry_core::mods::manage::apply(&store, &id, plan, &reason, &Cancel::new())
@@ -1078,7 +1078,7 @@ fn snapshot_restore(
     snapshot: String,
 ) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     quarry_core::snapshot::restore(
@@ -1133,7 +1133,7 @@ fn world_backup(
 #[tauri::command]
 fn world_restore(state: State<AppState>, id: String, file: String) -> CmdResult<String> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
@@ -1153,7 +1153,7 @@ async fn move_game_dir(
     target: Option<String>,
 ) -> CmdResult<String> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     tauri::async_runtime::spawn_blocking(move || {
@@ -1274,7 +1274,7 @@ fn resource_remove(
     file: String,
 ) -> CmdResult<()> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     quarry_core::resources::remove(
         &InstanceStore::new(state.data.clone()),
@@ -1355,7 +1355,7 @@ fn mods_toggle_group(
     enabled: bool,
 ) -> CmdResult<Vec<String>> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     quarry_core::mods::groups::toggle_group(
         &InstanceStore::new(state.data.clone()),
@@ -1697,7 +1697,7 @@ fn bisect_step(
     crashed: Option<bool>,
 ) -> CmdResult<Option<quarry_core::mods::bisect::Step>> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     use quarry_core::mods::bisect;
@@ -1743,7 +1743,7 @@ fn servers_save(
     // Игра перезаписывает servers.dat при выходе — правки во время игры потерялись бы.
     if state.registry.is_running(&id) {
         return Err(
-            "Сначала закройте игру в этом профиле: она перезапишет список при выходе".into(),
+            "Сначала закройте игру в этой сборке: она перезапишет список при выходе".into(),
         );
     }
     let game = InstanceStore::new(state.data.clone())
@@ -1918,7 +1918,7 @@ fn pack_settings(
 ) -> CmdResult<Instance> {
     let store = InstanceStore::new(state.data.clone());
     let mut inst = store.get(&id).map_err(err)?;
-    let pack = inst.pack.as_mut().ok_or("Профиль сделан не из сборки")?;
+    let pack = inst.pack.as_mut().ok_or("Сборка сделана не из модпака")?;
     pack.channel = channel;
     pack.pinned = pinned;
     store.save(&inst).map_err(err)?;
@@ -1953,7 +1953,7 @@ async fn pack_update_apply(
     version_id: Option<String>,
 ) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
-        return Err("Сначала закройте игру в этом профиле".into());
+        return Err("Сначала закройте игру в этой сборке".into());
     }
     quarry_core::import::apply_pack_update(
         &InstanceStore::new(state.data.clone()),

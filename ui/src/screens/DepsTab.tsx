@@ -150,7 +150,7 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
 
   if (error) return <div className="alert err"><span>{error}</span></div>;
   if (!g || !data) return <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>;
-  if (g.nodes.length === 0) return <div className="card empty"><p>{t("В профиле пока нет модов.")}</p></div>;
+  if (g.nodes.length === 0) return <div className="card empty"><p>{t("В сборке пока нет модов.")}</p></div>;
 
   const near = new Set(sel ? [sel, ...g.edges.filter((e) => e.from === sel || e.to === sel).flatMap((e) => [e.from, e.to])] : []);
   const edges = g.edges.filter((e) => view === "all" || (view === "problems" ? e.kind === "bad" : !sel || near.has(e.from) && near.has(e.to) && (e.from === sel || e.to === sel)));
@@ -230,7 +230,7 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
                 {g.edges.filter((e) => e.kind === "bad" && (e.from === node.id || e.to === node.id)).map((e, i) => (
                   <Fragment key={i}><dt>{t("Конфликт")}</dt><dd style={{ color: "var(--err)" }}>{e.why ?? t("Конфликт с {0}", nameOf(e.from === node.id ? e.to : e.from))}</dd></Fragment>
                 ))}
-                {(g.missing.get(node.id) ?? []).length > 0 && <><dt>{t("нет в профиле")}</dt><dd style={{ color: "var(--err)" }}>{g.missing.get(node.id)!.join(", ")}</dd></>}
+                {(g.missing.get(node.id) ?? []).length > 0 && <><dt>{t("нет в сборке")}</dt><dd style={{ color: "var(--err)" }}>{g.missing.get(node.id)!.join(", ")}</dd></>}
               </dl>
               <div className="acts">
                 {file && <button className="btn" disabled={running} onClick={() => toggle(file.file_name, !file.enabled)}>{file.enabled ? t("Выключить") : t("Включить")}</button>}
