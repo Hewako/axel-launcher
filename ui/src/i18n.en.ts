@@ -1,6 +1,10 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "По этому коду зайдут и друзья из другой сети, через интернет.": "Friends on other networks can join with this code too, over the internet.",
+  "Через интернет комната сейчас недоступна, зайти можно только из этой же сети.": "The room isn’t reachable over the internet right now; friends can join only from this network.",
+  "Мир «{0}» ждёт вас в игре: «Сетевая игра». Связь через интернет.": "World “{0}” is waiting for you in the game: “Multiplayer”. Connected over the internet.",
+  "Ищем комнату в вашей сети и в интернете…": "Looking for the room on your network and online…",
   "Новая папка для данных Axel'": "New folder for Axel' data",
   "Выбрать другую папку…": "Choose another folder…",
   "Перейти на эту папку?": "Switch to this folder?",
@@ -63,7 +67,6 @@ export const EN: Record<string, string> = {
   "Отправьте код друзьям и откройте мир в игре: Esc, «Открыть для сети».": "Send the code to your friends and open the world in the game: Esc, “Open to LAN”.",
   "Выйти из комнаты": "Leave the room",
   "Мир «{0}» ждёт вас в игре: «Сетевая игра».": "World “{0}” is waiting for you in the game: “Multiplayer”.",
-  "Ищем комнату в вашей сети…": "Looking for the room on your network…",
   "В профиле пока нет модов.": "This profile has no mods yet.",
   "Перед: установить {0}": "Before: install {0}",
   "Показано только то, что подходит к этому профилю": "Only what fits this profile is shown",

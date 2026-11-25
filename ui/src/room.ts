@@ -8,14 +8,15 @@ type CoreEvent =
   | { kind: "waiting" }
   | { kind: "world_open"; motd: string; port: number }
   | { kind: "guest_found"; ip: string }
+  | { kind: "internet"; ok: boolean }
   | { kind: "searching" }
-  | { kind: "joined"; motd: string; host: string; port: number }
+  | { kind: "joined"; motd: string; host: string; port: number; internet: boolean }
   | { kind: "error"; message: string };
 
 export type RoomState =
   | { role: "none"; error?: string }
-  | { role: "host"; code: string; world?: string; guests: number }
-  | { role: "guest"; code: string; world?: string };
+  | { role: "host"; code: string; world?: string; guests: number; internet?: boolean }
+  | { role: "guest"; code: string; world?: string; internet?: boolean };
 
 let state: RoomState = { role: "none" };
 const subs = new Set<(s: RoomState) => void>();
@@ -25,8 +26,9 @@ const seen = new Set<string>();
 listen<CoreEvent>("room-event", ({ payload: e }) => {
   if (e.kind === "error") set({ role: "none", error: e.message });
   else if (state.role === "host" && e.kind === "world_open") set({ ...state, world: e.motd });
+  else if (state.role === "host" && e.kind === "internet") set({ ...state, internet: e.ok });
   else if (state.role === "host" && e.kind === "guest_found" && !seen.has(e.ip)) { seen.add(e.ip); set({ ...state, guests: seen.size }); }
-  else if (state.role === "guest" && e.kind === "joined") set({ ...state, world: e.motd });
+  else if (state.role === "guest" && e.kind === "joined") set({ ...state, world: e.motd, internet: e.internet });
 }).catch(() => {});
 
 export const room = {

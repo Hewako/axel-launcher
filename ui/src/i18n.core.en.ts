@@ -2,6 +2,10 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Комната {0} не отвечает. Проверьте код и что у хозяина открыт Axel' с этой комнатой.": "Room {0} isn’t answering. Check the code and that the host has Axel' open with this room.",
+  "интернет": "internet",
+  "узел комнаты": "room node",
+  "комната": "room",
   "Не удалось найти системную папку настроек": "Couldn’t find the system settings folder",
   "Нужен полный путь к папке": "A full folder path is required",
   "По этому пути лежит файл, а не папка": "There is a file at this path, not a folder",
@@ -14,7 +18,6 @@ export const CORE_EN: Record<string, string> = {
   "Сначала закройте игру": "Close the game first",
   "нет сетевого подключения": "no network connection",
   "Комната {0} есть, но хозяин ещё не открыл мир для сети. Пусть в игре нажмёт Esc и «Открыть для сети».": "Room {0} exists, but the host hasn’t opened the world to the network yet. Ask them to press Esc and “Open to LAN” in the game.",
-  "Комната {0} не отвечает. Проверьте код и что вы в одной сети Wi-Fi. Если хозяин на Windows, Axel' должен быть разрешён в брандмауэре для частных сетей.": "Room {0} isn’t answering. Check the code and that you’re on the same Wi-Fi. If the host is on Windows, Axel' must be allowed through the firewall for private networks.",
   "локальная сеть": "local network",
   "порт объявлений Minecraft": "Minecraft announcement port",
   "группа объявлений Minecraft": "Minecraft announcement group",

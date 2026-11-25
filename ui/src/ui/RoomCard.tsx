@@ -3,7 +3,7 @@ import { errText } from "../api";
 import { room, useRoom } from "../room";
 import { t } from "../i18n";
 
-/** «Игра с друзьями»: комната по коду в одной сети Wi-Fi. */
+/** «Игра с друзьями»: комната по коду, в одной сети или через интернет. */
 export function RoomCard() {
   const r = useRoom();
   const [code, setCode] = useState("");
@@ -35,6 +35,8 @@ export function RoomCard() {
               ? (r.guests ? t("Мир «{0}» открыт, друзей в комнате: {1}", r.world, r.guests) : t("Мир «{0}» открыт, друзья могут заходить", r.world))
               : t("Отправьте код друзьям и откройте мир в игре: Esc, «Открыть для сети».")}
           </p>
+          {r.internet === true && <p className="muted small">{t("По этому коду зайдут и друзья из другой сети, через интернет.")}</p>}
+          {r.internet === false && <p className="muted small">{t("Через интернет комната сейчас недоступна, зайти можно только из этой же сети.")}</p>}
         </>
       )}
       {r.role === "guest" && (
@@ -44,7 +46,7 @@ export function RoomCard() {
             <button className="btn" onClick={() => run(room.leave)}>{t("Выйти из комнаты")}</button>
           </div>
           <p className="roomstate">
-            {r.world ? t("Мир «{0}» ждёт вас в игре: «Сетевая игра».", r.world) : <><span className="spinner" /> {t("Ищем комнату в вашей сети…")}</>}
+            {r.world ? (r.internet ? t("Мир «{0}» ждёт вас в игре: «Сетевая игра». Связь через интернет.", r.world) : t("Мир «{0}» ждёт вас в игре: «Сетевая игра».", r.world)) : <><span className="spinner" /> {t("Ищем комнату в вашей сети и в интернете…")}</>}
           </p>
         </>
       )}

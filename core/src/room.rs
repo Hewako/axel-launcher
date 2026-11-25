@@ -1,11 +1,16 @@
-//! Комната: игра в мире друга в одной сети (Wi-Fi) по коду из 5 символов.
+//! Комната: игра в мире друга по коду из 5 символов, в одной сети или через интернет.
 //!
 //! Хозяин открывает мир в игре «для сети». Его Minecraft раз в ~1,5 с объявляет мир в локальной
 //! сети (UDP multicast 224.0.2.60:4445, `[MOTD]…[/MOTD][AD]порт[/AD]`) — Axel' хозяина слушает
 //! это объявление со своего компьютера и узнаёт порт игры. Гость вводит код: его Axel' ищет
 //! хозяина широковещательным запросом (UDP 47815), открывает у себя проход до игры хозяина и сам
 //! объявляет мир у себя — мир появляется в «Сетевой игре», даже если роутер режет multicast.
-//! Позже сюда же встанет связь через интернет: проход будет вести не напрямую, а через посредника.
+//!
+//! Через интернет (как Hamachi) — библиотека iroh. Axel' хозяина поднимает узел, ключ которого
+//! выводится из кода комнаты, поэтому гость по тем же 5 символам знает, кого искать. Адрес узла
+//! публикуется в открытом каталоге n0 (DNS/pkarr); соединение идёт напрямую через пробитый NAT,
+//! а если роутеры не пускают — через общий сервер-посредник n0 (данные шифруются от узла до узла).
+//! Гость сначала ищет комнату в своей сети и только потом в интернете.
 
 use crate::error::{Error, Result};
 use rand::Rng;
@@ -13,6 +18,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
+use tokio::sync::watch;
 
 /// Порт, на котором Axel' хозяина отвечает на поиск комнаты.
 pub const DISCOVERY_PORT: u16 = 47815;
@@ -22,6 +28,12 @@ const LAN_PORT: u16 = 4445;
 const ALPHABET: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 pub const CODE_LEN: usize = 5;
 const PROTO: &str = "AXEL-ROOM 1";
+/// Протокол комнат через интернет (ALPN). Первый байт потока: `?` — что за мир, `>` — проход к игре.
+const ALPN: &[u8] = b"axel/room/1";
+/// Сколько гость ищет комнату в своей сети, прежде чем искать в интернете.
+const LAN_WAIT: Duration = Duration::from_secs(4);
+/// Сколько гость ждёт соединения через интернет.
+const NET_WAIT: Duration = Duration::from_secs(25);
 
 /// Случайный код комнаты, например `K7M2Q`.
 pub fn new_code() -> String {
@@ -108,6 +120,8 @@ pub enum RoomEvent {
     WorldOpen { motd: String, port: u16 },
     /// Хозяин: гость нашёл комнату.
     GuestFound { ip: String },
+    /// Хозяин: комната доступна и через интернет (`ok`) или только в своей сети.
+    Internet { ok: bool },
     /// Гость: ищем хозяина.
     Searching,
     /// Гость: мир хозяина появился в «Сетевой игре»; `port` — проход на этом компьютере.
@@ -115,6 +129,8 @@ pub enum RoomEvent {
         motd: String,
         host: String,
         port: u16,
+        /// Связь через интернет, а не в одной сети.
+        internet: bool,
     },
 }
 
@@ -205,6 +221,13 @@ pub async fn host(code: String, on_event: EventFn) -> Result<()> {
     }
     let disc = reusable_udp(DISCOVERY_PORT).map_err(|e| net_err("порт комнаты", e))?;
     on_event(RoomEvent::Waiting);
+    let (world_tx, world_rx) = watch::channel::<Option<(String, u16)>>(None);
+    // Интернет-часть живёт, пока живёт комната: при закрытии комнаты задача отменяется.
+    let _internet = AbortOnDrop(tokio::spawn(internet_host(
+        code.clone(),
+        world_rx,
+        on_event.clone(),
+    )));
     let mut world: Option<(String, u16)> = None;
     let (mut b1, mut b2) = ([0u8; 1024], [0u8; 256]);
     loop {
@@ -220,6 +243,7 @@ pub async fn host(code: String, on_event: EventFn) -> Result<()> {
                     && world.as_ref() != Some(&w)
                 {
                     on_event(RoomEvent::WorldOpen { motd: w.0.clone(), port: w.1 });
+                    world_tx.send_replace(Some(w.clone()));
                     world = Some(w);
                 }
             }
@@ -251,8 +275,37 @@ pub struct Found {
     pub via: Option<Ipv4Addr>,
 }
 
-/// Найти хозяина комнаты в сети. Ждём до `wait`: комната может быть создана, а мир открыт позже.
+/// Найти хозяина комнаты в своей сети. Ждём до `wait`: комната может быть создана, а мир открыт позже.
 pub async fn find(code: &str, wait: Duration) -> Result<Found> {
+    search_lan(code, wait).await.map_err(|m| match m {
+        Miss::Closed => closed_err(code),
+        Miss::Silent => silent_err(code),
+        Miss::Failed(e) => e,
+    })
+}
+
+/// Почему комната не нашлась.
+enum Miss {
+    /// Хозяин ответил: мир ещё не открыт для сети.
+    Closed,
+    /// Никто не ответил.
+    Silent,
+    Failed(Error),
+}
+
+fn closed_err(code: &str) -> Error {
+    Error::invalid(format!(
+        "Комната {code} есть, но хозяин ещё не открыл мир для сети. Пусть в игре нажмёт Esc и «Открыть для сети»."
+    ))
+}
+
+fn silent_err(code: &str) -> Error {
+    Error::invalid(format!(
+        "Комната {code} не отвечает. Проверьте код и что у хозяина открыт Axel' с этой комнатой."
+    ))
+}
+
+async fn search_lan(code: &str, wait: Duration) -> std::result::Result<Found, Miss> {
     use tokio::sync::mpsc;
     use tokio::task::JoinSet;
     let q = query(code);
@@ -290,10 +343,10 @@ pub async fn find(code: &str, wait: Duration) -> Result<Found> {
         });
     }
     if senders.is_empty() {
-        return Err(net_err(
+        return Err(Miss::Failed(net_err(
             "поиск комнаты",
             std::io::Error::other("нет сетевого подключения"),
-        ));
+        )));
     }
     let deadline = tokio::time::Instant::now() + wait;
     let mut closed = false;
@@ -317,15 +370,7 @@ pub async fn find(code: &str, wait: Duration) -> Result<Found> {
             }
         }
     }
-    Err(Error::invalid(if closed {
-        format!(
-            "Комната {code} есть, но хозяин ещё не открыл мир для сети. Пусть в игре нажмёт Esc и «Открыть для сети»."
-        )
-    } else {
-        format!(
-            "Комната {code} не отвечает. Проверьте код и что вы в одной сети Wi-Fi. Если хозяин на Windows, Axel' должен быть разрешён в брандмауэре для частных сетей."
-        )
-    }))
+    Err(if closed { Miss::Closed } else { Miss::Silent })
 }
 
 /// UDP-сокет для объявлений мира: наружу через адаптер `via` (если известен).
@@ -341,12 +386,30 @@ fn announcer(via: Option<Ipv4Addr>) -> std::io::Result<UdpSocket> {
     UdpSocket::from_std(s.into())
 }
 
-/// Гость: найти комнату, открыть у себя проход до игры хозяина и объявить мир в «Сетевой игре».
-/// Работает, пока задачу не отменят.
+/// Куда ведёт проход гостя.
+enum Route {
+    /// Хозяин в этой же сети: прямо на его игру.
+    Lan(SocketAddr),
+    /// Хозяин в другой сети: потоки через соединение iroh.
+    Internet(iroh::endpoint::Connection),
+}
+
+/// Гость: найти комнату (сначала в своей сети, потом в интернете), открыть у себя проход до игры
+/// хозяина и объявить мир в «Сетевой игре». Работает, пока задачу не отменят.
 pub async fn join(code: String, on_event: EventFn) -> Result<()> {
     on_event(RoomEvent::Searching);
-    let found = find(&code, Duration::from_secs(15)).await?;
-    let host_addr = found.addr;
+    // Узел iroh живёт, пока живёт проход: с ним закрывается и соединение.
+    let mut _endpoint = None;
+    let (route, motd, via) = match search_lan(&code, LAN_WAIT).await {
+        Ok(f) => (Route::Lan(f.addr), f.motd, f.via),
+        Err(Miss::Closed) => return Err(closed_err(&code)),
+        // В своей сети не нашли (или сети нет) — ищем через интернет.
+        Err(Miss::Silent | Miss::Failed(_)) => {
+            let (ep, conn, motd) = internet_find(&code).await?;
+            _endpoint = Some(ep);
+            (Route::Internet(conn), motd, None)
+        }
+    };
     // Проход: игра гостя подключается к нему, он пересылает всё хозяину.
     let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0))
         .await
@@ -355,15 +418,19 @@ pub async fn join(code: String, on_event: EventFn) -> Result<()> {
         .local_addr()
         .map_err(|e| net_err("проход", e))?
         .port();
-    let shown = format!("{} · {code}", found.motd);
+    let shown = format!("{motd} · {code}");
     on_event(RoomEvent::Joined {
         motd: shown.clone(),
-        host: host_addr.ip().to_string(),
+        host: match &route {
+            Route::Lan(a) => a.ip().to_string(),
+            Route::Internet(c) => c.remote_id().fmt_short().to_string(),
+        },
         port: local_port,
+        internet: matches!(route, Route::Internet(_)),
     });
     // Объявляем мир через тот адаптер, где нашли хозяина: так в списке игры один адрес, а не по
     // одному на каждый адаптер.
-    let announcer = announcer(found.via)
+    let announcer = announcer(via)
         .or_else(|_| announcer(None))
         .map_err(|e| net_err("объявление мира", e))?;
     let ad = lan_announcement(&shown, local_port);
@@ -381,15 +448,145 @@ pub async fn join(code: String, on_event: EventFn) -> Result<()> {
                 if !local.is_some_and(|l| same_machine(from.ip(), l)) {
                     continue;
                 }
+                let _ = game.set_nodelay(true);
+                match &route {
+                    Route::Lan(host_addr) => {
+                        let host_addr = *host_addr;
+                        tokio::spawn(async move {
+                            if let Ok(mut up) = TcpStream::connect(host_addr).await {
+                                let _ = up.set_nodelay(true);
+                                let _ = tokio::io::copy_bidirectional(&mut game, &mut up).await;
+                            }
+                        });
+                    }
+                    Route::Internet(conn) => {
+                        let conn = conn.clone();
+                        tokio::spawn(async move {
+                            let Ok((mut send, recv)) = conn.open_bi().await else { return };
+                            if send.write_all(b">").await.is_err() {
+                                return;
+                            }
+                            let mut up = tokio::io::join(recv, send);
+                            let _ = tokio::io::copy_bidirectional(&mut game, &mut up).await;
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Задача, которая отменяется вместе с владельцем.
+struct AbortOnDrop(tokio::task::JoinHandle<()>);
+
+impl Drop for AbortOnDrop {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
+/// Ключ узла комнаты: из кода, чтобы гость знал адрес хозяина по тем же 5 символам.
+/// shortcut: кто знает код, тот может назваться хозяином этой комнаты — как и войти в неё;
+/// при росте до публичных комнат — ключ хозяина отдельно, а код как короткая ссылка на него.
+fn room_key(code: &str) -> iroh::SecretKey {
+    use sha2::{Digest, Sha256};
+    let hash: [u8; 32] = Sha256::digest(format!("axel-room-v1:{code}").as_bytes()).into();
+    iroh::SecretKey::from_bytes(&hash)
+}
+
+fn p2p_err(what: &str, e: impl std::fmt::Display) -> Error {
+    Error::Network {
+        host: "интернет".into(),
+        reason: format!("{what}: {e}"),
+    }
+}
+
+/// Хозяин в интернете: узел с ключом комнаты. Отвечает на «что за мир» и пробрасывает потоки
+/// гостей в свою игру на этом компьютере. Без интернета комната просто работает только в сети.
+async fn internet_host(
+    code: String,
+    world: watch::Receiver<Option<(String, u16)>>,
+    on_event: EventFn,
+) {
+    let ep = match iroh::Endpoint::builder(iroh::endpoint::presets::N0)
+        .secret_key(room_key(&code))
+        .alpns(vec![ALPN.to_vec()])
+        .bind()
+        .await
+    {
+        Ok(ep) => ep,
+        Err(_) => return on_event(RoomEvent::Internet { ok: false }),
+    };
+    let online = tokio::time::timeout(Duration::from_secs(20), ep.online())
+        .await
+        .is_ok();
+    on_event(RoomEvent::Internet { ok: online });
+    while let Some(incoming) = ep.accept().await {
+        let (world, on_event, code) = (world.clone(), on_event.clone(), code.clone());
+        tokio::spawn(async move {
+            let Ok(conn) = incoming.await else { return };
+            let guest = conn.remote_id().fmt_short().to_string();
+            while let Ok((mut send, mut recv)) = conn.accept_bi().await {
+                let (world, on_event, code, guest) =
+                    (world.clone(), on_event.clone(), code.clone(), guest.clone());
                 tokio::spawn(async move {
-                    if let Ok(mut up) = TcpStream::connect(host_addr).await {
-                        let _ = game.set_nodelay(true);
-                        let _ = up.set_nodelay(true);
-                        let _ = tokio::io::copy_bidirectional(&mut game, &mut up).await;
+                    let mut kind = [0u8; 1];
+                    if recv.read_exact(&mut kind).await.is_err() {
+                        return;
+                    }
+                    let w = world.borrow().clone();
+                    match (kind[0], w) {
+                        (b'?', w) => {
+                            let _ = send.write_all(reply(&code, w.as_ref()).as_bytes()).await;
+                            let _ = send.finish();
+                            if w.is_some() {
+                                on_event(RoomEvent::GuestFound { ip: guest });
+                            }
+                        }
+                        (b'>', Some((_, port))) => {
+                            if let Ok(mut game) =
+                                TcpStream::connect((Ipv4Addr::LOCALHOST, port)).await
+                            {
+                                let _ = game.set_nodelay(true);
+                                let mut down = tokio::io::join(recv, send);
+                                let _ = tokio::io::copy_bidirectional(&mut game, &mut down).await;
+                            }
+                        }
+                        _ => {}
                     }
                 });
             }
-        }
+        });
+    }
+}
+
+/// Гость в интернете: соединиться с узлом комнаты и узнать, что за мир.
+async fn internet_find(code: &str) -> Result<(iroh::Endpoint, iroh::endpoint::Connection, String)> {
+    let ep = iroh::Endpoint::bind(iroh::endpoint::presets::N0)
+        .await
+        .map_err(|e| p2p_err("узел комнаты", e))?;
+    let conn = match tokio::time::timeout(NET_WAIT, ep.connect(room_key(code).public(), ALPN)).await
+    {
+        Ok(Ok(c)) => c,
+        _ => return Err(silent_err(code)),
+    };
+    let ask = async {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|e| p2p_err("комната", e))?;
+        send.write_all(b"?")
+            .await
+            .map_err(|e| p2p_err("комната", e))?;
+        let _ = send.finish();
+        recv.read_to_end(512)
+            .await
+            .map_err(|e| p2p_err("комната", e))
+    };
+    let answer = tokio::time::timeout(Duration::from_secs(10), ask)
+        .await
+        .map_err(|_| silent_err(code))??;
+    match parse_reply(&answer, code) {
+        Some(Answer::Open(_, motd)) => Ok((ep, conn, motd)),
+        Some(Answer::Closed) => Err(closed_err(code)),
+        None => Err(silent_err(code)),
     }
 }
 
@@ -445,6 +642,16 @@ mod tests {
             "мир не открыт, это ответ, а не тишина"
         );
         assert_eq!(parse_reply(r.as_bytes(), "AAAAA"), None, "чужой код");
+    }
+
+    #[test]
+    fn room_key_comes_from_the_code() {
+        assert_eq!(
+            room_key("K7M2Q").public(),
+            room_key("K7M2Q").public(),
+            "гость знает адрес хозяина по коду"
+        );
+        assert_ne!(room_key("K7M2Q").public(), room_key("K7M2R").public());
     }
 
     #[test]
@@ -545,5 +752,63 @@ mod tests {
         let e = find(&code, Duration::from_secs(3)).await.unwrap_err();
         assert!(e.to_string().contains("не открыл мир"), "{e}");
         h.abort();
+    }
+
+    /// Комната через интернет по-настоящему: хозяин и гость — два узла iroh, связь через
+    /// каталог и посредника n0. Проверяет и «что за мир», и проход до игры хозяина.
+    // Многопоточный, как в приложении: iroh держит фоновые задачи.
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore = "интернет: серверы n0, `cargo test -p quarry-core room -- --ignored`"]
+    async fn internet_room_round_trip() {
+        let code = new_code();
+        // «Игра» хозяина: TCP-сервер с эхом.
+        let game = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let game_port = game.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            while let Ok((mut c, _)) = game.accept().await {
+                tokio::spawn(async move {
+                    let (mut r, mut w) = c.split();
+                    let _ = tokio::io::copy(&mut r, &mut w).await;
+                });
+            }
+        });
+        let (tx, rx) = watch::channel(Some(("Тест".to_string(), game_port)));
+        let events = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let ev = events.clone();
+        let _host = AbortOnDrop(tokio::spawn(internet_host(
+            code.clone(),
+            rx,
+            Arc::new(move |e| ev.lock().unwrap().push(e)),
+        )));
+        // Хозяин вышел в сеть и опубликовал адрес.
+        for _ in 0..200 {
+            if events
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|e| matches!(e, RoomEvent::Internet { .. }))
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(
+            events
+                .lock()
+                .unwrap()
+                .contains(&RoomEvent::Internet { ok: true }),
+            "{:?}",
+            events.lock().unwrap()
+        );
+        let (_ep, conn, motd) = internet_find(&code).await.unwrap();
+        assert_eq!(motd, "Тест");
+        let (mut send, recv) = conn.open_bi().await.unwrap();
+        send.write_all(b">ping").await.unwrap();
+        let mut up = tokio::io::join(recv, send);
+        use tokio::io::AsyncReadExt;
+        let mut buf = [0u8; 4];
+        up.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"ping");
+        drop(tx);
     }
 }
