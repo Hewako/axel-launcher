@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DataDirButton } from "../ui/DataDirButton";
 import { api, diagnostics, errText, sizeText, type AppInfo, type GlobalSettings, type LauncherRelease } from "../api";
 import { useDialog } from "../ui/Dialog";
 import { path, setStreamer } from "../streamer";
@@ -71,7 +72,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
         <div className="setting">
           <div className="lbl">{t("Папка данных")}</div>
           <span className="mono" style={{ userSelect: "text" }}>{path(info.data_dir, s.streamer_mode)}</span>
-          <span />
+          <DataDirButton />
         </div>
         <div className="setting">
           <div className="lbl">{t("Память по умолчанию")}<span className="hint">{t("для профилей без своего значения")}</span></div>

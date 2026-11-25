@@ -1,6 +1,22 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Новая папка для данных Axel'": "New folder for Axel' data",
+  "Выбрать другую папку…": "Choose another folder…",
+  "Перейти на эту папку?": "Switch to this folder?",
+  "Перенести данные?": "Move your data?",
+  "Здесь уже есть данные Axel'. Лаунчер перезапустится и откроет их, текущие данные останутся на месте.": "This folder already has Axel' data. The launcher will restart and open it; your current data stays where it is.",
+  "Профили, миры, версии игры и Java занимают {0}. Их можно перенести сюда или начать с пустой папки, тогда текущие данные останутся на месте.": "Profiles, worlds, game versions and Java take {0}. You can move them here, or start with an empty folder and keep the current data where it is.",
+  "Свободно на диске: {0}": "Free on disk: {0}",
+  "Если это другой диск, места может не хватить.": "If this is another drive, there may not be enough space.",
+  "Лаунчер перезапустится. Пока идёт игра, папку сменить нельзя.": "The launcher will restart. You can’t change the folder while a game is running.",
+  "Перейти": "Switch",
+  "Начать с пустой": "Start empty",
+  "Переносим данные": "Moving your data",
+  "Скопировано {0} из {1}": "Copied {0} of {1}",
+  "Готовим папку…": "Preparing the folder…",
+  "Перенос данных": "Moving data",
+  "Не закрывайте лаунчер. Когда всё будет готово, он перезапустится сам.": "Don’t close the launcher. It will restart by itself when everything is done.",
   "Каталог": "Catalog",
   "Сборки": "Modpacks",
   "Квесты": "Quests",

@@ -211,6 +211,10 @@ export const api = {
   serverTags: (id: string) => invoke<Record<string, string[]>>("server_tags", { id }),
   setServerTags: (id: string, ip: string, tags: string[]) => invoke<void>("server_set_tags", { id, ip, tags }),
   pingServer: (address: string) => invoke<ServerStatus>("server_ping", { address }),
+  /** Что будет, если сделать папкой данных `path`. */
+  dataDirCheck: (path: string) => invoke<DataDirCheck>("data_dir_check", { path }),
+  /** Сменить папку данных; после этого лаунчер перезапускается. */
+  dataDirChange: (target: string, mode: "move" | "empty" | "use_existing") => invoke<void>("data_dir_change", { target, mode }),
   firstRunInfo: () => invoke<{ data_dir: string; free_bytes?: number; javas: { path: string; major: number; version: string; arch: string }[] }>("first_run_info"),
   firstRunDone: (language: string) => invoke<void>("first_run_done", { language }),
   launcherUpdate: () => invoke<LauncherRelease | null>("launcher_update"),
@@ -318,6 +322,7 @@ export interface SnapshotDiff { added: string[]; removed: string[]; changed: str
 export interface SearchHit { project_id: string; slug: string; title: string; description: string; downloads: number; icon_url?: string; author: string; client_side: string; categories: string[] }
 export type Channel = "auto" | "release" | "beta" | "alpha";
 export type CatalogSource = "modrinth" | "curseforge";
+export type DataDirCheck = { target: string; has_data: boolean; size: number; free?: number | null };
 export type ProjectKind = "mod" | "resourcepack" | "shader" | "datapack";
 export type CatalogSort = "relevance" | "downloads" | "newest" | "updated";
 /** Нужен ли проект на стороне клиента или сервера; пусто — любой. */

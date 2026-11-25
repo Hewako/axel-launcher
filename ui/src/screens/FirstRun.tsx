@@ -1,6 +1,7 @@
 // Мастер первого запуска: язык, папка данных и место, Java, вход, первый профиль, приватность.
 // По одной мысли на шаг; любой шаг можно пропустить — всё меняется потом в настройках.
 import { useEffect, useState } from "react";
+import { DataDirButton } from "../ui/DataDirButton";
 import { api, sizeText } from "../api";
 import { currentLang, switchLang, t } from "../i18n";
 
@@ -41,6 +42,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
             <h3 id="wiz-title">{t("Где Axel' хранит игру")}</h3>
             <p>{t("Версии игры, моды, миры и настройки лежат в одной папке:")}</p>
             <p className="mono small" style={{ userSelect: "text" }}>{info?.data_dir || "…"}</p>
+            <div className="row"><DataDirButton /></div>
             {info?.free_bytes !== undefined && <p>{t("Свободно на диске:")} <b>{sizeText(info.free_bytes)}</b>.</p>}
             {lowSpace && <div className="alert warn"><span>{t("Места мало. Одна версия игры с модами занимает 1–3 ГБ — освободите место заранее.")}</span></div>}
           </>

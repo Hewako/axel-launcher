@@ -151,7 +151,7 @@ enum AccountAction {
 
 fn data_dir(root: Option<PathBuf>) -> Result<DataDir> {
     let root = root
-        .or_else(DataDir::default_root)
+        .or_else(quarry_core::relocate::resolve_root)
         .context("Не удалось определить домашнюю папку")?;
     let data = DataDir::open(root)?;
     quarry_core::mods::rules::load_cached(&data);

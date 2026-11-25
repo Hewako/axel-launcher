@@ -28,6 +28,7 @@ pub mod nbt;
 pub mod net;
 pub mod options;
 pub mod paths;
+pub mod relocate;
 pub mod resources;
 pub mod room;
 pub mod servers;

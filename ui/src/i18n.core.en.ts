@@ -2,6 +2,16 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Не удалось найти системную папку настроек": "Couldn’t find the system settings folder",
+  "Нужен полный путь к папке": "A full folder path is required",
+  "По этому пути лежит файл, а не папка": "There is a file at this path, not a folder",
+  "Данные уже лежат в этой папке": "The data is already in this folder",
+  "Новая папка не может быть внутри текущей папки данных, и наоборот": "The new folder can’t be inside the current data folder, or the other way round",
+  "Папка {0} уже занята другими файлами. Выберите пустую папку.": "Folder {0} already has other files. Choose an empty folder.",
+  "В этой папке нет данных Axel'": "This folder has no Axel' data",
+  "Папка для переноса должна быть пустой": "The destination folder must be empty",
+  "На диске не хватает места: нужно {0} МБ, свободно {1} МБ": "Not enough disk space: {0} MB needed, {1} MB free",
+  "Сначала закройте игру": "Close the game first",
   "нет сетевого подключения": "no network connection",
   "Комната {0} есть, но хозяин ещё не открыл мир для сети. Пусть в игре нажмёт Esc и «Открыть для сети».": "Room {0} exists, but the host hasn’t opened the world to the network yet. Ask them to press Esc and “Open to LAN” in the game.",
   "Комната {0} не отвечает. Проверьте код и что вы в одной сети Wi-Fi. Если хозяин на Windows, Axel' должен быть разрешён в брандмауэре для частных сетей.": "Room {0} isn’t answering. Check the code and that you’re on the same Wi-Fi. If the host is on Windows, Axel' must be allowed through the firewall for private networks.",

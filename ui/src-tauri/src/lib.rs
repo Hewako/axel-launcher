@@ -2029,13 +2029,63 @@ fn link_minecraft(
     .map_err(err)
 }
 
+/// Что будет, если сделать папкой данных `path`.
+#[tauri::command]
+async fn data_dir_check(
+    state: State<'_, AppState>,
+    path: String,
+) -> CmdResult<quarry_core::relocate::Check> {
+    let cur = state.data.root().to_path_buf();
+    tauri::async_runtime::spawn_blocking(move || {
+        quarry_core::relocate::check(&cur, std::path::Path::new(&path))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(err)
+}
+
+/// Сменить папку данных и перезапустить лаунчер. Ход копирования — событие `data-move`.
+#[tauri::command]
+async fn data_dir_change(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    target: String,
+    mode: quarry_core::relocate::Mode,
+) -> CmdResult<()> {
+    if !state.registry.running_ids().is_empty() {
+        return Err("Сначала закройте игру".into());
+    }
+    let cur = state.data.root().to_path_buf();
+    let emitter = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let last = std::sync::atomic::AtomicU64::new(u64::MAX);
+        quarry_core::relocate::relocate(
+            &cur,
+            std::path::Path::new(&target),
+            mode,
+            &|done, total| {
+                // Сообщаем не чаще, чем раз на процент: файлов бывают десятки тысяч.
+                let pct = done * 100 / total.max(1);
+                if last.swap(pct, std::sync::atomic::Ordering::Relaxed) != pct {
+                    let _ = emitter.emit("data-move", (done, total));
+                }
+            },
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(err)?;
+    app.restart()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let root = DataDir::default_root().ok_or("Не удалось определить домашнюю папку")?;
+            let root = quarry_core::relocate::resolve_root()
+                .ok_or("Не удалось определить домашнюю папку")?;
             let data = DataDir::open(root)?;
             if let Ok(g) = GlobalSettings::load(&data) {
                 quarry_core::download::throttle().set_limit_kbps(g.download_limit_kbps.into());
@@ -2099,6 +2149,8 @@ pub fn run() {
             mods_add_files,
             catalog_search,
             catalog_installed,
+            data_dir_check,
+            data_dir_change,
             mods_plan_install,
             mods_check_updates,
             mods_apply,
