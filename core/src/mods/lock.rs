@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn roundtrip_and_lookup() {
-        let d = std::env::temp_dir().join(format!("quarry-lock-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-lock-{}", std::process::id()));
         std::fs::create_dir_all(&d).unwrap();
         let mut l = PackLock::default();
         l.upsert(LockEntry {

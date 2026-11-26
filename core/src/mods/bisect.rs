@@ -203,8 +203,7 @@ mod tests {
         name: &str,
         mods: &[(&str, &[&str])],
     ) -> (InstanceStore, String, std::path::PathBuf) {
-        let root =
-            std::env::temp_dir().join(format!("quarry-bisect-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-bisect-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store

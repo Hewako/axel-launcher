@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn clone_usage_and_copy() {
-        let root = std::env::temp_dir().join(format!("quarry-ops-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-ops-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let mut a = store
@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn copy_mods_and_launch_settings_between_profiles() {
         use crate::mods::lock::{Layer, LockEntry, PackLock, Source};
-        let root = std::env::temp_dir().join(format!("quarry-copy-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-copy-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let mut a = store
@@ -454,7 +454,7 @@ mod tests {
 
     #[test]
     fn move_game_folder_out_and_back() {
-        let root = std::env::temp_dir().join(format!("quarry-move-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-move-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(root.join("data")).unwrap());
         let a = store
@@ -485,7 +485,7 @@ mod tests {
 
     #[test]
     fn copy_fallback_moves_everything() {
-        let root = std::env::temp_dir().join(format!("quarry-movecopy-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-movecopy-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("a/sub")).unwrap();
         std::fs::write(root.join("a/sub/f"), b"1234").unwrap();
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn copying_worlds_never_overwrites_existing() {
-        let root = std::env::temp_dir().join(format!("quarry-saves-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-saves-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let a = store

@@ -5,7 +5,7 @@
 use crate::error::Result;
 use serde::Serialize;
 
-pub const RELEASES_URL: &str = "https://github.com/Hewako/quarry-launcher/releases";
+pub const RELEASES_URL: &str = "https://github.com/Hewako/axel-launcher/releases";
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Release {
@@ -62,7 +62,7 @@ pub async fn latest() -> Result<Option<Release>> {
         body: Option<String>,
     }
     let text =
-        crate::net::get_text("https://api.github.com/repos/Hewako/quarry-launcher/releases/latest")
+        crate::net::get_text("https://api.github.com/repos/Hewako/axel-launcher/releases/latest")
             .await?;
     let r: Gh =
         serde_json::from_str(&text).map_err(|e| crate::error::Error::parse("ответ GitHub", e))?;
@@ -115,7 +115,7 @@ mod tests {
         assert_eq!(
             download_url("macos", false).as_deref(),
             Some(
-                "https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
+                "https://github.com/Hewako/axel-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
             )
         );
     }

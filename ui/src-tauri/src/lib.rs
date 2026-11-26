@@ -1,14 +1,14 @@
-//! Тонкие команды Tauri поверх quarry-core. Логики здесь нет: только преобразование
+//! Тонкие команды Tauri поверх axel-core. Логики здесь нет: только преобразование
 //! ошибок в текст для интерфейса и пересылка событий запуска.
 
-use quarry_core::account::{AccountRef, AccountStore, KeyringStore};
-use quarry_core::download::Cancel;
-use quarry_core::instance::{AuthMode, BrokenInstance, Instance, InstanceStore};
-use quarry_core::launch::{self, LaunchEvent, LaunchOptions, LaunchRegistry, args::QuickPlay};
-use quarry_core::loader::{self, LoaderKind, LoaderVersion};
-use quarry_core::metadata::{self, Freshness};
-use quarry_core::paths::DataDir;
-use quarry_core::settings::{self, GlobalSettings, LaunchOverrides, ResolvedLaunch};
+use axel_core::account::{AccountRef, AccountStore, KeyringStore};
+use axel_core::download::Cancel;
+use axel_core::instance::{AuthMode, BrokenInstance, Instance, InstanceStore};
+use axel_core::launch::{self, LaunchEvent, LaunchOptions, LaunchRegistry, args::QuickPlay};
+use axel_core::loader::{self, LoaderKind, LoaderVersion};
+use axel_core::metadata::{self, Freshness};
+use axel_core::paths::DataDir;
+use axel_core::settings::{self, GlobalSettings, LaunchOverrides, ResolvedLaunch};
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager, State};
@@ -25,7 +25,7 @@ struct AppState {
 
 type CmdResult<T> = Result<T, String>;
 
-fn err(e: quarry_core::Error) -> String {
+fn err(e: axel_core::Error) -> String {
     e.to_string()
 }
 
@@ -46,23 +46,23 @@ struct AppInfo {
 #[derive(Clone, Serialize)]
 #[serde(untagged)]
 enum RoomPayload {
-    Event(quarry_core::room::RoomEvent),
+    Event(axel_core::room::RoomEvent),
     Error { kind: &'static str, message: String },
 }
 
 fn start_room<F>(app: &tauri::AppHandle, state: &AppState, run: F)
 where
     F: FnOnce(
-        quarry_core::room::EventFn,
+        axel_core::room::EventFn,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = quarry_core::error::Result<()>> + Send>,
+        Box<dyn std::future::Future<Output = axel_core::error::Result<()>> + Send>,
     >,
 {
     if let Some(old) = state.room.lock().unwrap().take() {
         old.abort();
     }
     let emitter = app.clone();
-    let on_event: quarry_core::room::EventFn = Arc::new(move |e| {
+    let on_event: axel_core::room::EventFn = Arc::new(move |e| {
         let _ = emitter.emit("room-event", RoomPayload::Event(e));
     });
     let fut = run(on_event);
@@ -84,10 +84,10 @@ where
 /// Создать комнату: вернуть код и ждать, пока хозяин откроет мир для сети.
 #[tauri::command]
 fn room_create(app: tauri::AppHandle, state: State<AppState>) -> String {
-    let code = quarry_core::room::new_code();
+    let code = axel_core::room::new_code();
     let c = code.clone();
     start_room(&app, &state, move |ev| {
-        Box::pin(quarry_core::room::host(c, ev))
+        Box::pin(axel_core::room::host(c, ev))
     });
     code
 }
@@ -95,11 +95,11 @@ fn room_create(app: tauri::AppHandle, state: State<AppState>) -> String {
 /// Войти в комнату по коду: найти хозяина в сети и показать его мир в «Сетевой игре».
 #[tauri::command]
 fn room_join(app: tauri::AppHandle, state: State<AppState>, code: String) -> CmdResult<String> {
-    let code = quarry_core::room::normalize_code(&code)
+    let code = axel_core::room::normalize_code(&code)
         .ok_or_else(|| "Код комнаты: 5 букв и цифр, например K7M2Q".to_string())?;
     let c = code.clone();
     start_room(&app, &state, move |ev| {
-        Box::pin(quarry_core::room::join(c, ev))
+        Box::pin(axel_core::room::join(c, ev))
     });
     Ok(code)
 }
@@ -118,9 +118,9 @@ fn app_info(state: State<AppState>) -> AppInfo {
         version: launch::LAUNCHER_VERSION,
         dev_launch: launch::DEV_LAUNCH,
         data_dir: state.data.root().display().to_string(),
-        microsoft_configured: quarry_core::account::microsoft::CLIENT_ID.is_some(),
-        curseforge: quarry_core::curseforge::api_key().is_some(),
-        free_bytes: quarry_core::paths::free_space(state.data.root()),
+        microsoft_configured: axel_core::account::microsoft::CLIENT_ID.is_some(),
+        curseforge: axel_core::curseforge::api_key().is_some(),
+        free_bytes: axel_core::paths::free_space(state.data.root()),
         os: std::env::consts::OS,
     }
 }
@@ -138,7 +138,7 @@ struct InstanceList {
 struct LaunchRun {
     id: String,
     #[serde(flatten)]
-    run: quarry_core::instance::LastLaunch,
+    run: axel_core::instance::LastLaunch,
 }
 
 /// Журнал запусков всех профилей (новые первыми) — для экрана «Логи и краши».
@@ -232,7 +232,7 @@ fn update_instance(
     account: Option<String>,
     meta: Option<ProfileMeta>,
     // Команды запуска: окно присылает их после того, как игрок подтвердил точные строки.
-    hooks: Option<quarry_core::launch::hooks::Hooks>,
+    hooks: Option<axel_core::launch::hooks::Hooks>,
 ) -> CmdResult<Instance> {
     let store = InstanceStore::new(state.data.clone());
     let mut inst = store.get(&id).map_err(err)?;
@@ -309,9 +309,9 @@ fn clone_instance(
     state: State<AppState>,
     id: String,
     name: String,
-    parts: quarry_core::instance::ops::CloneParts,
+    parts: axel_core::instance::ops::CloneParts,
 ) -> CmdResult<Instance> {
-    quarry_core::instance::ops::clone_instance(
+    axel_core::instance::ops::clone_instance(
         &InstanceStore::new(state.data.clone()),
         &id,
         &name,
@@ -324,14 +324,12 @@ fn clone_instance(
 async fn disk_usage(
     state: State<'_, AppState>,
     id: String,
-) -> CmdResult<quarry_core::instance::ops::DiskUsage> {
+) -> CmdResult<axel_core::instance::ops::DiskUsage> {
     let store = InstanceStore::new(state.data.clone());
-    tauri::async_runtime::spawn_blocking(move || {
-        quarry_core::instance::ops::disk_usage(&store, &id)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-    .map_err(err)
+    tauri::async_runtime::spawn_blocking(move || axel_core::instance::ops::disk_usage(&store, &id))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(err)
 }
 
 #[tauri::command]
@@ -344,7 +342,7 @@ fn copy_between(
     if state.registry.is_running(&to) {
         return Err("Сначала закройте игру в сборке, куда переносите".into());
     }
-    quarry_core::instance::ops::copy_between(
+    axel_core::instance::ops::copy_between(
         &InstanceStore::new(state.data.clone()),
         &from,
         &to,
@@ -382,7 +380,7 @@ fn launch_settings(state: State<AppState>, id: String) -> CmdResult<LaunchSettin
 /// Linux — /proc/meminfo, Windows — пока нет (подсказка без числа).
 #[tauri::command]
 fn memory_advice(max_mb: u32, pack_mb: Option<u32>) -> Vec<String> {
-    quarry_core::settings::memory_advice(max_mb, total_memory_mb(), pack_mb)
+    axel_core::settings::memory_advice(max_mb, total_memory_mb(), pack_mb)
 }
 
 fn total_memory_mb() -> Option<u64> {
@@ -419,14 +417,14 @@ fn global_settings(state: State<AppState>) -> CmdResult<GlobalSettings> {
 #[tauri::command]
 fn save_global_settings(state: State<AppState>, settings: GlobalSettings) -> CmdResult<()> {
     settings.save(&state.data).map_err(err)?;
-    quarry_core::download::throttle().set_limit_kbps(settings.download_limit_kbps.into());
+    axel_core::download::throttle().set_limit_kbps(settings.download_limit_kbps.into());
     Ok(())
 }
 
 /// Пауза всех загрузок (и снятие паузы).
 #[tauri::command]
 fn downloads_pause(paused: bool) {
-    quarry_core::download::throttle().set_paused(paused);
+    axel_core::download::throttle().set_paused(paused);
 }
 
 #[derive(Serialize)]
@@ -528,7 +526,7 @@ fn launch_instance(
         .await;
         let error = match result {
             Ok(_) => None,
-            Err(quarry_core::Error::Cancelled) => Some("Запуск отменён".into()),
+            Err(axel_core::Error::Cancelled) => Some("Запуск отменён".into()),
             Err(e) => Some(e.to_string()),
         };
         let _ = app.emit("launch-finished", LaunchFinished { id, error });
@@ -593,7 +591,7 @@ fn read_log_file(
     let path = match file {
         Some(name) => {
             // Только файлы из папки логов профиля.
-            if !quarry_core::paths::is_plain_file_name(&name) {
+            if !axel_core::paths::is_plain_file_name(&name) {
                 return Err("Недопустимое имя файла".into());
             }
             logs.join(name)
@@ -631,7 +629,7 @@ async fn account_avatar(state: State<'_, AppState>, key: String) -> CmdResult<Op
         .get(&key)
         .map_err(err)?;
     Ok(match account {
-        Some(a) => quarry_core::skin::avatar_data_url(&state.data, &a).await,
+        Some(a) => axel_core::skin::avatar_data_url(&state.data, &a).await,
         None => None,
     })
 }
@@ -643,7 +641,7 @@ async fn account_skin(state: State<'_, AppState>, key: String) -> CmdResult<Opti
         .get(&key)
         .map_err(err)?;
     Ok(match account {
-        Some(a) => quarry_core::skin::figure_data_url(&state.data, &a).await,
+        Some(a) => axel_core::skin::figure_data_url(&state.data, &a).await,
         None => None,
     })
 }
@@ -665,8 +663,8 @@ fn remove_account(state: State<AppState>, key: String) -> CmdResult<()> {
 #[tauri::command]
 async fn microsoft_start(
     state: State<'_, AppState>,
-) -> CmdResult<quarry_core::account::microsoft::DeviceCode> {
-    let code = quarry_core::account::microsoft::start_device_code()
+) -> CmdResult<axel_core::account::microsoft::DeviceCode> {
+    let code = axel_core::account::microsoft::start_device_code()
         .await
         .map_err(err)?;
     *state.login_cancel.lock().unwrap_or_else(|p| p.into_inner()) = Some(Cancel::new());
@@ -676,7 +674,7 @@ async fn microsoft_start(
 #[tauri::command]
 async fn microsoft_finish(
     state: State<'_, AppState>,
-    code: quarry_core::account::microsoft::DeviceCode,
+    code: axel_core::account::microsoft::DeviceCode,
 ) -> CmdResult<AccountRef> {
     let cancel = state
         .login_cancel
@@ -686,7 +684,7 @@ async fn microsoft_finish(
         .unwrap_or_default();
     let secrets = KeyringStore;
     let store = AccountStore::new(&state.data, &secrets);
-    quarry_core::account::microsoft::complete_login(&store, &code, &cancel)
+    axel_core::account::microsoft::complete_login(&store, &code, &cancel)
         .await
         .map_err(err)
 }
@@ -697,12 +695,12 @@ async fn ely_login(app: tauri::AppHandle, state: State<'_, AppState>) -> CmdResu
     *state.login_cancel.lock().unwrap_or_else(|p| p.into_inner()) = Some(cancel.clone());
     let secrets = KeyringStore;
     let store = AccountStore::new(&state.data, &secrets);
-    quarry_core::account::ely::login(
+    axel_core::account::ely::login(
         &store,
         |url| {
             app.opener()
                 .open_url(url, None::<&str>)
-                .map_err(|e| quarry_core::Error::Auth(format!("Не удалось открыть браузер: {e}")))
+                .map_err(|e| axel_core::Error::Auth(format!("Не удалось открыть браузер: {e}")))
         },
         &cancel,
     )
@@ -726,15 +724,15 @@ async fn ely_login_password(
 ) -> CmdResult<PasswordLoginResult> {
     let secrets = KeyringStore;
     let store = AccountStore::new(&state.data, &secrets);
-    match quarry_core::account::ely::login_password(&store, &login, &password, totp.as_deref())
+    match axel_core::account::ely::login_password(&store, &login, &password, totp.as_deref())
         .await
         .map_err(err)?
     {
-        quarry_core::account::ely::PasswordLogin::Done(a) => Ok(PasswordLoginResult {
+        axel_core::account::ely::PasswordLogin::Done(a) => Ok(PasswordLoginResult {
             account: Some(a),
             need_totp: false,
         }),
-        quarry_core::account::ely::PasswordLogin::NeedTotp => Ok(PasswordLoginResult {
+        axel_core::account::ely::PasswordLogin::NeedTotp => Ok(PasswordLoginResult {
             account: None,
             need_totp: true,
         }),
@@ -761,7 +759,7 @@ fn link_allowed(url: &str) -> bool {
         "https://microsoft.com/devicelogin",
         "https://www.microsoft.com/devicelogin",
         "https://ely.by",
-        "https://github.com/Hewako/quarry-launcher",
+        "https://github.com/Hewako/axel-launcher",
         "https://www.curseforge.com/",
         "https://modrinth.com/",
     ];
@@ -787,9 +785,9 @@ fn open_link(app: tauri::AppHandle, url: String) -> CmdResult<()> {
 
 #[derive(Serialize)]
 struct ModsView {
-    files: Vec<quarry_core::mods::ModFile>,
-    report: quarry_core::mods::doctor::Report,
-    journal: Vec<quarry_core::mods::manage::JournalEntry>,
+    files: Vec<axel_core::mods::ModFile>,
+    report: axel_core::mods::doctor::Report,
+    journal: Vec<axel_core::mods::manage::JournalEntry>,
 }
 
 // Читает все JAR профиля: не на главном потоке, иначе окно замирает.
@@ -801,14 +799,14 @@ fn mods_view(state: State<AppState>, id: String) -> CmdResult<ModsView> {
         store.game_dir(&id).map_err(err)?,
         store.dir(&id).map_err(err)?,
     );
-    let files = quarry_core::mods::inventory(&game, &dir).map_err(err)?;
-    let report = quarry_core::mods::doctor::check(
+    let files = axel_core::mods::inventory(&game, &dir).map_err(err)?;
+    let report = axel_core::mods::doctor::check(
         &files,
         inst.loader,
         &inst.game_version,
         inst.loader_version.as_deref(),
     );
-    let mut journal = quarry_core::mods::manage::journal(&dir);
+    let mut journal = axel_core::mods::manage::journal(&dir);
     journal.reverse();
     journal.truncate(50);
     Ok(ModsView {
@@ -824,9 +822,9 @@ fn profiles_compare(
     state: State<AppState>,
     a: String,
     b: String,
-) -> CmdResult<quarry_core::compare::ProfileDiff> {
+) -> CmdResult<axel_core::compare::ProfileDiff> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::compare::compare(&store, &a, &b).map_err(err)
+    axel_core::compare::compare(&store, &a, &b).map_err(err)
 }
 
 #[tauri::command]
@@ -835,7 +833,7 @@ fn mods_toggle(state: State<AppState>, id: String, file: String, enabled: bool) 
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::mods::manage::toggle(&store, &id, &file, enabled, "вручную").map_err(err)
+    axel_core::mods::manage::toggle(&store, &id, &file, enabled, "вручную").map_err(err)
 }
 
 #[tauri::command]
@@ -843,18 +841,18 @@ fn mods_remove(
     state: State<AppState>,
     id: String,
     file: String,
-) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
+) -> CmdResult<axel_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::mods::manage::remove(&store, &id, &file, "вручную").map_err(err)
+    axel_core::mods::manage::remove(&store, &id, &file, "вручную").map_err(err)
 }
 
 #[tauri::command]
 fn mods_pin(state: State<AppState>, id: String, file: String, pinned: bool) -> CmdResult<()> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::mods::manage::set_pinned(&store, &id, &file, pinned).map_err(err)
+    axel_core::mods::manage::set_pinned(&store, &id, &file, pinned).map_err(err)
 }
 
 #[tauri::command]
@@ -862,13 +860,13 @@ async fn mods_add_files(
     state: State<'_, AppState>,
     id: String,
     paths: Vec<String>,
-) -> CmdResult<Vec<quarry_core::mods::manage::AddedFile>> {
+) -> CmdResult<Vec<axel_core::mods::manage::AddedFile>> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
     let paths: Vec<std::path::PathBuf> = paths.into_iter().map(std::path::PathBuf::from).collect();
-    quarry_core::mods::manage::add_files(&store, &id, &paths)
+    axel_core::mods::manage::add_files(&store, &id, &paths)
         .await
         .map(|(_, added)| added)
         .map_err(err)
@@ -879,28 +877,28 @@ async fn catalog_search(
     state: State<'_, AppState>,
     id: String,
     query: String,
-    kind: quarry_core::catalog::ProjectType,
+    kind: axel_core::catalog::ProjectType,
     offset: u32,
-    filters: Option<quarry_core::catalog::Filters>,
+    filters: Option<axel_core::catalog::Filters>,
     source: Option<String>,
-) -> CmdResult<quarry_core::catalog::SearchResult> {
+) -> CmdResult<axel_core::catalog::SearchResult> {
     let inst = InstanceStore::new(state.data.clone())
         .get(&id)
         .map_err(err)?;
     if source.as_deref() == Some("curseforge") {
         let hits =
-            quarry_core::curseforge::search(&query, kind, inst.loader, &inst.game_version, offset)
+            axel_core::curseforge::search(&query, kind, inst.loader, &inst.game_version, offset)
                 .await
                 .map_err(err)?;
         // CurseForge не сообщает, сколько всего нашлось: полная страница — значит, есть следующая.
-        let more = hits.len() as u64 >= quarry_core::catalog::PAGE as u64;
-        return Ok(quarry_core::catalog::SearchResult {
+        let more = hits.len() as u64 >= axel_core::catalog::PAGE as u64;
+        return Ok(axel_core::catalog::SearchResult {
             total_hits: offset as u64 + hits.len() as u64 + more as u64,
             hits,
         });
     }
-    let loaders = quarry_core::catalog::loaders_for(inst.loader);
-    quarry_core::catalog::search(
+    let loaders = axel_core::catalog::loaders_for(inst.loader);
+    axel_core::catalog::search(
         &query,
         kind,
         &loaders,
@@ -918,12 +916,12 @@ async fn catalog_search(
 async fn catalog_installed(
     state: State<'_, AppState>,
     id: String,
-    kind: quarry_core::catalog::ProjectType,
-) -> CmdResult<Vec<quarry_core::catalog::SearchHit>> {
-    use quarry_core::mods::lock::{PackLock, Source};
+    kind: axel_core::catalog::ProjectType,
+) -> CmdResult<Vec<axel_core::catalog::SearchHit>> {
+    use axel_core::mods::lock::{PackLock, Source};
     let store = InstanceStore::new(state.data.clone());
     let lock = PackLock::load(&store.dir(&id).map_err(err)?).map_err(err)?;
-    let entries = quarry_core::catalog::installed(&lock, kind);
+    let entries = axel_core::catalog::installed(&lock, kind);
     let modrinth: Vec<String> = entries
         .iter()
         .filter(|e| e.source == Source::Modrinth)
@@ -932,7 +930,7 @@ async fn catalog_installed(
     let projects = if modrinth.is_empty() {
         Vec::new()
     } else {
-        quarry_core::catalog::projects(&modrinth)
+        axel_core::catalog::projects(&modrinth)
             .await
             .unwrap_or_default()
     };
@@ -941,7 +939,7 @@ async fn catalog_installed(
         .map(|e| {
             let pid = e.project_id.clone().unwrap_or_default();
             match projects.iter().find(|p| p.id == pid) {
-                Some(p) => quarry_core::catalog::SearchHit {
+                Some(p) => axel_core::catalog::SearchHit {
                     project_id: p.id.clone(),
                     slug: p.slug.clone(),
                     title: p.title.clone(),
@@ -953,7 +951,7 @@ async fn catalog_installed(
                     icon_url: p.icon_url.clone(),
                     author: String::new(),
                 },
-                None => quarry_core::catalog::SearchHit {
+                None => axel_core::catalog::SearchHit {
                     title: e.title.clone().unwrap_or_else(|| {
                         e.path.rsplit('/').next().unwrap_or(&e.path).to_string()
                     }),
@@ -977,15 +975,15 @@ async fn mods_plan_install(
     state: State<'_, AppState>,
     id: String,
     project: String,
-    channel: Option<quarry_core::catalog::Channel>,
+    channel: Option<axel_core::catalog::Channel>,
     source: Option<String>,
-) -> CmdResult<quarry_core::mods::manage::Plan> {
+) -> CmdResult<axel_core::mods::manage::Plan> {
     let store = InstanceStore::new(state.data.clone());
     if source.as_deref() == Some("curseforge") {
         let mod_id: u64 = project
             .parse()
             .map_err(|_| "Неверный номер мода CurseForge".to_string())?;
-        return quarry_core::curseforge::plan_install(
+        return axel_core::curseforge::plan_install(
             &store,
             &id,
             mod_id,
@@ -994,7 +992,7 @@ async fn mods_plan_install(
         .await
         .map_err(err);
     }
-    quarry_core::mods::manage::plan_install(&store, &id, &project, channel.unwrap_or_default())
+    axel_core::mods::manage::plan_install(&store, &id, &project, channel.unwrap_or_default())
         .await
         .map_err(err)
 }
@@ -1003,9 +1001,9 @@ async fn mods_plan_install(
 async fn mods_check_updates(
     state: State<'_, AppState>,
     id: String,
-) -> CmdResult<quarry_core::mods::manage::Plan> {
+) -> CmdResult<axel_core::mods::manage::Plan> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::mods::manage::check_updates(&store, &id)
+    axel_core::mods::manage::check_updates(&store, &id)
         .await
         .map_err(err)
 }
@@ -1014,14 +1012,14 @@ async fn mods_check_updates(
 async fn mods_apply(
     state: State<'_, AppState>,
     id: String,
-    plan: quarry_core::mods::manage::Plan,
+    plan: axel_core::mods::manage::Plan,
     reason: String,
-) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
+) -> CmdResult<axel_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::mods::manage::apply(&store, &id, plan, &reason, &Cancel::new())
+    axel_core::mods::manage::apply(&store, &id, plan, &reason, &Cancel::new())
         .await
         .map_err(err)
 }
@@ -1030,9 +1028,9 @@ async fn mods_apply(
 fn snapshots_list(
     state: State<AppState>,
     id: String,
-) -> CmdResult<Vec<quarry_core::snapshot::SnapshotInfo>> {
+) -> CmdResult<Vec<axel_core::snapshot::SnapshotInfo>> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::snapshot::list(&store.dir(&id).map_err(err)?).map_err(err)
+    axel_core::snapshot::list(&store.dir(&id).map_err(err)?).map_err(err)
 }
 
 #[tauri::command]
@@ -1040,14 +1038,14 @@ fn snapshot_create(
     state: State<AppState>,
     id: String,
     reason: String,
-) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
+) -> CmdResult<axel_core::snapshot::SnapshotInfo> {
     let store = InstanceStore::new(state.data.clone());
     let reason = if reason.trim().is_empty() {
         "Создан вручную".to_string()
     } else {
         reason
     };
-    quarry_core::snapshot::create(
+    axel_core::snapshot::create(
         &store.dir(&id).map_err(err)?,
         &store.game_dir(&id).map_err(err)?,
         &reason,
@@ -1061,9 +1059,9 @@ fn snapshot_diff(
     state: State<AppState>,
     id: String,
     snapshot: String,
-) -> CmdResult<quarry_core::snapshot::Diff> {
+) -> CmdResult<axel_core::snapshot::Diff> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::snapshot::diff(
+    axel_core::snapshot::diff(
         &store.dir(&id).map_err(err)?,
         &store.game_dir(&id).map_err(err)?,
         &snapshot,
@@ -1076,12 +1074,12 @@ fn snapshot_restore(
     state: State<AppState>,
     id: String,
     snapshot: String,
-) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
+) -> CmdResult<axel_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::snapshot::restore(
+    axel_core::snapshot::restore(
         &store.dir(&id).map_err(err)?,
         &store.game_dir(&id).map_err(err)?,
         &snapshot,
@@ -1097,20 +1095,17 @@ fn snapshot_pin(
     pinned: bool,
 ) -> CmdResult<()> {
     let store = InstanceStore::new(state.data.clone());
-    quarry_core::snapshot::set_pinned(&store.dir(&id).map_err(err)?, &snapshot, pinned).map_err(err)
+    axel_core::snapshot::set_pinned(&store.dir(&id).map_err(err)?, &snapshot, pinned).map_err(err)
 }
 
 #[tauri::command]
-fn worlds_list(
-    state: State<AppState>,
-    id: String,
-) -> CmdResult<Vec<quarry_core::worlds::WorldInfo>> {
+fn worlds_list(state: State<AppState>, id: String) -> CmdResult<Vec<axel_core::worlds::WorldInfo>> {
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    Ok(quarry_core::worlds::list(
+    Ok(axel_core::worlds::list(
         &game,
-        &quarry_core::worlds::backups_dir(&state.data, &id),
+        &axel_core::worlds::backups_dir(&state.data, &id),
     ))
 }
 
@@ -1119,12 +1114,12 @@ fn world_backup(
     state: State<AppState>,
     id: String,
     world: String,
-) -> CmdResult<quarry_core::snapshot::WorldBackup> {
+) -> CmdResult<axel_core::snapshot::WorldBackup> {
     let store = InstanceStore::new(state.data.clone());
     let game = store.game_dir(&id).map_err(err)?;
-    quarry_core::snapshot::backup_world(
+    axel_core::snapshot::backup_world(
         &game,
-        &quarry_core::worlds::backups_dir(&state.data, &id),
+        &axel_core::worlds::backups_dir(&state.data, &id),
         &world,
     )
     .map_err(err)
@@ -1138,9 +1133,9 @@ fn world_restore(state: State<AppState>, id: String, file: String) -> CmdResult<
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    quarry_core::worlds::restore(
+    axel_core::worlds::restore(
         &game,
-        &quarry_core::worlds::backups_dir(&state.data, &id),
+        &axel_core::worlds::backups_dir(&state.data, &id),
         std::path::Path::new(&file),
     )
     .map_err(err)
@@ -1157,7 +1152,7 @@ async fn move_game_dir(
     }
     let store = InstanceStore::new(state.data.clone());
     tauri::async_runtime::spawn_blocking(move || {
-        quarry_core::instance::ops::move_game_dir(
+        axel_core::instance::ops::move_game_dir(
             &store,
             &id,
             target.as_deref().map(std::path::Path::new),
@@ -1171,7 +1166,7 @@ async fn move_game_dir(
 
 #[derive(Serialize)]
 struct ResourcesView {
-    packs: Vec<quarry_core::resources::PackInfo>,
+    packs: Vec<axel_core::resources::PackInfo>,
     /// Формат ресурспаков игры; `None` — игра ещё не скачана.
     game_format: Option<i64>,
     /// Установлен Iris или Oculus — без них шейдеры не работают.
@@ -1182,16 +1177,16 @@ struct ResourcesView {
 fn game_pack_format(
     state: &AppState,
     game_version: &str,
-    kind: quarry_core::resources::Kind,
+    kind: axel_core::resources::Kind,
 ) -> Option<i64> {
     let jar = state
         .data
         .versions()
         .join(game_version)
         .join(format!("{game_version}.jar"));
-    let info = quarry_core::worlds::game_jar_info(&jar).ok()?;
+    let info = axel_core::worlds::game_jar_info(&jar).ok()?;
     match kind {
-        quarry_core::resources::Kind::Datapack => info.data_pack_format,
+        axel_core::resources::Kind::Datapack => info.data_pack_format,
         _ => info.resource_pack_format,
     }
 }
@@ -1200,7 +1195,7 @@ fn game_pack_format(
 fn resources_list(
     state: State<AppState>,
     id: String,
-    kind: quarry_core::resources::Kind,
+    kind: axel_core::resources::Kind,
     world: Option<String>,
 ) -> CmdResult<ResourcesView> {
     let store = InstanceStore::new(state.data.clone());
@@ -1209,8 +1204,8 @@ fn resources_list(
     let game_format = game_pack_format(&state, &inst.game_version, kind);
     // Список ищет папку вида внутри: для датапаков это папка мира.
     let base = match kind {
-        quarry_core::resources::Kind::Datapack => {
-            quarry_core::resources::target_dir(&game, kind, world.as_deref())
+        axel_core::resources::Kind::Datapack => {
+            axel_core::resources::target_dir(&game, kind, world.as_deref())
                 .map_err(err)?
                 .parent()
                 .map(std::path::Path::to_path_buf)
@@ -1218,12 +1213,12 @@ fn resources_list(
         }
         _ => game.clone(),
     };
-    let shader_loader = quarry_core::mods::inventory(&game, &store.dir(&id).map_err(err)?)
+    let shader_loader = axel_core::mods::inventory(&game, &store.dir(&id).map_err(err)?)
         .unwrap_or_default()
         .iter()
         .any(|f| f.enabled && f.mods.iter().any(|m| m.id == "iris" || m.id == "oculus"));
     Ok(ResourcesView {
-        packs: quarry_core::resources::list(&base, kind, game_format),
+        packs: axel_core::resources::list(&base, kind, game_format),
         game_format,
         shader_loader,
     })
@@ -1242,13 +1237,13 @@ fn resources_set_enabled(
     let store = InstanceStore::new(state.data.clone());
     let inst = store.get(&id).map_err(err)?;
     let game = store.game_dir(&id).map_err(err)?;
-    quarry_core::resources::set_enabled(
+    axel_core::resources::set_enabled(
         &game,
         &enabled,
         game_pack_format(
             &state,
             &inst.game_version,
-            quarry_core::resources::Kind::Resourcepack,
+            axel_core::resources::Kind::Resourcepack,
         ),
     )
     .map_err(err)
@@ -1262,21 +1257,21 @@ fn shader_set(state: State<AppState>, id: String, shader: Option<String>) -> Cmd
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    quarry_core::resources::set_shader(&game, shader.as_deref()).map_err(err)
+    axel_core::resources::set_shader(&game, shader.as_deref()).map_err(err)
 }
 
 #[tauri::command]
 fn resource_remove(
     state: State<AppState>,
     id: String,
-    kind: quarry_core::resources::Kind,
+    kind: axel_core::resources::Kind,
     world: Option<String>,
     file: String,
 ) -> CmdResult<()> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
-    quarry_core::resources::remove(
+    axel_core::resources::remove(
         &InstanceStore::new(state.data.clone()),
         &id,
         kind,
@@ -1291,16 +1286,16 @@ async fn resource_install(
     state: State<'_, AppState>,
     id: String,
     project: String,
-    kind: quarry_core::resources::Kind,
+    kind: axel_core::resources::Kind,
     world: Option<String>,
     source: Option<String>,
 ) -> CmdResult<String> {
     let source = if source.as_deref() == Some("curseforge") {
-        quarry_core::mods::lock::Source::CurseForge
+        axel_core::mods::lock::Source::CurseForge
     } else {
-        quarry_core::mods::lock::Source::Modrinth
+        axel_core::mods::lock::Source::Modrinth
     };
-    quarry_core::resources::install(
+    axel_core::resources::install(
         &InstanceStore::new(state.data.clone()),
         &id,
         &project,
@@ -1324,8 +1319,8 @@ fn mods_groups(state: State<AppState>, id: String) -> CmdResult<GroupsView> {
         .dir(&id)
         .map_err(err)?;
     Ok(GroupsView {
-        names: quarry_core::mods::groups::GROUPS.to_vec(),
-        groups: quarry_core::mods::groups::ModGroups::load(&dir)
+        names: axel_core::mods::groups::GROUPS.to_vec(),
+        groups: axel_core::mods::groups::ModGroups::load(&dir)
             .map_err(err)?
             .groups,
     })
@@ -1338,7 +1333,7 @@ fn mods_set_group(
     file: String,
     group: Option<String>,
 ) -> CmdResult<()> {
-    quarry_core::mods::groups::set_group(
+    axel_core::mods::groups::set_group(
         &InstanceStore::new(state.data.clone()),
         &id,
         &file,
@@ -1357,7 +1352,7 @@ fn mods_toggle_group(
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
-    quarry_core::mods::groups::toggle_group(
+    axel_core::mods::groups::toggle_group(
         &InstanceStore::new(state.data.clone()),
         &id,
         &group,
@@ -1368,7 +1363,7 @@ fn mods_toggle_group(
 
 #[tauri::command]
 async fn mods_auto_groups(state: State<'_, AppState>, id: String) -> CmdResult<usize> {
-    quarry_core::mods::groups::auto_assign(&InstanceStore::new(state.data.clone()), &id)
+    axel_core::mods::groups::auto_assign(&InstanceStore::new(state.data.clone()), &id)
         .await
         .map_err(err)
 }
@@ -1385,9 +1380,9 @@ fn config_dirs(state: &AppState, id: &str) -> CmdResult<(std::path::PathBuf, std
 fn configs_list(
     state: State<AppState>,
     id: String,
-) -> CmdResult<Vec<quarry_core::configs::ConfigFile>> {
+) -> CmdResult<Vec<axel_core::configs::ConfigFile>> {
     let (game, dir) = config_dirs(&state, &id)?;
-    Ok(quarry_core::configs::list(&game, &dir))
+    Ok(axel_core::configs::list(&game, &dir))
 }
 
 #[tauri::command]
@@ -1395,9 +1390,9 @@ async fn configs_search(
     state: State<'_, AppState>,
     id: String,
     query: String,
-) -> CmdResult<Vec<quarry_core::configs::Hit>> {
+) -> CmdResult<Vec<axel_core::configs::Hit>> {
     let (game, _) = config_dirs(&state, &id)?;
-    tauri::async_runtime::spawn_blocking(move || quarry_core::configs::search(&game, &query))
+    tauri::async_runtime::spawn_blocking(move || axel_core::configs::search(&game, &query))
         .await
         .map_err(|e| e.to_string())
 }
@@ -1405,12 +1400,12 @@ async fn configs_search(
 #[tauri::command]
 fn config_read(state: State<AppState>, id: String, path: String) -> CmdResult<String> {
     let (game, _) = config_dirs(&state, &id)?;
-    quarry_core::configs::read(&game, &path).map_err(err)
+    axel_core::configs::read(&game, &path).map_err(err)
 }
 
 #[derive(Serialize)]
 struct ConfigPreview {
-    diff: Vec<quarry_core::configs::DiffLine>,
+    diff: Vec<axel_core::configs::DiffLine>,
     error: Option<String>,
 }
 
@@ -1422,10 +1417,10 @@ fn config_preview(
     text: String,
 ) -> CmdResult<ConfigPreview> {
     let (game, _) = config_dirs(&state, &id)?;
-    let old = quarry_core::configs::read(&game, &path).unwrap_or_default();
+    let old = axel_core::configs::read(&game, &path).unwrap_or_default();
     Ok(ConfigPreview {
-        diff: quarry_core::configs::diff(&old, &text),
-        error: quarry_core::configs::validate(&path, &text).err(),
+        diff: axel_core::configs::diff(&old, &text),
+        error: axel_core::configs::validate(&path, &text).err(),
     })
 }
 
@@ -1436,7 +1431,7 @@ fn config_save(state: State<AppState>, id: String, path: String, text: String) -
         return Err("Сначала закройте игру: она перезапишет настройки при выходе".into());
     }
     let (game, dir) = config_dirs(&state, &id)?;
-    quarry_core::configs::save(&game, &dir, &path, &text).map_err(err)
+    axel_core::configs::save(&game, &dir, &path, &text).map_err(err)
 }
 
 #[tauri::command]
@@ -1444,9 +1439,9 @@ fn config_history(
     state: State<AppState>,
     id: String,
     path: String,
-) -> CmdResult<Vec<quarry_core::configs::HistoryEntry>> {
+) -> CmdResult<Vec<axel_core::configs::HistoryEntry>> {
     let (_, dir) = config_dirs(&state, &id)?;
-    Ok(quarry_core::configs::history(&dir, &path))
+    Ok(axel_core::configs::history(&dir, &path))
 }
 
 #[tauri::command]
@@ -1457,14 +1452,14 @@ fn config_history_read(
     at: u64,
 ) -> CmdResult<String> {
     let (_, dir) = config_dirs(&state, &id)?;
-    quarry_core::configs::history_read(&dir, &path, at).map_err(err)
+    axel_core::configs::history_read(&dir, &path, at).map_err(err)
 }
 
 #[derive(Serialize)]
 struct OptionsView {
     entries: Vec<(String, String)>,
-    conflicts: Vec<quarry_core::options::KeyConflict>,
-    presets: Vec<quarry_core::options::Preset>,
+    conflicts: Vec<axel_core::options::KeyConflict>,
+    presets: Vec<axel_core::options::Preset>,
 }
 
 fn presets_dir(state: &AppState) -> std::path::PathBuf {
@@ -1476,10 +1471,10 @@ fn options_view(state: State<AppState>, id: String) -> CmdResult<OptionsView> {
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    let entries = quarry_core::options::read(&game).map_err(err)?;
+    let entries = axel_core::options::read(&game).map_err(err)?;
     Ok(OptionsView {
-        conflicts: quarry_core::options::conflicts(&entries),
-        presets: quarry_core::options::list_presets(&presets_dir(&state)),
+        conflicts: axel_core::options::conflicts(&entries),
+        presets: axel_core::options::list_presets(&presets_dir(&state)),
         entries,
     })
 }
@@ -1497,9 +1492,8 @@ fn options_apply(
     }
     let store = InstanceStore::new(state.data.clone());
     let game = store.game_dir(id).map_err(err)?;
-    quarry_core::snapshot::create(&store.dir(id).map_err(err)?, &game, reason, true)
-        .map_err(err)?;
-    quarry_core::options::set(&game, changes).map_err(err)
+    axel_core::snapshot::create(&store.dir(id).map_err(err)?, &game, reason, true).map_err(err)?;
+    axel_core::options::set(&game, changes).map_err(err)
 }
 
 #[tauri::command]
@@ -1516,18 +1510,18 @@ fn options_preset_save(
     state: State<AppState>,
     id: String,
     name: String,
-    category: quarry_core::options::Category,
-) -> CmdResult<quarry_core::options::Preset> {
+    category: axel_core::options::Category,
+) -> CmdResult<axel_core::options::Preset> {
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    let entries = quarry_core::options::read(&game).map_err(err)?;
-    quarry_core::options::save_preset(&presets_dir(&state), &name, category, &entries).map_err(err)
+    let entries = axel_core::options::read(&game).map_err(err)?;
+    axel_core::options::save_preset(&presets_dir(&state), &name, category, &entries).map_err(err)
 }
 
 #[tauri::command]
 fn options_preset_apply(state: State<AppState>, id: String, name: String) -> CmdResult<()> {
-    let changes = quarry_core::options::load_preset(&presets_dir(&state), &name).map_err(err)?;
+    let changes = axel_core::options::load_preset(&presets_dir(&state), &name).map_err(err)?;
     options_apply(&state, &id, &changes, &format!("Перед пресетом «{name}»"))
 }
 
@@ -1536,7 +1530,7 @@ fn options_layout_export(state: State<AppState>, id: String, path: String) -> Cm
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    let keys: String = quarry_core::options::read(&game)
+    let keys: String = axel_core::options::read(&game)
         .map_err(err)?
         .into_iter()
         .filter(|(k, _)| k.starts_with("key_"))
@@ -1559,7 +1553,7 @@ fn options_layout_import(state: State<AppState>, id: String, path: String) -> Cm
         return Err("Файл раскладки слишком большой".into());
     }
     let text = std::fs::read_to_string(&path).map_err(|_| "Это не текстовый файл".to_string())?;
-    let keys = quarry_core::options::import_layout(&text).map_err(err)?;
+    let keys = axel_core::options::import_layout(&text).map_err(err)?;
     options_apply(&state, &id, &keys, "Перед импортом раскладки")?;
     Ok(keys.len())
 }
@@ -1568,11 +1562,11 @@ fn options_layout_import(state: State<AppState>, id: String, path: String) -> Cm
 fn crash_reports(
     state: State<AppState>,
     id: String,
-) -> CmdResult<Vec<quarry_core::diagnostics::CrashReportInfo>> {
+) -> CmdResult<Vec<axel_core::diagnostics::CrashReportInfo>> {
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    Ok(quarry_core::diagnostics::crash_reports(&game))
+    Ok(axel_core::diagnostics::crash_reports(&game))
 }
 
 #[tauri::command]
@@ -1580,14 +1574,11 @@ fn crash_report_read(state: State<AppState>, id: String, file: String) -> CmdRes
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    quarry_core::diagnostics::read_crash_report(&game, &file).map_err(err)
+    axel_core::diagnostics::read_crash_report(&game, &file).map_err(err)
 }
 
 /// Отчёт поддержки. В режиме стримера скрывается и ник аккаунта профиля.
-fn build_report(
-    state: &AppState,
-    id: &str,
-) -> CmdResult<Vec<quarry_core::diagnostics::ReportFile>> {
+fn build_report(state: &AppState, id: &str) -> CmdResult<Vec<axel_core::diagnostics::ReportFile>> {
     let store = InstanceStore::new(state.data.clone());
     let global = GlobalSettings::load(&state.data).unwrap_or_default();
     let nick = if global.streamer_mode {
@@ -1604,29 +1595,29 @@ fn build_report(
     } else {
         None
     };
-    quarry_core::diagnostics::support_report(&store, id, nick.as_deref()).map_err(err)
+    axel_core::diagnostics::support_report(&store, id, nick.as_deref()).map_err(err)
 }
 
 #[tauri::command]
 fn support_report_preview(
     state: State<AppState>,
     id: String,
-) -> CmdResult<Vec<quarry_core::diagnostics::ReportFile>> {
+) -> CmdResult<Vec<axel_core::diagnostics::ReportFile>> {
     build_report(&state, &id)
 }
 
 #[tauri::command]
 fn support_report_save(state: State<AppState>, id: String, path: String) -> CmdResult<()> {
     let files = build_report(&state, &id)?;
-    quarry_core::diagnostics::write_zip(&files, std::path::Path::new(&path)).map_err(err)
+    axel_core::diagnostics::write_zip(&files, std::path::Path::new(&path)).map_err(err)
 }
 
 #[tauri::command]
 async fn storage_overview(
     state: State<'_, AppState>,
-) -> CmdResult<Vec<quarry_core::diagnostics::StoragePart>> {
+) -> CmdResult<Vec<axel_core::diagnostics::StoragePart>> {
     let data = state.data.clone();
-    tauri::async_runtime::spawn_blocking(move || quarry_core::diagnostics::storage(&data))
+    tauri::async_runtime::spawn_blocking(move || axel_core::diagnostics::storage(&data))
         .await
         .map_err(|e| e.to_string())
 }
@@ -1638,7 +1629,7 @@ async fn cache_clean(state: State<'_, AppState>) -> CmdResult<u64> {
         return Err("Сначала закройте все запущенные игры".into());
     }
     let data = state.data.clone();
-    tauri::async_runtime::spawn_blocking(move || quarry_core::diagnostics::clean_cache(&data))
+    tauri::async_runtime::spawn_blocking(move || axel_core::diagnostics::clean_cache(&data))
         .await
         .map_err(|e| e.to_string())?
         .map_err(err)
@@ -1648,7 +1639,7 @@ async fn cache_clean(state: State<'_, AppState>) -> CmdResult<u64> {
 struct FirstRunInfo {
     data_dir: String,
     free_bytes: Option<u64>,
-    javas: Vec<quarry_core::java::JavaInstall>,
+    javas: Vec<axel_core::java::JavaInstall>,
 }
 
 #[tauri::command]
@@ -1658,12 +1649,12 @@ async fn first_run_info(state: State<'_, AppState>) -> CmdResult<FirstRunInfo> {
     Ok(FirstRunInfo {
         data_dir: root.display().to_string(),
         free_bytes: tauri::async_runtime::spawn_blocking(move || {
-            quarry_core::paths::free_space(&root)
+            axel_core::paths::free_space(&root)
         })
         .await
         .ok()
         .flatten(),
-        javas: quarry_core::java::discover(Some(&data)).await,
+        javas: axel_core::java::discover(Some(&data)).await,
     })
 }
 
@@ -1684,8 +1675,8 @@ fn first_run_done(state: State<AppState>, language: String) -> CmdResult<()> {
 fn bisect_status(
     state: State<AppState>,
     id: String,
-) -> CmdResult<Option<quarry_core::mods::bisect::Bisect>> {
-    quarry_core::mods::bisect::load(&InstanceStore::new(state.data.clone()), &id).map_err(err)
+) -> CmdResult<Option<axel_core::mods::bisect::Bisect>> {
+    axel_core::mods::bisect::load(&InstanceStore::new(state.data.clone()), &id).map_err(err)
 }
 
 /// Начать (`start`), ответить (`answer`) или прекратить поиск виновника краша.
@@ -1695,12 +1686,12 @@ fn bisect_step(
     id: String,
     action: String,
     crashed: Option<bool>,
-) -> CmdResult<Option<quarry_core::mods::bisect::Step>> {
+) -> CmdResult<Option<axel_core::mods::bisect::Step>> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
     let store = InstanceStore::new(state.data.clone());
-    use quarry_core::mods::bisect;
+    use axel_core::mods::bisect;
     match action.as_str() {
         "start" => bisect::start(&store, &id).map(|b| Some(bisect::Step::Next { state: b })),
         "answer" => bisect::answer(&store, &id, crashed.unwrap_or(true)).map(Some),
@@ -1713,32 +1704,29 @@ fn bisect_step(
 #[tauri::command]
 async fn launcher_update(
     state: State<'_, AppState>,
-) -> CmdResult<Option<quarry_core::updates::Release>> {
+) -> CmdResult<Option<axel_core::updates::Release>> {
     if !GlobalSettings::load(&state.data)
         .map(|g| g.check_launcher_updates)
         .unwrap_or(true)
     {
         return Ok(None);
     }
-    Ok(quarry_core::updates::latest().await.unwrap_or(None))
+    Ok(axel_core::updates::latest().await.unwrap_or(None))
 }
 
 #[tauri::command]
-fn servers_list(
-    state: State<AppState>,
-    id: String,
-) -> CmdResult<Vec<quarry_core::servers::Server>> {
+fn servers_list(state: State<AppState>, id: String) -> CmdResult<Vec<axel_core::servers::Server>> {
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    quarry_core::servers::read(&game).map_err(err)
+    axel_core::servers::read(&game).map_err(err)
 }
 
 #[tauri::command]
 fn servers_save(
     state: State<AppState>,
     id: String,
-    servers: Vec<quarry_core::servers::Server>,
+    servers: Vec<axel_core::servers::Server>,
 ) -> CmdResult<()> {
     // Игра перезаписывает servers.dat при выходе — правки во время игры потерялись бы.
     if state.registry.is_running(&id) {
@@ -1749,7 +1737,7 @@ fn servers_save(
     let game = InstanceStore::new(state.data.clone())
         .game_dir(&id)
         .map_err(err)?;
-    quarry_core::servers::write(&game, &servers).map_err(err)
+    axel_core::servers::write(&game, &servers).map_err(err)
 }
 
 #[tauri::command]
@@ -1757,7 +1745,7 @@ fn server_tags(
     state: State<AppState>,
     id: String,
 ) -> CmdResult<std::collections::BTreeMap<String, Vec<String>>> {
-    Ok(quarry_core::servers::load_tags(
+    Ok(axel_core::servers::load_tags(
         &InstanceStore::new(state.data.clone())
             .dir(&id)
             .map_err(err)?,
@@ -1774,12 +1762,12 @@ fn server_set_tags(
     let dir = InstanceStore::new(state.data.clone())
         .dir(&id)
         .map_err(err)?;
-    quarry_core::servers::set_tags(&dir, &ip, &tags).map_err(err)
+    axel_core::servers::set_tags(&dir, &ip, &tags).map_err(err)
 }
 
 #[tauri::command]
-async fn server_ping(address: String) -> CmdResult<quarry_core::servers::Status> {
-    quarry_core::servers::ping(&address).await.map_err(err)
+async fn server_ping(address: String) -> CmdResult<axel_core::servers::Status> {
+    axel_core::servers::ping(&address).await.map_err(err)
 }
 
 #[derive(Serialize)]
@@ -1791,10 +1779,10 @@ struct ImportSources {
 #[tauri::command]
 fn import_sources() -> ImportSources {
     ImportSources {
-        prism: quarry_core::import::find_prism_instances()
+        prism: axel_core::import::find_prism_instances()
             .into_iter()
             .map(|p| {
-                let name = quarry_core::import::detect_mmc(&p)
+                let name = axel_core::import::detect_mmc(&p)
                     .map(|d| format!("{} ({} · {})", d.name, d.game_version, d.loader.display()))
                     .unwrap_or_else(|_| {
                         p.file_name()
@@ -1804,7 +1792,7 @@ fn import_sources() -> ImportSources {
                 (p.display().to_string(), name)
             })
             .collect(),
-        official: quarry_core::import::official_minecraft_dir().map(|p| p.display().to_string()),
+        official: axel_core::import::official_minecraft_dir().map(|p| p.display().to_string()),
     }
 }
 
@@ -1816,13 +1804,13 @@ async fn import_path(
     // Сборка из каталога Modrinth: запомнить проект и версию для обновлений.
     project_id: Option<String>,
     version_id: Option<String>,
-) -> CmdResult<quarry_core::import::ImportResult> {
+) -> CmdResult<axel_core::import::ImportResult> {
     let store = InstanceStore::new(state.data.clone());
     let p = std::path::PathBuf::from(&path);
     if p.is_dir() {
-        quarry_core::import::import_mmc(&store, &p).map_err(err)
+        axel_core::import::import_mmc(&store, &p).map_err(err)
     } else if p.extension().is_some_and(|e| e == "mrpack") {
-        let mut r = quarry_core::import::import_mrpack(
+        let mut r = axel_core::import::import_mrpack(
             &store,
             &p,
             &skip_optional.unwrap_or_default(),
@@ -1839,7 +1827,7 @@ async fn import_path(
         }
         Ok(r)
     } else if p.extension().is_some_and(|e| e == "zip") {
-        quarry_core::import::import_curseforge(&store, &p).map_err(err)
+        axel_core::import::import_curseforge(&store, &p).map_err(err)
     } else {
         Err("Поддерживаются папка инстанса Prism/MultiMC, .mrpack и .zip CurseForge".into())
     }
@@ -1857,11 +1845,11 @@ struct PackVersion {
 async fn modpack_search(
     query: String,
     offset: u32,
-    filters: Option<quarry_core::catalog::Filters>,
-) -> CmdResult<quarry_core::catalog::SearchResult> {
-    quarry_core::catalog::search(
+    filters: Option<axel_core::catalog::Filters>,
+) -> CmdResult<axel_core::catalog::SearchResult> {
+    axel_core::catalog::search(
         &query,
-        quarry_core::catalog::ProjectType::Modpack,
+        axel_core::catalog::ProjectType::Modpack,
         &[],
         "",
         offset,
@@ -1877,9 +1865,9 @@ async fn pack_download(
     state: State<'_, AppState>,
     project_id: String,
     version_id: Option<String>,
-    channel: Option<quarry_core::catalog::Channel>,
+    channel: Option<axel_core::catalog::Channel>,
 ) -> CmdResult<PackVersion> {
-    let (path, v) = quarry_core::import::download_pack(
+    let (path, v) = axel_core::import::download_pack(
         &state.data,
         &project_id,
         version_id.as_deref(),
@@ -1898,7 +1886,7 @@ async fn pack_download(
 
 #[tauri::command]
 async fn pack_check(state: State<'_, AppState>, id: String) -> CmdResult<Option<PackVersion>> {
-    let v = quarry_core::import::pack_update_check(&InstanceStore::new(state.data.clone()), &id)
+    let v = axel_core::import::pack_update_check(&InstanceStore::new(state.data.clone()), &id)
         .await
         .map_err(err)?;
     Ok(v.map(|v| PackVersion {
@@ -1913,7 +1901,7 @@ async fn pack_check(state: State<'_, AppState>, id: String) -> CmdResult<Option<
 fn pack_settings(
     state: State<AppState>,
     id: String,
-    channel: quarry_core::catalog::Channel,
+    channel: axel_core::catalog::Channel,
     pinned: bool,
 ) -> CmdResult<Instance> {
     let store = InstanceStore::new(state.data.clone());
@@ -1926,8 +1914,8 @@ fn pack_settings(
 }
 
 #[tauri::command]
-fn mrpack_preview(path: String) -> CmdResult<quarry_core::import::MrpackPreview> {
-    quarry_core::import::preview_mrpack(std::path::Path::new(&path)).map_err(err)
+fn mrpack_preview(path: String) -> CmdResult<axel_core::import::MrpackPreview> {
+    axel_core::import::preview_mrpack(std::path::Path::new(&path)).map_err(err)
 }
 
 #[tauri::command]
@@ -1935,8 +1923,8 @@ fn pack_update_plan(
     state: State<AppState>,
     id: String,
     path: String,
-) -> CmdResult<quarry_core::import::PackUpdatePlan> {
-    quarry_core::import::plan_pack_update(
+) -> CmdResult<axel_core::import::PackUpdatePlan> {
+    axel_core::import::plan_pack_update(
         &InstanceStore::new(state.data.clone()),
         &id,
         std::path::Path::new(&path),
@@ -1951,11 +1939,11 @@ async fn pack_update_apply(
     path: String,
     skip_optional: Vec<String>,
     version_id: Option<String>,
-) -> CmdResult<quarry_core::snapshot::SnapshotInfo> {
+) -> CmdResult<axel_core::snapshot::SnapshotInfo> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
-    quarry_core::import::apply_pack_update(
+    axel_core::import::apply_pack_update(
         &InstanceStore::new(state.data.clone()),
         &id,
         std::path::Path::new(&path),
@@ -1986,19 +1974,19 @@ async fn export_mrpack(
     let store = InstanceStore::new(state.data.clone());
     let out = std::path::PathBuf::from(&path);
     let report =
-        quarry_core::import::export_mrpack(&store, &id, &out, &name, &version).map_err(err)?;
+        axel_core::import::export_mrpack(&store, &id, &out, &name, &version).map_err(err)?;
     let ids: Vec<String> = report
         .mods
         .iter()
         .filter_map(|m| m.project_id.clone())
         .collect();
-    let licenses = quarry_core::catalog::projects(&ids)
+    let licenses = axel_core::catalog::projects(&ids)
         .await
         .unwrap_or_default()
         .into_iter()
         .filter_map(|p| Some((p.id, p.license?.id)))
         .collect();
-    let md = quarry_core::import::modpack_report(&name, &version, &report, &licenses);
+    let md = axel_core::import::modpack_report(&name, &version, &report, &licenses);
     let report_path = out.with_extension("md");
     std::fs::write(&report_path, md).map_err(|e| e.to_string())?;
     Ok(ExportDone {
@@ -2015,10 +2003,10 @@ fn link_minecraft(
     name: String,
     game_version: String,
     loader: String,
-) -> CmdResult<quarry_core::import::ImportResult> {
+) -> CmdResult<axel_core::import::ImportResult> {
     let store = InstanceStore::new(state.data.clone());
     let kind = LoaderKind::parse(&loader).map_err(err)?;
-    quarry_core::import::link_existing(
+    axel_core::import::link_existing(
         &store,
         std::path::Path::new(&path),
         &name,
@@ -2034,10 +2022,10 @@ fn link_minecraft(
 async fn data_dir_check(
     state: State<'_, AppState>,
     path: String,
-) -> CmdResult<quarry_core::relocate::Check> {
+) -> CmdResult<axel_core::relocate::Check> {
     let cur = state.data.root().to_path_buf();
     tauri::async_runtime::spawn_blocking(move || {
-        quarry_core::relocate::check(&cur, std::path::Path::new(&path))
+        axel_core::relocate::check(&cur, std::path::Path::new(&path))
     })
     .await
     .map_err(|e| e.to_string())?
@@ -2050,7 +2038,7 @@ async fn data_dir_change(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     target: String,
-    mode: quarry_core::relocate::Mode,
+    mode: axel_core::relocate::Mode,
 ) -> CmdResult<()> {
     if !state.registry.running_ids().is_empty() {
         return Err("Сначала закройте игру".into());
@@ -2059,18 +2047,13 @@ async fn data_dir_change(
     let emitter = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let last = std::sync::atomic::AtomicU64::new(u64::MAX);
-        quarry_core::relocate::relocate(
-            &cur,
-            std::path::Path::new(&target),
-            mode,
-            &|done, total| {
-                // Сообщаем не чаще, чем раз на процент: файлов бывают десятки тысяч.
-                let pct = done * 100 / total.max(1);
-                if last.swap(pct, std::sync::atomic::Ordering::Relaxed) != pct {
-                    let _ = emitter.emit("data-move", (done, total));
-                }
-            },
-        )
+        axel_core::relocate::relocate(&cur, std::path::Path::new(&target), mode, &|done, total| {
+            // Сообщаем не чаще, чем раз на процент: файлов бывают десятки тысяч.
+            let pct = done * 100 / total.max(1);
+            if last.swap(pct, std::sync::atomic::Ordering::Relaxed) != pct {
+                let _ = emitter.emit("data-move", (done, total));
+            }
+        })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -2084,17 +2067,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let root = quarry_core::relocate::resolve_root()
+            let root = axel_core::relocate::resolve_root()
                 .ok_or("Не удалось определить домашнюю папку")?;
             let data = DataDir::open(root)?;
             if let Ok(g) = GlobalSettings::load(&data) {
-                quarry_core::download::throttle().set_limit_kbps(g.download_limit_kbps.into());
+                axel_core::download::throttle().set_limit_kbps(g.download_limit_kbps.into());
             }
             // Правила Mod Doctor: сначала кеш, свежие — в фоне (не чаще раза в сутки).
-            quarry_core::mods::rules::load_cached(&data);
+            axel_core::mods::rules::load_cached(&data);
             let d = data.clone();
             tauri::async_runtime::spawn(async move {
-                let _ = quarry_core::mods::rules::refresh(&d).await;
+                let _ = axel_core::mods::rules::refresh(&d).await;
             });
             // Сборка разработчика отмечена в названии окна (вместо полосы сверху).
             if launch::DEV_LAUNCH
@@ -2232,17 +2215,17 @@ mod tests {
         assert!(link_allowed("https://ely.by"));
         assert!(link_allowed("https://ely.by/oauth2/v1"));
         assert!(link_allowed(
-            "https://github.com/Hewako/quarry-launcher/releases/tag/v0.2.0"
+            "https://github.com/Hewako/axel-launcher/releases/tag/v0.2.0"
         ));
         assert!(link_allowed("https://www.microsoft.com/link?otc=ABC"));
         assert!(link_allowed("https://modrinth.com/project/sodium"));
         // Кнопка «Скачать» новой версии (updates::download_url).
         assert!(link_allowed(
-            "https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
+            "https://github.com/Hewako/axel-launcher/releases/latest/download/Axel-Launcher-macOS.dmg"
         ));
         assert!(!link_allowed("https://ely.by.evil.com/login"));
         assert!(!link_allowed(
-            "https://github.com/Hewako/quarry-launcher-evil"
+            "https://github.com/Hewako/axel-launcher-evil"
         ));
         assert!(!link_allowed("https://evil.com/?https://ely.by"));
         assert!(!link_allowed("http://ely.by"));

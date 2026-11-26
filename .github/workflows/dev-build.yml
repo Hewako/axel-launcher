@@ -123,11 +123,11 @@ jobs:
         working-directory: ui
         shell: bash
         env:
-          QUARRY_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
-          QUARRY_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
+          AXEL_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
+          AXEL_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
           ARGS: ${{ matrix.args }}
         run: |
-          echo '{"productName":"Axel Launcher Dev","identifier":"com.quarry.launcher.dev","bundle":{"windows":{"nsis":{"installerHooks":"installer/hooks-dev.nsh"}}}}' > dev-config.json
+          echo '{"productName":"Axel Launcher Dev","identifier":"com.axel.launcher.dev","bundle":{"windows":{"nsis":{"installerHooks":"installer/hooks-dev.nsh"}}}}' > dev-config.json
           # shellcheck disable=SC2086
           npm run tauri build -- --debug --features dev-launch --config dev-config.json $ARGS
 
@@ -142,7 +142,7 @@ jobs:
             Windows)
               cp "$OUT"/nsis/*.exe up/Axel-Launcher-Dev-Windows.exe
               dir="portable/Axel Launcher Dev"; mkdir -p "$dir"
-              cp target/debug/quarry-ui.exe "$dir/Axel Launcher Dev.exe"
+              cp target/debug/axel-ui.exe "$dir/Axel Launcher Dev.exe"
               cp ui/src-tauri/THIRD-PARTY-NOTICES.txt .github/release/README-portable.txt "$dir/"
               (cd portable && 7z a -tzip ../up/Axel-Launcher-Dev-Windows-portable.zip "Axel Launcher Dev" >/dev/null) ;;
             Linux)

@@ -529,7 +529,7 @@ side="CLIENT"
 
     #[test]
     fn jar_reading_and_broken_jars() {
-        let d = std::env::temp_dir().join(format!("quarry-meta-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-meta-{}", std::process::id()));
         std::fs::create_dir_all(&d).unwrap();
         let jar = d.join("sodium.jar");
         make_jar(
@@ -555,7 +555,7 @@ side="CLIENT"
 
     #[test]
     fn world_content_detection() {
-        let d = std::env::temp_dir().join(format!("quarry-worldmod-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-worldmod-{}", std::process::id()));
         std::fs::create_dir_all(&d).unwrap();
         let biomes = d.join("biomes.jar");
         make_jar(&biomes, &[("data/terralith/worldgen/biome/x.json", b"{}")]);

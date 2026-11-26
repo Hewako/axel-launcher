@@ -173,7 +173,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
             <button className="btn" onClick={() => setReport(null)}>{t("Закрыть")}</button>
             <button className="btn pri" onClick={async () => {
               if (!inst) return;
-              const path = await save({ title: t("Сохранить отчёт"), defaultPath: `quarry-report-${inst.id}.zip`, filters: [{ name: "ZIP", extensions: ["zip"] }] }).catch(() => null);
+              const path = await save({ title: t("Сохранить отчёт"), defaultPath: `axel-report-${inst.id}.zip`, filters: [{ name: "ZIP", extensions: ["zip"] }] }).catch(() => null);
               if (!path) return;
               try { await diagnostics.reportSave(inst.id, path); setReport(null); await dialog.alert(t("Отчёт сохранён"), t("Приложите этот архив к вопросу в поддержку или в issue на GitHub.")); }
               catch (e) { await dialog.alert(t("Не сохранён"), errText(e)); }

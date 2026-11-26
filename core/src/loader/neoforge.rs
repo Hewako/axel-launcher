@@ -523,7 +523,7 @@ mod tests {
 
     #[test]
     fn manifest_main_class_with_wrapping() {
-        let dir = std::env::temp_dir().join(format!("quarry-manifest-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("axel-manifest-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let jar = dir.join("t.jar");
         {

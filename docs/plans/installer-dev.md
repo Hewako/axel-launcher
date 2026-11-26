@@ -17,7 +17,7 @@ query/explain`, после правок `graphify update .`); каждая за�
 
 - 21.10.2026: без сертификатов разработчика, без автообновления, релизы публикует владелец.
 - 21.11.2026: один `.dmg` для любых Mac; в Windows только `.exe`; удаление программы не трогает
-  миры и профили (`~/.quarry`); картинки рисует владелец; делаем все 27 пунктов.
+  миры и профили (`~/.axel`); картинки рисует владелец; делаем все 27 пунктов.
 
 ## Как будет у игрока (итог)
 
@@ -31,7 +31,7 @@ query/explain`, после правок `graphify update .`); каждая за�
 | Любой другой Linux | `Axel-Launcher-Linux.AppImage` | разрешить запуск; на Ubuntu 22.04+ нужен `libfuse2` |
 | — | `SHA256SUMS.txt` | контрольные суммы всех файлов |
 
-Данные игрока — всегда в `~/.quarry` (`%USERPROFILE%\.quarry` на Windows); ни обновление,
+Данные игрока — всегда в `~/.axel` (`%USERPROFILE%\.axel` на Windows); ни обновление,
 ни удаление программы их не трогают.
 
 ## Задачи
@@ -45,7 +45,7 @@ query/explain`, после правок `graphify update .`); каждая за�
 | 1.1 | 1 | macOS: одна сборка `--target universal-apple-darwin` вместо двух (обе цели Rust в тулчейне) | `.github/workflows/release.yml` | в черновике один `.dmg`; `lipo -archs` → `x86_64 arm64` |
 | 1.2 | 2, 3 | цели бандла: `dmg`, `nsis`, `deb`, `rpm`, `appimage` (без `msi` и архивов обновления) | `ui/src-tauri/tauri.conf.json` | список файлов черновика |
 | 1.3 | 4 | имена без версии: `assetNamePattern` в tauri-action (сверить с документацией используемой версии) или шаг переименования через `gh release` | `release.yml` | имена файлов в черновике |
-| 1.4 | 27 | портативный zip для Windows: `quarry-ui.exe` (переименован в `Axel Launcher.exe`), `THIRD-PARTY-NOTICES.txt`, `README-portable.txt` (что WebView2 нужен — в Windows 11 он есть, на Windows 10 — ссылка на установку); собирается шагом после бандла | `release.yml` | распаковать на Windows и запустить (владелец) |
+| 1.4 | 27 | портативный zip для Windows: `axel-ui.exe` (переименован в `Axel Launcher.exe`), `THIRD-PARTY-NOTICES.txt`, `README-portable.txt` (что WebView2 нужен — в Windows 11 он есть, на Windows 10 — ссылка на установку); собирается шагом после бандла | `release.yml` | распаковать на Windows и запустить (владелец) |
 | 1.5 | 15 | `SHA256SUMS.txt`: последний шаг релиза считает суммы всех файлов черновика и выкладывает файл | `release.yml` (отдельная задача после матрицы) | `shasum -a 256 -c` по скачанным файлам |
 | 1.6 | 16 | проверка в том же шаге: в черновике ровно ожидаемый набор имён (6 файлов + суммы), иначе сборка красная | `release.yml` | намеренно сломать имя в ветке — шаг падает |
 | 1.7 | 24 | сверить имя пакета `.deb`/`.rpm` (для `apt remove …`) и минимальную macOS (`LSMinimumSystemVersion` в Info.plist) с готовой сборкой; поправить README и таблицу | README | `dpkg-deb -f … Package`, Info.plist |
@@ -57,7 +57,7 @@ query/explain`, после правок `graphify update .`); каждая за�
 | 2.1 | 8 | языки русский и английский, окно выбора языка, по умолчанию язык системы (`languages`, `displayLanguageSelector`) | `tauri.conf.json` | rc: окна на русском (владелец) |
 | 2.2 | 9 | `installMode: currentUser` — без администратора, папка `%LOCALAPPDATA%\Axel Launcher` | `tauri.conf.json` | rc: пароль не спрашивает (владелец) |
 | 2.3 | 10 | ярлыки на рабочем столе и в «Пуске», галочка «Запустить Axel'» на последней странице; если шаблон Tauri не создаёт ярлык на рабочем столе сам — свой фрагмент NSIS (`installerHooks`) | `tauri.conf.json`, `ui/src-tauri/installer/hooks.nsh` | rc (владелец) |
-| 2.4 | 11 | текст на приветствии и в окне удаления: миры и профили хранятся в `%USERPROFILE%\.quarry` и не удаляются; на двух языках (свои строки NSIS) | `installer/hooks.nsh` или свои языковые файлы | rc (владелец) |
+| 2.4 | 11 | текст на приветствии и в окне удаления: миры и профили хранятся в `%USERPROFILE%\.axel` и не удаляются; на двух языках (свои строки NSIS) | `installer/hooks.nsh` или свои языковые файлы | rc (владелец) |
 | 2.5 | 13 | (после дизайна) боковая полоса и шапка: `sidebarImage`, `headerImage` | `tauri.conf.json`, `installer/*.bmp` | `file` → BMP 24 бита; rc |
 
 ### 3. Образ macOS (.dmg)
@@ -71,7 +71,7 @@ query/explain`, после правок `graphify update .`); каждая за�
 
 | # | Пункт | Что сделать | Файлы | Проверка |
 |---|---|---|---|---|
-| 4.1 | 19 | `updates::Release` получает `download_url` — постоянная ссылка на файл для текущей системы (`cfg!(target_os)`: Windows → `.exe`, macOS → `.dmg`, Linux → AppImage, если программа запущена из AppImage, иначе страница релиза); `link_allowed` пропускает `github.com/Hewako/quarry-launcher/releases/latest/download/…` | `core/src/updates.rs`, `ui/src-tauri/src/lib.rs` | тест на выбор ссылки по системе; тест `link_allowed` |
+| 4.1 | 19 | `updates::Release` получает `download_url` — постоянная ссылка на файл для текущей системы (`cfg!(target_os)`: Windows → `.exe`, macOS → `.dmg`, Linux → AppImage, если программа запущена из AppImage, иначе страница релиза); `link_allowed` пропускает `github.com/Hewako/axel-launcher/releases/latest/download/…` | `core/src/updates.rs`, `ui/src-tauri/src/lib.rs` | тест на выбор ссылки по системе; тест `link_allowed` |
 | 4.2 | 19 | лента «Вышла новая версия»: кнопки «Скачать» (сразу файл) и «Открыть страницу»; то же в «Настройки → О Axel'»; оформление — по дизайну владельца (до него — нынешний вид ленты + кнопка) | `ui/src/App.tsx`, `ui/src/screens/Settings.tsx`, переводы | preview `?update`; ссылки — после публикации 0.1.0 |
 
 ### 5. Описание релиза и README
@@ -112,7 +112,7 @@ Windows 10 или 11:
 4. Папка по умолчанию в профиле пользователя, пароль администратора не спросили.
 5. Ярлыки на рабочем столе и в «Пуске»; галочка «Запустить Axel'» работает.
 6. Лаунчер открывается, вход Microsoft, профиль, игра до главного меню.
-7. Удаление: окно говорит про `%USERPROFILE%\.quarry`; после удаления папка на месте.
+7. Удаление: окно говорит про `%USERPROFILE%\.axel`; после удаления папка на месте.
 8. Portable-zip: распаковать в любую папку, запустить `Axel Launcher.exe` — открывается.
 
 Linux:

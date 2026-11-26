@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn servers_dat_roundtrip_keeps_old_copy() {
-        let d = std::env::temp_dir().join(format!("quarry-servers-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-servers-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         assert!(read(&d).unwrap().is_empty());
         let list = vec![
@@ -429,7 +429,7 @@ mod tests {
 
     #[test]
     fn tags_live_next_to_servers_dat() {
-        let d = std::env::temp_dir().join(format!("quarry-srvtags-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-srvtags-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         assert!(load_tags(&d).is_empty());

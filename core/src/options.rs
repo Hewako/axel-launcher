@@ -194,7 +194,7 @@ pub fn save_preset(
             "В options.txt нет настроек этой категории, сначала запустите игру",
         ));
     }
-    let mut text = format!("# quarry-preset: {}\n", category_name(category));
+    let mut text = format!("# axel-preset: {}\n", category_name(category));
     for (k, v) in &picked {
         text.push_str(&format!("{k}:{v}\n"));
     }
@@ -220,7 +220,7 @@ pub fn list_presets(presets_dir: &Path) -> Vec<Preset> {
                 .strip_suffix(".txt")?
                 .to_string();
             let text = std::fs::read_to_string(e.path()).ok()?;
-            let cat = match text.lines().next()?.strip_prefix("# quarry-preset: ")? {
+            let cat = match text.lines().next()?.strip_prefix("# axel-preset: ")? {
                 "graphics" => Category::Graphics,
                 "sound" => Category::Sound,
                 "controls" => Category::Controls,
@@ -265,7 +265,7 @@ mod tests {
     use super::*;
 
     fn dir(name: &str) -> std::path::PathBuf {
-        let d = std::env::temp_dir().join(format!("quarry-opts-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-opts-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d

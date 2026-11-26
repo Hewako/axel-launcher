@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn group_toggles_all_its_mods_and_survives_reload() {
-        let root = std::env::temp_dir().join(format!("quarry-groups-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-groups-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store.create("G", "26.3", LoaderKind::Fabric, None).unwrap();

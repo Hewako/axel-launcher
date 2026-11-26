@@ -737,7 +737,7 @@ mod tests {
 
     #[test]
     fn remove_takes_snapshot_and_writes_journal() {
-        let root = std::env::temp_dir().join(format!("quarry-manage-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-manage-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store
@@ -763,7 +763,7 @@ mod tests {
 
     #[tokio::test]
     async fn pin_and_add_files() {
-        let root = std::env::temp_dir().join(format!("quarry-manage-pin-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-manage-pin-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store
@@ -804,7 +804,7 @@ mod tests {
 
     #[test]
     fn vanilla_profile_has_no_mods() {
-        let root = std::env::temp_dir().join(format!("quarry-manage-v-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-manage-v-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store
@@ -817,7 +817,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "сеть: api.modrinth.com, скачивает Iris и Sodium (~5 МБ)"]
     async fn live_install_with_dependency() {
-        let root = std::env::temp_dir().join(format!("quarry-manage-live-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-manage-live-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store

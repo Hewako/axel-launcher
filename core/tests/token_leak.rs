@@ -2,13 +2,13 @@
 //! даже если «игра» печатает все свои аргументы. Вместо Java — скрипт, который выводит argv.
 #![cfg(unix)]
 
-use quarry_core::download::{Cancel, Verify};
-use quarry_core::install::{Installed, Installer};
-use quarry_core::launch::args::{self, GameAuth, LaunchSpec};
-use quarry_core::launch::process::{self, GameEvent};
-use quarry_core::logmask::Masker;
-use quarry_core::metadata::{Environment, VersionJson};
-use quarry_core::paths::DataDir;
+use axel_core::download::{Cancel, Verify};
+use axel_core::install::{Installed, Installer};
+use axel_core::launch::args::{self, GameAuth, LaunchSpec};
+use axel_core::launch::process::{self, GameEvent};
+use axel_core::logmask::Masker;
+use axel_core::metadata::{Environment, VersionJson};
+use axel_core::paths::DataDir;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -16,13 +16,13 @@ const TOKEN: &str = "eyJhbGciOiJIUzI1NiJ9.SECRET-PAYLOAD-0123456789.signature-xy
 
 #[tokio::test]
 async fn token_never_reaches_logs_events_or_preview() {
-    let root = std::env::temp_dir().join(format!("quarry-leak-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("axel-leak-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).unwrap();
 
     // «Java», печатающая все аргументы и ещё раз токен в stderr.
     let fake_java = root.join("java");
-    std::fs::write(&fake_java, "#!/bin/sh\nfor a in \"$@\"; do echo \"arg: $a\"; done\necho \"Session token=$QUARRY_T\" >&2\n").unwrap();
+    std::fs::write(&fake_java, "#!/bin/sh\nfor a in \"$@\"; do echo \"arg: $a\"; done\necho \"Session token=$AXEL_T\" >&2\n").unwrap();
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&fake_java, std::fs::Permissions::from_mode(0o755)).unwrap();
 
@@ -89,7 +89,7 @@ async fn token_never_reaches_logs_events_or_preview() {
     let ev = events.clone();
     let log_file: PathBuf = root.join("logs/game.log");
     // Переменная окружения процесса тоже содержит токен — проверяем вывод из stderr.
-    unsafe { std::env::set_var("QUARRY_T", TOKEN) };
+    unsafe { std::env::set_var("AXEL_T", TOKEN) };
     let proc = process::spawn(
         &cmd,
         &log_file,

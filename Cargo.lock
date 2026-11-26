@@ -446,6 +446,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "axel-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.23.1",
+ "chrono",
+ "clap",
+ "dirs",
+ "flate2",
+ "hex",
+ "hickory-resolver",
+ "if-addrs",
+ "image",
+ "iroh",
+ "keyring",
+ "open",
+ "rand 0.8.8",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2 0.11.1",
+ "socket2",
+ "tar",
+ "thiserror 2.0.21",
+ "tokio",
+ "toml 1.1.8+spec-1.1.0",
+ "urlencoding",
+ "zip",
+]
+
+[[package]]
+name = "axel-ui"
+version = "0.1.0"
+dependencies = [
+ "axel-core",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+]
+
+[[package]]
 name = "backon"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4810,52 +4856,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f6d64c71eb498fe9eae14ce4ec935c555749aef511cca85b5568910d6e48001"
 dependencies = [
  "bytemuck",
-]
-
-[[package]]
-name = "quarry-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.23.1",
- "chrono",
- "clap",
- "dirs",
- "flate2",
- "hex",
- "hickory-resolver",
- "if-addrs",
- "image",
- "iroh",
- "keyring",
- "open",
- "rand 0.8.8",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha1",
- "sha2 0.11.1",
- "socket2",
- "tar",
- "thiserror 2.0.21",
- "tokio",
- "toml 1.1.8+spec-1.1.0",
- "urlencoding",
- "zip",
-]
-
-[[package]]
-name = "quarry-ui"
-version = "0.1.0"
-dependencies = [
- "quarry-core",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
 ]
 
 [[package]]

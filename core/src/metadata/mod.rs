@@ -235,7 +235,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "сеть: манифест Mojang (~280 КБ)"]
     async fn fetch_real_manifest() {
-        let root = std::env::temp_dir().join("quarry-net-manifest");
+        let root = std::env::temp_dir().join("axel-net-manifest");
         let data = DataDir::open(&root).unwrap();
         let (m, fresh) = manifest(&data).await.unwrap();
         assert_eq!(fresh, Freshness::Online);

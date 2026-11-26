@@ -10,7 +10,7 @@
 | Другой Linux | `Axel-Launcher-Linux.AppImage` |
 
 Если Axel' у вас уже стоит, просто поставьте новую версию поверх. Миры, профили и настройки
-лежат в папке `.quarry` в домашней папке, установка и удаление программы её не трогают.
+лежат в папке `.axel` в домашней папке, установка и удаление программы её не трогают.
 
 ## Система ругается при первом запуске
 
@@ -30,9 +30,9 @@
 Linux: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`, на Windows: `Get-FileHash <файл>` в
 PowerShell.
 
-Что изменилось в этой версии — в [CHANGELOG.md](https://github.com/Hewako/quarry-launcher/blob/main/CHANGELOG.md),
-установка по шагам — в [README](https://github.com/Hewako/quarry-launcher#установка).
-Нашли ошибку — [расскажите о ней](https://github.com/Hewako/quarry-launcher/issues/new).
+Что изменилось в этой версии — в [CHANGELOG.md](https://github.com/Hewako/axel-launcher/blob/main/CHANGELOG.md),
+установка по шагам — в [README](https://github.com/Hewako/axel-launcher#установка).
+Нашли ошибку — [расскажите о ней](https://github.com/Hewako/axel-launcher/issues/new).
 
 ---
 
@@ -42,5 +42,5 @@ install anything. Mac (macOS 11+, Apple Silicon or Intel): `Axel-Launcher-macOS.
 signed with a paid certificate, so your system will warn you the first time: on Windows click
 "More info" → "Run anyway"; on macOS 15+ go to System Settings → Privacy & Security → Open Anyway
 (on macOS 14 and older, right-click the app → Open). Install over the old version to update.
-Your worlds and profiles live in the `.quarry` folder in your home folder and survive updates and
+Your worlds and profiles live in the `.axel` folder in your home folder and survive updates and
 uninstalls. Checksums are in `SHA256SUMS.txt`.

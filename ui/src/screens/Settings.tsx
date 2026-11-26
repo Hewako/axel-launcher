@@ -215,13 +215,13 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
               <li>{t("Данные входа хранятся в защищённом хранилище системы, а не в файлах.")}</li>
               <li>{t("Из логов и отчётов скрываются токены, путь к домашней папке и IP-адреса.")}</li>
             </ul>
-            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/blob/main/docs/PRIVACY.md").catch(() => {})}>{t("Подробнее о приватности")}</button>
+            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/axel-launcher/blob/main/docs/PRIVACY.md").catch(() => {})}>{t("Подробнее о приватности")}</button>
           </>}
           {sec === "about" && <>
             {release && <UpdateNotice release={release} variant="block" />}
             <p>Axel' {info.version} {t("· открытый проект под GPL-3.0 · не связан с Mojang и Microsoft.")}</p>
             {!release && <p className="muted small">{s.check_launcher_updates ? t("У вас последняя версия.") : t("Проверка новой версии выключена в «Общих».")}</p>}
-            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/releases").catch(() => {})}>{t("Все версии")}</button>
+            <button className="btn link" onClick={() => api.openLink("https://github.com/Hewako/axel-launcher/releases").catch(() => {})}>{t("Все версии")}</button>
           </>}
           <p className="muted small" role="status" aria-live="polite">{saved ? t("Сохранено") : ""}</p>
         </section>

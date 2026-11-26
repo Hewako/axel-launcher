@@ -1,25 +1,25 @@
 //! CLI лаунчера: установка, проверка и запуск профилей без интерфейса.
 
 use anyhow::{Context, Result};
+use axel_core::account::{AccountStore, KeyringStore, Provider, account_key};
+use axel_core::download::Cancel;
+use axel_core::instance::InstanceStore;
+use axel_core::launch::{self, LaunchEvent, LaunchOptions, LaunchRegistry, args::QuickPlay};
+use axel_core::loader::{self, LoaderKind};
+use axel_core::paths::DataDir;
 use clap::{Parser, Subcommand};
-use quarry_core::account::{AccountStore, KeyringStore, Provider, account_key};
-use quarry_core::download::Cancel;
-use quarry_core::instance::InstanceStore;
-use quarry_core::launch::{self, LaunchEvent, LaunchOptions, LaunchRegistry, args::QuickPlay};
-use quarry_core::loader::{self, LoaderKind};
-use quarry_core::paths::DataDir;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(Parser)]
 #[command(
-    name = "quarry",
+    name = "axel",
     version,
     about = "Axel', открытый лаунчер Minecraft Java Edition"
 )]
 struct Cli {
-    /// Папка данных (по умолчанию ~/.quarry)
+    /// Папка данных (по умолчанию ~/.axel)
     #[arg(long, global = true)]
     root: Option<PathBuf>,
     #[command(subcommand)]
@@ -151,10 +151,10 @@ enum AccountAction {
 
 fn data_dir(root: Option<PathBuf>) -> Result<DataDir> {
     let root = root
-        .or_else(quarry_core::relocate::resolve_root)
+        .or_else(axel_core::relocate::resolve_root)
         .context("Не удалось определить домашнюю папку")?;
     let data = DataDir::open(root)?;
-    quarry_core::mods::rules::load_cached(&data);
+    axel_core::mods::rules::load_cached(&data);
     Ok(data)
 }
 
@@ -207,8 +207,8 @@ async fn main() -> Result<()> {
             old,
             limit,
         } => {
-            let (m, fresh) = quarry_core::metadata::manifest(&data).await?;
-            if fresh == quarry_core::metadata::Freshness::Cached {
+            let (m, fresh) = axel_core::metadata::manifest(&data).await?;
+            if fresh == axel_core::metadata::Freshness::Cached {
                 eprintln!("Нет сети, показан сохранённый список.");
             }
             println!("{:<24} {:<10} Дата", "Версия", "Тип");
@@ -248,7 +248,7 @@ async fn main() -> Result<()> {
             }
         }
         Command::Java => {
-            for j in quarry_core::java::discover(Some(&data)).await {
+            for j in axel_core::java::discover(Some(&data)).await {
                 println!(
                     "Java {:<3} {:<40} {:?}  {}",
                     j.major,
@@ -351,11 +351,11 @@ async fn main() -> Result<()> {
         Command::Import { path } => {
             let store = InstanceStore::new(data.clone());
             let r = if path.is_dir() {
-                quarry_core::import::import_mmc(&store, &path)?
+                axel_core::import::import_mmc(&store, &path)?
             } else if path.extension().is_some_and(|e| e == "mrpack") {
-                quarry_core::import::import_mrpack(&store, &path, &[], &Cancel::new()).await?
+                axel_core::import::import_mrpack(&store, &path, &[], &Cancel::new()).await?
             } else {
-                quarry_core::import::import_curseforge(&store, &path)?
+                axel_core::import::import_curseforge(&store, &path)?
             };
             println!(
                 "Импортирована сборка «{}» (ID {}): {} · {}",
@@ -380,8 +380,8 @@ async fn main() -> Result<()> {
                 None => {
                     let inst = store.get(&id)?;
                     let files =
-                        quarry_core::mods::inventory(&store.game_dir(&id)?, &store.dir(&id)?)?;
-                    let report = quarry_core::mods::doctor::check(
+                        axel_core::mods::inventory(&store.game_dir(&id)?, &store.dir(&id)?)?;
+                    let report = axel_core::mods::doctor::check(
                         &files,
                         inst.loader,
                         &inst.game_version,
@@ -409,7 +409,7 @@ async fn main() -> Result<()> {
                             "{} {}
    {}
    основание: {}",
-                            if f.severity == quarry_core::mods::doctor::Severity::Blocking {
+                            if f.severity == axel_core::mods::doctor::Severity::Blocking {
                                 "✖"
                             } else {
                                 "⚠"
@@ -421,11 +421,11 @@ async fn main() -> Result<()> {
                     }
                 }
                 Some(ModsAction::Install { project }) => {
-                    let plan = quarry_core::mods::manage::plan_install(
+                    let plan = axel_core::mods::manage::plan_install(
                         &store,
                         &id,
                         &project,
-                        quarry_core::catalog::Channel::Auto,
+                        axel_core::catalog::Channel::Auto,
                     )
                     .await?;
                     for c in &plan.changes {
@@ -439,7 +439,7 @@ async fn main() -> Result<()> {
                     for n in &plan.notes {
                         println!("  {n}");
                     }
-                    let snap = quarry_core::mods::manage::apply(
+                    let snap = axel_core::mods::manage::apply(
                         &store,
                         &id,
                         plan,
@@ -450,7 +450,7 @@ async fn main() -> Result<()> {
                     println!("Готово. Снимок до изменений: {}", snap.id);
                 }
                 Some(ModsAction::Update { apply }) => {
-                    let plan = quarry_core::mods::manage::check_updates(&store, &id).await?;
+                    let plan = axel_core::mods::manage::check_updates(&store, &id).await?;
                     for c in &plan.changes {
                         println!(
                             "~ {} {} → {}",
@@ -465,7 +465,7 @@ async fn main() -> Result<()> {
                     if plan.changes.is_empty() {
                         println!("Обновлений нет.");
                     } else if apply {
-                        let snap = quarry_core::mods::manage::apply(
+                        let snap = axel_core::mods::manage::apply(
                             &store,
                             &id,
                             plan,
@@ -478,9 +478,9 @@ async fn main() -> Result<()> {
                 }
                 Some(ModsAction::Remove { file }) => {
                     let snap =
-                        quarry_core::mods::manage::remove(&store, &id, &file, "удалено через CLI")?;
+                        axel_core::mods::manage::remove(&store, &id, &file, "удалено через CLI")?;
                     println!(
-                        "Удалено. Вернуть: quarry snapshots {id} --restore {}",
+                        "Удалено. Вернуть: axel snapshots {id} --restore {}",
                         snap.id
                     );
                 }
@@ -489,8 +489,8 @@ async fn main() -> Result<()> {
         Command::Worlds { id } => {
             let store = InstanceStore::new(data.clone());
             let game = store.game_dir(&id)?;
-            let backups = quarry_core::worlds::backups_dir(&data, &id);
-            for w in quarry_core::worlds::list(&game, &backups) {
+            let backups = axel_core::worlds::backups_dir(&data, &id);
+            for w in axel_core::worlds::list(&game, &backups) {
                 println!(
                     "{:<24} {:<10} {:<12} DataVersion {:<6} {:.1} МБ, бэкапов {}",
                     w.name,
@@ -506,13 +506,13 @@ async fn main() -> Result<()> {
             let store = InstanceStore::new(data.clone());
             let (dir, game) = (store.dir(&id)?, store.game_dir(&id)?);
             if let Some(sid) = restore {
-                let before = quarry_core::snapshot::restore(&dir, &game, &sid)?;
+                let before = axel_core::snapshot::restore(&dir, &game, &sid)?;
                 println!(
                     "Откат выполнен. Состояние до отката сохранено: {}",
                     before.id
                 );
             } else {
-                for s in quarry_core::snapshot::list(&dir)? {
+                for s in axel_core::snapshot::list(&dir)? {
                     println!(
                         "{:<44} {}{} (модов {}, конфигов {})",
                         s.id,
@@ -548,13 +548,13 @@ async fn main() -> Result<()> {
                     }
                 }
                 AccountAction::LoginMicrosoft => {
-                    let code = quarry_core::account::microsoft::start_device_code().await?;
+                    let code = axel_core::account::microsoft::start_device_code().await?;
                     println!(
                         "Откройте {} и введите код {}",
                         code.verification_uri, code.user_code
                     );
                     let _ = open::that(&code.verification_uri);
-                    let acc = quarry_core::account::microsoft::complete_login(
+                    let acc = axel_core::account::microsoft::complete_login(
                         &store,
                         &code,
                         &Cancel::new(),
@@ -571,7 +571,7 @@ async fn main() -> Result<()> {
                     );
                 }
                 AccountAction::LoginEly { login } => {
-                    use quarry_core::account::ely::{PasswordLogin, login_password};
+                    use axel_core::account::ely::{PasswordLogin, login_password};
                     eprint!("Пароль Ely.by (ввод виден; передаётся только на authserver.ely.by): ");
                     let mut password = String::new();
                     std::io::stdin().read_line(&mut password)?;
@@ -593,12 +593,12 @@ async fn main() -> Result<()> {
                     println!("Вход Ely.by: {} (только совместимые серверы)", acc.name);
                 }
                 AccountAction::LoginElyBrowser => {
-                    let acc = quarry_core::account::ely::login(
+                    let acc = axel_core::account::ely::login(
                         &store,
                         |url| {
                             println!("Открываем браузер для входа Ely.by…");
                             open::that(url).map_err(|e| {
-                                quarry_core::Error::Auth(format!("Не удалось открыть браузер: {e}"))
+                                axel_core::Error::Auth(format!("Не удалось открыть браузер: {e}"))
                             })
                         },
                         &Cancel::new(),

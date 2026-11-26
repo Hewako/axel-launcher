@@ -3,5 +3,5 @@
 #![windows_subsystem = "windows"]
 
 fn main() {
-    quarry_ui_lib::run()
+    axel_ui_lib::run()
 }

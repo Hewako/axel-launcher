@@ -1,6 +1,6 @@
 ; Строки установщика Tauri (Russian) — копия languages/Russian.nsh из tauri-cli v2.12.3
 ; (crates/tauri-bundler/src/bundle/windows/nsis/languages) с двумя изменениями для Axel':
-; 1) deleteAppData поясняет, что миры и профили не удаляются; 2) добавлена строка quarryDataKept
+; 1) deleteAppData поясняет, что миры и профили не удаляются; 2) добавлена строка axelDataKept
 ; для окна после удаления (installer/hooks.nsh). При обновлении tauri-cli сверить с новым файлом.
 LangString addOrReinstall ${LANG_RUSSIAN} "Добавить/Переустановить компоненты"
 LangString alreadyInstalled ${LANG_RUSSIAN} "Уже установлено"
@@ -29,4 +29,4 @@ LangString webview2Downloading ${LANG_RUSSIAN} "Загрузка WebView2..."
 LangString webview2InstallError ${LANG_RUSSIAN} "Ошибка: Не удалось установить WebView2, код выхода: $1"
 LangString webview2InstallSuccess ${LANG_RUSSIAN} "WebView2 успешно установлен"
 LangString deleteAppData ${LANG_RUSSIAN} "Удалить служебные данные приложения (миры и профили не удаляются)"
-LangString quarryDataKept ${LANG_RUSSIAN} "Ваши миры, профили и настройки хранятся в папке:$\n$PROFILE\.quarry$\n$\nУдаление и обновление программы их не трогают."
+LangString axelDataKept ${LANG_RUSSIAN} "Ваши миры, профили и настройки хранятся в папке:$\n$PROFILE\.axel$\n$\nУдаление и обновление программы их не трогают."

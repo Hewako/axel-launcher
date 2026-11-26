@@ -1,4 +1,4 @@
-// Типизированные обёртки над командами Tauri. Формы данных совпадают с serde в quarry-core.
+// Типизированные обёртки над командами Tauri. Формы данных совпадают с serde в axel-core.
 import { invoke } from "@tauri-apps/api/core";
 import { currentLang, t, tc } from "./i18n";
 

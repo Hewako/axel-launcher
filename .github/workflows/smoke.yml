@@ -34,25 +34,25 @@ jobs:
           key: smoke-${{ matrix.os }}
 
       - name: Сборка консольного Axel'
-        run: cargo build -p quarry-core --bin quarry
+        run: cargo build -p axel-core --bin axel
 
       - name: Последняя релизная версия Minecraft
-        # Сначала в файл: awk выходит на первой строке, и quarry упал бы на закрытом канале.
+        # Сначала в файл: awk выходит на первой строке, и axel упал бы на закрытом канале.
         run: |
-          target/debug/quarry versions > "$RUNNER_TEMP/versions.txt"
+          target/debug/axel versions > "$RUNNER_TEMP/versions.txt"
           v=$(awk '$2 == "release" { print $1; exit }' "$RUNNER_TEMP/versions.txt")
           test -n "$v"
           echo "MC=$v" >> "$GITHUB_ENV"
           echo "Версия: $v"
 
       - name: Профиль на пустой папке данных
-        run: target/debug/quarry --root "$RUNNER_TEMP/q" instance create smoke --version "$MC"
+        run: target/debug/axel --root "$RUNNER_TEMP/q" instance create smoke --version "$MC"
 
       - name: Установка с проверкой всех хэшей
-        run: target/debug/quarry --root "$RUNNER_TEMP/q" install smoke --verify
+        run: target/debug/axel --root "$RUNNER_TEMP/q" install smoke --verify
 
       - name: Команда запуска собирается
         # Сначала в файл: команда длиной 10+ КБ, а head закрыл бы канал раньше времени.
         run: |
-          target/debug/quarry --root "$RUNNER_TEMP/q" preview smoke > "$RUNNER_TEMP/preview.txt"
+          target/debug/axel --root "$RUNNER_TEMP/q" preview smoke > "$RUNNER_TEMP/preview.txt"
           head -c 600 "$RUNNER_TEMP/preview.txt"

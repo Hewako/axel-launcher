@@ -33,13 +33,13 @@ Client ID — не секрет: его можно хранить в репоз�
 ## 3. Сборка Axel' с вашим Client ID
 
 ```bash
-cd ui && QUARRY_MS_CLIENT_ID=00000000-0000-0000-0000-000000000000 npm run tauri dev
+cd ui && AXEL_MS_CLIENT_ID=00000000-0000-0000-0000-000000000000 npm run tauri dev
 ```
 
 или для CLI:
 
 ```bash
-QUARRY_MS_CLIENT_ID=00000000-0000-0000-0000-000000000000 cargo run -p quarry-core --bin quarry -- account login-microsoft
+AXEL_MS_CLIENT_ID=00000000-0000-0000-0000-000000000000 cargo run -p axel-core --bin axel -- account login-microsoft
 ```
 
 Без переменной кнопка «Войти через Microsoft» неактивна и объясняет, почему.

@@ -62,7 +62,7 @@ jobs:
       - name: dev-launch не собирается в релизе
         shell: bash
         run: |
-          if cargo check -p quarry-core --release --features dev-launch 2>/dev/null; then
+          if cargo check -p axel-core --release --features dev-launch 2>/dev/null; then
             echo "dev-launch собрался в release — так быть не должно"; exit 1
           fi
           echo "ok: dev-launch недоступен в release"
@@ -72,4 +72,4 @@ jobs:
       # каждой ОС, в том числе на Windows.
       - name: Комнаты — сетевые тесты
         continue-on-error: true
-        run: cargo test -p quarry-core --lib room -- --ignored --test-threads=1
+        run: cargo test -p axel-core --lib room -- --ignored --test-threads=1

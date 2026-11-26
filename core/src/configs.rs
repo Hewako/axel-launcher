@@ -433,7 +433,7 @@ mod tests {
     use super::*;
 
     fn dirs(name: &str) -> (std::path::PathBuf, std::path::PathBuf) {
-        let root = std::env::temp_dir().join(format!("quarry-cfg-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-cfg-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let game = root.join("game");
         std::fs::create_dir_all(game.join("config/sodium")).unwrap();

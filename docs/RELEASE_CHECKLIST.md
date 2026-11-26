@@ -10,8 +10,8 @@
       (`cargo test`, clippy, fmt, `npm run build`, `npm run i18n:check`, `npm run ipc:check`).
 - [ ] Версия одна во всех местах: `Cargo.toml` (workspace), `ui/package.json`.
 - [ ] `CHANGELOG.md`: раздел «Ещё не вышло» переименован в `X.Y.Z — дата`, сверху новый пустой.
-- [ ] Секреты репозитория на месте: `QUARRY_MS_CLIENT_ID` (одобренный Mojang),
-      `QUARRY_CURSEFORGE_KEY` (если каталог CurseForge нужен в этой версии).
+- [ ] Секреты репозитория на месте: `AXEL_MS_CLIENT_ID` (одобренный Mojang),
+      `AXEL_CURSEFORGE_KEY` (если каталог CurseForge нужен в этой версии).
 - [ ] Известные ограничения в README актуальны.
 - [ ] Финальный аудит без находок уровня «исправить обязательно» (безопасность, утечка токенов).
 - [ ] `cargo audit` — без уязвимостей; `npm audit --omit=dev` (в `ui/`) — без уязвимостей.
@@ -25,13 +25,13 @@
 - [ ] В черновике ровно эти файлы: `Axel-Launcher-Windows.exe`, `Axel-Launcher-Windows-portable.zip`,
       `Axel-Launcher-macOS.dmg`, `Axel-Launcher-Linux.deb`, `Axel-Launcher-Linux.rpm`,
       `Axel-Launcher-Linux.AppImage`, `SHA256SUMS.txt` (лишние `finalize` удаляет сам).
-- [ ] macOS: `lipo -archs` у `Axel Launcher.app/Contents/MacOS/quarry-ui` → `x86_64 arm64`.
+- [ ] macOS: `lipo -archs` у `Axel Launcher.app/Contents/MacOS/axel-ui` → `x86_64 arm64`.
 - [ ] macOS: `syspolicy_check distribution "Axel Launcher.app"` → только «Adhoc Signed App» и
       «Notary Ticket Missing» (оба — следствие выпуска без сертификата Apple), без «Codesign Error»
       (иначе скачанное из браузера приложение macOS назовёт повреждённым).
 - [ ] macOS: приложение из `.dmg` запускается, открывается главная.
 - [ ] Linux: зависимости `.deb` покрывают всё, что нужно программе
-      (`llvm-objdump -p usr/bin/quarry-ui | grep NEEDED` против `Depends`).
+      (`llvm-objdump -p usr/bin/axel-ui | grep NEEDED` против `Depends`).
 - [ ] Файлы проверены на VirusTotal (особенно `.exe` и `.zip`); ложные срабатывания — записать в релиз.
 - [ ] Эталонный сценарий на чистой системе: установка → вход Microsoft → профиль Vanilla →
       запуск до главного меню → выход. macOS — Claude, Windows и Linux — владелец или ВМ
@@ -46,8 +46,8 @@ Windows 10 или 11:
 - [ ] Папка по умолчанию в профиле пользователя, пароль администратора не спросили.
 - [ ] Ярлыки на рабочем столе и в «Пуске»; галочка «Запустить Axel'» работает.
 - [ ] Лаунчер открывается, вход Microsoft, профиль, игра до главного меню.
-- [ ] Удаление: окно говорит про `%USERPROFILE%\.quarry`; после удаления папка на месте.
-- [ ] Установка поверх (тот же `.exe` ещё раз): окно про `.quarry` не пугает, миры и профили на месте.
+- [ ] Удаление: окно говорит про `%USERPROFILE%\.axel`; после удаления папка на месте.
+- [ ] Установка поверх (тот же `.exe` ещё раз): окно про `.axel` не пугает, миры и профили на месте.
 - [ ] Portable-zip: распаковать в любую папку, запустить `Axel Launcher.exe` — открывается.
 - [ ] Картинки мастера: боковая полоса на первой и последней страницах, шапка на остальных и в окне удаления; ничего не размыто и не обрезано на масштабе 100 % и 150 %.
 

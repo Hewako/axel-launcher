@@ -1,5 +1,5 @@
 //! Каталог CurseForge (API v1). Ключ API не хранится в коде: он подставляется при сборке
-//! из переменной окружения `QUARRY_CURSEFORGE_KEY` (см. docs/CURSEFORGE_SETUP.md).
+//! из переменной окружения `AXEL_CURSEFORGE_KEY` (см. docs/CURSEFORGE_SETUP.md).
 //! Без ключа каталог CurseForge в этой сборке недоступен, остальное работает.
 
 use crate::catalog::{Channel, ProjectType, SearchHit};
@@ -54,7 +54,7 @@ pub struct CfFile {
 
 /// Ключ, подставленный при сборке. Пустая строка считается отсутствием ключа.
 pub fn api_key() -> Option<&'static str> {
-    option_env!("QUARRY_CURSEFORGE_KEY").filter(|k| !k.trim().is_empty())
+    option_env!("AXEL_CURSEFORGE_KEY").filter(|k| !k.trim().is_empty())
 }
 
 pub fn class_id(kind: ProjectType) -> u32 {

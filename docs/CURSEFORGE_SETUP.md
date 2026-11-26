@@ -1,7 +1,7 @@
 # Каталог CurseForge: как подключить ключ API
 
 Каталог CurseForge в Axel' работает только с ключом API. Ключ **не хранится в коде и в
-репозитории**: он подставляется при сборке из переменной окружения `QUARRY_CURSEFORGE_KEY`.
+репозитории**: он подставляется при сборке из переменной окружения `AXEL_CURSEFORGE_KEY`.
 Без ключа лаунчер работает как обычно, просто в каталоге нет переключателя «CurseForge».
 
 ## 1. Получить ключ
@@ -14,7 +14,7 @@
 ## 2. Собрать локально с ключом
 
 ```bash
-cd ui && QUARRY_CURSEFORGE_KEY='ваш-ключ' npm run tauri build
+cd ui && AXEL_CURSEFORGE_KEY='ваш-ключ' npm run tauri build
 ```
 
 Для разработки — то же самое с `npm run tauri dev`. Проверка: в каталоге модов появился
@@ -23,8 +23,8 @@ cd ui && QUARRY_CURSEFORGE_KEY='ваш-ключ' npm run tauri build
 ## 3. Сборки на GitHub
 
 В репозитории: **Settings → Secrets and variables → Actions → New repository secret**,
-имя `QUARRY_CURSEFORGE_KEY`, значение — ключ. Сборка релиза берёт ключ оттуда
-(`env: QUARRY_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}`); в логах GitHub
+имя `AXEL_CURSEFORGE_KEY`, значение — ключ. Сборка релиза берёт ключ оттуда
+(`env: AXEL_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}`); в логах GitHub
 он скрыт.
 
 ## Важно знать

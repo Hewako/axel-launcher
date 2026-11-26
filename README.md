@@ -11,25 +11,25 @@ Axel' говорит, какой мод виноват, и предлагает 
 
 <sub>An open-source Minecraft: Java Edition launcher for people with more than one modpack. Interface in Russian and English.</sub>
 
-[![Версия](https://img.shields.io/github/v/release/Hewako/quarry-launcher?include_prereleases&label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F&color=53d49f)](https://github.com/Hewako/quarry-launcher/releases)
-[![Скачивания](https://img.shields.io/github/downloads/Hewako/quarry-launcher/total?label=%D1%81%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F&color=53d49f)](https://github.com/Hewako/quarry-launcher/releases)
-[![Лицензия](https://img.shields.io/github/license/Hewako/quarry-launcher?label=%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F)](LICENSE)
-[![Задачи](https://img.shields.io/github/issues/Hewako/quarry-launcher?label=%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8)](https://github.com/Hewako/quarry-launcher/issues)
+[![Версия](https://img.shields.io/github/v/release/Hewako/axel-launcher?include_prereleases&label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F&color=53d49f)](https://github.com/Hewako/axel-launcher/releases)
+[![Скачивания](https://img.shields.io/github/downloads/Hewako/axel-launcher/total?label=%D1%81%D0%BA%D0%B0%D1%87%D0%B8%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F&color=53d49f)](https://github.com/Hewako/axel-launcher/releases)
+[![Лицензия](https://img.shields.io/github/license/Hewako/axel-launcher?label=%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F)](LICENSE)
+[![Задачи](https://img.shields.io/github/issues/Hewako/axel-launcher?label=%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8)](https://github.com/Hewako/axel-launcher/issues)
 
 <p>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="macOS, .dmg" src="https://img.shields.io/badge/macOS-.dmg%20%C2%B7%20%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20Mac-000000?style=for-the-badge&logo=apple&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Windows, установщик .exe" src="https://img.shields.io/badge/Windows-.exe%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D1%89%D0%B8%D0%BA-0078D4?style=for-the-badge"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Windows, .zip без установки" src="https://img.shields.io/badge/Windows-.zip%20%D0%B1%D0%B5%D0%B7%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8-1f5f99?style=for-the-badge"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Linux, AppImage" src="https://img.shields.io/badge/Linux-AppImage-E3A008?style=for-the-badge&logo=linux&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Debian и Ubuntu, .deb" src="https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?style=for-the-badge&logo=debian&logoColor=white"></a>
-<a href="https://github.com/Hewako/quarry-launcher/releases"><img alt="Fedora, .rpm" src="https://img.shields.io/badge/Fedora-.rpm-294172?style=for-the-badge&logo=fedora&logoColor=white"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="macOS, .dmg" src="https://img.shields.io/badge/macOS-.dmg%20%C2%B7%20%D0%BB%D1%8E%D0%B1%D0%BE%D0%B9%20Mac-000000?style=for-the-badge&logo=apple&logoColor=white"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="Windows, установщик .exe" src="https://img.shields.io/badge/Windows-.exe%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D1%89%D0%B8%D0%BA-0078D4?style=for-the-badge"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="Windows, .zip без установки" src="https://img.shields.io/badge/Windows-.zip%20%D0%B1%D0%B5%D0%B7%20%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8-1f5f99?style=for-the-badge"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="Linux, AppImage" src="https://img.shields.io/badge/Linux-AppImage-E3A008?style=for-the-badge&logo=linux&logoColor=white"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="Debian и Ubuntu, .deb" src="https://img.shields.io/badge/Debian%20%C2%B7%20Ubuntu-.deb-A81D33?style=for-the-badge&logo=debian&logoColor=white"></a>
+<a href="https://github.com/Hewako/axel-launcher/releases"><img alt="Fedora, .rpm" src="https://img.shields.io/badge/Fedora-.rpm-294172?style=for-the-badge&logo=fedora&logoColor=white"></a>
 </p>
 
 <!-- До выхода 0.1.0 кнопки ведут на страницу релизов: ссылки releases/latest/download/… не видят пробные сборки.
      После 0.1.0 вернуть прямые ссылки на файлы (docs/RELEASE_CHECKLIST.md). -->
 <p>
-  <a href="https://github.com/Hewako/quarry-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-windows-dark.png"><img alt="Скачать для Windows" src="docs/img/download-windows.png" width="240" height="56"></picture></a>
-  <a href="https://github.com/Hewako/quarry-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-macos-dark.png"><img alt="Скачать для macOS" src="docs/img/download-macos.png" width="240" height="56"></picture></a>
+  <a href="https://github.com/Hewako/axel-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-windows-dark.png"><img alt="Скачать для Windows" src="docs/img/download-windows.png" width="240" height="56"></picture></a>
+  <a href="https://github.com/Hewako/axel-launcher/releases"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-macos-dark.png"><img alt="Скачать для macOS" src="docs/img/download-macos.png" width="240" height="56"></picture></a>
   <a href="#установка"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/img/download-linux-dark.png"><img alt="Скачать для Linux: .deb, .rpm, AppImage" src="docs/img/download-linux.png" width="240" height="56"></picture></a>
 </p>
 
@@ -71,8 +71,8 @@ Vanilla, Fabric, Quilt, Forge или NeoForge и любая версия из о
 
 ## Установка
 
-Все версии, включая пробные сборки, лежат на [странице релизов](https://github.com/Hewako/quarry-launcher/releases).
-Миры, профили и настройки хранятся отдельно, в папке `.quarry` в домашней папке: обновление и
+Все версии, включая пробные сборки, лежат на [странице релизов](https://github.com/Hewako/axel-launcher/releases).
+Миры, профили и настройки хранятся отдельно, в папке `.axel` в домашней папке: обновление и
 удаление программы их не трогают.
 
 Установщики пока не подписаны платным сертификатом, поэтому при первом запуске система
@@ -123,7 +123,7 @@ Vanilla, Fabric, Quilt, Forge или NeoForge и любая версия из о
 
 **Удаление.** Windows — «Параметры → Приложения»; macOS — перетащить из «Программ» в Корзину;
 Linux — `sudo apt remove axel-launcher`, `sudo dnf remove axel-launcher` или просто удалить
-AppImage. Миры и профили останутся в `.quarry` (`%USERPROFILE%\.quarry` на Windows) — если они
+AppImage. Миры и профили останутся в `.axel` (`%USERPROFILE%\.axel` на Windows) — если они
 больше не нужны, удалите и эту папку.
 
 **Файл не подменён?** В каждом релизе есть `SHA256SUMS.txt`. На macOS и Linux в папке со
@@ -180,12 +180,12 @@ CurseForge, а папку официального лаунчера подхва
   CurseForge импортируются везде.
 - **Ely.by** работает только вместе с Microsoft-аккаунтом, на котором куплена игра.
 
-Нашли ошибку — [расскажите о ней](https://github.com/Hewako/quarry-launcher/issues/new). Лучше всего с отчётом из
+Нашли ошибку — [расскажите о ней](https://github.com/Hewako/axel-launcher/issues/new). Лучше всего с отчётом из
 «Логи и краши → Отчёт для поддержки».
 
 ## Помочь проекту
 
-Самая полезная помощь — сообщить об ошибке или о том, что неудобно: [задачи](https://github.com/Hewako/quarry-launcher/issues).
+Самая полезная помощь — сообщить об ошибке или о том, что неудобно: [задачи](https://github.com/Hewako/axel-launcher/issues).
 Хотите поправить код — добро пожаловать, пулреквесты читаем.
 
 ![Статистика репозитория: вклад, задачи, пулреквесты и участники за последние 30 дней](https://repobeats.axiom.co/api/embed/cb6d3549708b77e9db997029c7072d1beb00c54a.svg "Repobeats analytics image")
@@ -208,13 +208,13 @@ cd ui && npm run tauri dev -- --features dev-launch
 Командная строка:
 
 ```bash
-cargo run -p quarry-core --bin quarry -- --help
+cargo run -p axel-core --bin axel -- --help
 ```
 
 Тесты: `cargo test --workspace` (сетевые помечены `#[ignore]`: `cargo test -- --ignored`).
 
 ```
-core/   ядро quarry-core и CLI quarry, без зависимости от интерфейса
+core/   ядро axel-core и CLI axel, без зависимости от интерфейса
 ui/     интерфейс Tauri 2 + React; ui/src-tauri — тонкие команды над ядром
 docs/   журнал работы, решения, инструкции
 ```

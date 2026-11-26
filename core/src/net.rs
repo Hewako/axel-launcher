@@ -7,9 +7,9 @@ use std::time::Duration;
 
 /// User-Agent по требованию Modrinth: автор/проект/версия (контакт).
 pub const USER_AGENT: &str = concat!(
-    "Hewako/quarry-launcher/",
+    "Hewako/axel-launcher/",
     env!("CARGO_PKG_VERSION"),
-    " (github.com/Hewako/quarry-launcher)"
+    " (github.com/Hewako/axel-launcher)"
 );
 
 /// Сколько раз пробовать запрос при сетевой ошибке, 429 или 5xx.
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn user_agent_has_contact() {
-        assert!(USER_AGENT.starts_with("Hewako/quarry-launcher/"));
+        assert!(USER_AGENT.starts_with("Hewako/axel-launcher/"));
         assert!(USER_AGENT.contains("github.com"));
     }
 

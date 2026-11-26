@@ -13,7 +13,7 @@
 ```bash
 cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace
 cd ui && npm ci && npm run build
-cargo build -p quarry-core --features dev-launch && ./target/debug/quarry launch <id>   # запуск без входа (debug)
+cargo build -p axel-core --features dev-launch && ./target/debug/axel launch <id>   # запуск без входа (debug)
 ```
 
 ## Решения владельца (21.10.2026)
@@ -22,7 +22,7 @@ cargo build -p quarry-core --features dev-launch && ./target/debug/quarry launch
 |---|---|
 | Лицензия | GPL-3.0 (файл `LICENSE`, `GPL-3.0-or-later` в манифестах) |
 | Название | Axel' (рабочее; проверка товарных знаков — владельцем до публичного релиза) |
-| Репозиторий | Один в корне `quarry-launcher/`, Cargo workspace `core` + `ui/src-tauri` |
+| Репозиторий | Один в корне `axel-launcher/`, Cargo workspace `core` + `ui/src-tauri` |
 | Microsoft client ID | Не зарегистрирован. Регистрировать приложение в Azure должен владелец (нужен вход в его учётную запись) — инструкция в `docs/MICROSOFT_SETUP.md` |
 
 ## Этап 0 — отправная точка ✅
@@ -87,10 +87,10 @@ cargo build -p quarry-core --features dev-launch && ./target/debug/quarry launch
 | `cargo clippy --workspace --all-targets -- -D warnings` | ок |
 | `cargo test --workspace` | 99 passed (94 юнит + 5 golden), 4 ignored (сеть) |
 | `npm ci && npm run build` | ок |
-| `cargo check -p quarry-core --release --features dev-launch` | ожидаемо не собирается |
-| `quarry launch creative-test` (Vanilla 26.3, dev-launch) | дошла до главного меню (атласы текстур созданы), Java 25 найдена с причиной, токен замаскирован |
-| `quarry launch fabric-test` (Fabric 0.19.5 на 26.3, dev-launch) | главное меню, «Sound engine started», статус Success записан в профиль |
-| Перенос `~/.quarry` старой раскладки | все папки перенесены, 4 профиля прочитаны; копия `profiles/` до переноса — в scratchpad сессии |
+| `cargo check -p axel-core --release --features dev-launch` | ожидаемо не собирается |
+| `axel launch creative-test` (Vanilla 26.3, dev-launch) | дошла до главного меню (атласы текстур созданы), Java 25 найдена с причиной, токен замаскирован |
+| `axel launch fabric-test` (Fabric 0.19.5 на 26.3, dev-launch) | главное меню, «Sound engine started», статус Success записан в профиль |
+| Перенос `~/.axel` старой раскладки | все папки перенесены, 4 профиля прочитаны; копия `profiles/` до переноса — в scratchpad сессии |
 | Интерфейс | предпросмотр `ui/preview.html` в браузере (IPC подменён): главная, прогресс, профиль, аккаунты, логи, светлая тема. Нативное окно запускается (`npm run tauri dev`), скриншот окна сделать не удалось — нет разрешения на запись экрана |
 
 ### Не проверено
@@ -202,8 +202,8 @@ Microsoft (нет client ID), сборка установщиков в Actions (
 ## Допущения
 
 - Версия всех пакетов — `0.1.0` (единый источник `workspace.package.version`).
-- Крейт интерфейса переименован `ui` → `quarry-ui` (библиотека `quarry_ui_lib`).
-- Папка данных остаётся `~/.quarry`; старая раскладка переносится переименованием при первом открытии.
+- Крейт интерфейса переименован `ui` → `axel-ui` (библиотека `axel_ui_lib`).
+- Папка данных остаётся `~/.axel`; старая раскладка переносится переименованием при первом открытии.
 - Быстрая проверка перед запуском сверяет размер файлов; полная (хэши) — пунктом «Проверить файлы и играть».
 - Память по умолчанию 4 ГБ, Xms = Xmx.
 - XUID для `--xuid` — «0» (ответ XSTS для Minecraft его не содержит; не подтверждено первоисточником).
@@ -214,7 +214,7 @@ Microsoft (нет client ID), сборка установщиков в Actions (
 1. **Секрет Ely.by в локальной истории.** Ветка `main` содержит `client_secret` Ely.by в трёх
    непубликованных коммитах. Перед любым `git push` переставьте `main` на чистую ветку
    (уже сделано 21.10.2026: старая ветка переименована в `local-old-main-with-ely-secret` и не публикуется) и **смените секрет в кабинете Ely.by**.
-2. **Токен Ely.by в открытом виде** в `~/.quarry/active_account.toml` (записан старой версией).
+2. **Токен Ely.by в открытом виде** в `~/.axel/active_account.toml` (записан старой версией).
    Новый код этот файл не читает. Удалите файл и завершите сессию в кабинете Ely.by.
 3. Регистрация приложения Microsoft и заявка Mojang — `docs/MICROSOFT_SETUP.md`.
 4. Интерфейс: `cd ui && npm run tauri dev -- --features dev-launch` → «Играть» в профиле Fabric Test.
@@ -267,7 +267,7 @@ Microsoft (нет client ID), сборка установщиков в Actions (
   программы; .rpm — dbus-libs, GTK, WebKitGTK; нужна glibc не новее 2.34.
 - Windows: .exe — установщик NSIS, .msi — пакет Windows Installer (запуск на Windows — владелец).
 - Проверка «чистая машина» по тегу: macOS и Windows прошли; Linux упал на самой проверке
-  (`quarry versions | awk` — awk закрыл канал раньше) — исправлено, вывод сначала в файл.
+  (`axel versions | awk` — awk закрыл канал раньше) — исправлено, вывод сначала в файл.
 - На тег пришло два события push, и запустились два одинаковых релиза; второй отменён, в
   release.yml добавлен concurrency по тегу.
 - Не проверено: вход Microsoft и запуск игры из установленной версии (нет client ID).
@@ -276,9 +276,9 @@ Microsoft (нет client ID), сборка установщиков в Actions (
 ## 25.10.2026 — вход Microsoft проверен вживую
 
 - Mojang одобрил client ID приложения Axel' (`174c3629-…`, письмо Mojang Enforcement).
-- `quarry account login-microsoft` (сборка с QUARRY_MS_CLIENT_ID): device code → Xbox Live → XSTS →
+- `axel account login-microsoft` (сборка с AXEL_MS_CLIENT_ID): device code → Xbox Live → XSTS →
   login_with_xbox → entitlements → профиль: «Вход выполнен: Kot1ara — Java Edition куплена».
-- `quarry launch fabric-test` (Fabric, 26.3) с этим аккаунтом: «Setting user: Kot1ara», звук и
+- `axel launch fabric-test` (Fabric, 26.3) с этим аккаунтом: «Setting user: Kot1ara», звук и
   текстуры загружены. В логе запуска и в логе игры токен скрыт.
 - `v0.1.0-rc.3` собран: черновик pre-release, установщики macOS (arm64, x64), Windows (exe, msi),
   Linux (deb, rpm, AppImage), лицензии сторонних библиотек внутри; client ID вшит.

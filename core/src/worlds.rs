@@ -162,7 +162,7 @@ pub fn list(game_dir: &Path, backups_dir: &Path) -> Vec<WorldInfo> {
 }
 
 /// Восстановить мир из бэкапа. Текущий мир не удаляется: сначала он сам бэкапится,
-/// затем откладывается в `<папка игры>/.quarry-replaced/` — на тот же диск, что и мир
+/// затем откладывается в `<папка игры>/.axel-replaced/` — на тот же диск, что и мир
 /// (папку игры могли перенести на другой диск, а rename между дисками не работает).
 pub fn restore(game_dir: &Path, backups_dir: &Path, backup_file: &Path) -> Result<String> {
     let backup_file = std::fs::canonicalize(backup_file).at(backup_file)?;
@@ -197,7 +197,7 @@ pub fn restore(game_dir: &Path, backups_dir: &Path, backup_file: &Path) -> Resul
     let current = saves.join(&world);
     if current.exists() {
         snapshot::backup_world(game_dir, backups_dir, &world)?;
-        let replaced = game_dir.join(".quarry-replaced");
+        let replaced = game_dir.join(".axel-replaced");
         std::fs::create_dir_all(&replaced).at(&replaced)?;
         let aside = replaced.join(format!("{world}-{}", crate::instance::now()));
         std::fs::rename(&current, &aside).at(&current)?;
@@ -294,7 +294,7 @@ mod tests {
 
     #[test]
     fn list_restore_and_version_check() {
-        let root = std::env::temp_dir().join(format!("quarry-worlds-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-worlds-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let (game, backups) = (root.join("game"), root.join("backups"));
         make_world(&game, "W1", "База у реки", 4671, 2_000_000_000_000);
@@ -315,7 +315,7 @@ mod tests {
             1000
         );
         // Испорченная версия не пропала: забэкаплена и отложена на том же диске, что и мир.
-        assert!(game.join(".quarry-replaced").read_dir().unwrap().count() == 1);
+        assert!(game.join(".axel-replaced").read_dir().unwrap().count() == 1);
         assert!(restore(&game, &backups, &root.join("elsewhere.zip")).is_err());
         assert!(backup_latest(&game, &backups).is_some());
         std::fs::remove_dir_all(&root).unwrap();
@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn broken_backup_leaves_no_half_world() {
-        let root = std::env::temp_dir().join(format!("quarry-worlds-bad-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-worlds-bad-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let (game, backups) = (root.join("game"), root.join("backups"));
         make_world(&game, "W1", "Мир", 4671, 1);
@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn jar_info_both_formats() {
-        let root = std::env::temp_dir().join(format!("quarry-jarinfo-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-jarinfo-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         for (name, json, res) in [
             (

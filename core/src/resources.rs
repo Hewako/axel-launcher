@@ -530,7 +530,7 @@ mod tests {
     }
 
     fn game_dir(name: &str) -> std::path::PathBuf {
-        let d = std::env::temp_dir().join(format!("quarry-res-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-res-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("resourcepacks")).unwrap();
         d
@@ -675,7 +675,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn install_resourcepack_from_modrinth() {
-        let root = std::env::temp_dir().join(format!("quarry-res-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-res-{}", std::process::id()));
         let store = InstanceStore::new(crate::paths::DataDir::new(root.clone()));
         let inst = store
             .create("Р", "1.21.1", crate::loader::LoaderKind::Vanilla, None)

@@ -88,7 +88,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
               <li>{t("В интернет он ходит только за игрой, входом, Java, модами и новой версией Axel'.")}</li>
               <li>{t("Данные входа лежат в защищённом хранилище системы, а в логах и отчётах скрыты.")}</li>
             </ul>
-            <button className="btn link small" onClick={() => api.openLink("https://github.com/Hewako/quarry-launcher/blob/main/docs/PRIVACY.md").catch(() => {})}>{t("Подробнее о приватности")}</button>
+            <button className="btn link small" onClick={() => api.openLink("https://github.com/Hewako/axel-launcher/blob/main/docs/PRIVACY.md").catch(() => {})}>{t("Подробнее о приватности")}</button>
           </>
         )}
 

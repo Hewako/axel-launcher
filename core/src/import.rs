@@ -1223,8 +1223,7 @@ mod tests {
     use std::io::Write;
 
     fn store(name: &str) -> (InstanceStore, PathBuf) {
-        let root =
-            std::env::temp_dir().join(format!("quarry-import-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-import-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         (
             InstanceStore::new(DataDir::open(root.join("data")).unwrap()),

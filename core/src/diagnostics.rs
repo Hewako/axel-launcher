@@ -339,7 +339,7 @@ mod tests {
     use crate::paths::DataDir;
 
     fn setup(name: &str) -> (InstanceStore, String, std::path::PathBuf) {
-        let root = std::env::temp_dir().join(format!("quarry-diag-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-diag-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let inst = store
@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn cleanup_removes_only_safe_cache() {
-        let root = std::env::temp_dir().join(format!("quarry-clean-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-clean-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let data = DataDir::open(&root).unwrap();
         for (p, n) in [

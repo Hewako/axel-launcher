@@ -75,7 +75,7 @@ pub struct LaunchOptions {
     pub safe_mode: bool,
 }
 
-const SAFE_MODE_DIR: &str = "mods.quarry-safe-mode";
+const SAFE_MODE_DIR: &str = "mods.axel-safe-mode";
 
 /// Если лаунчер закрылся во время безопасного запуска — вернуть моды на место.
 fn recover_safe_mode(game_dir: &std::path::Path) -> Option<String> {
@@ -243,7 +243,7 @@ async fn resolve_auth(
         (Provider::Microsoft, None) if DEV_LAUNCH => {
             Ok((
                 GameAuth {
-                    name: "QuarryDev".into(),
+                    name: "AxelDev".into(),
                     uuid: "00000000000000000000000000000000".into(),
                     access_token: "0".into(),
                     user_type: "legacy".into(),
@@ -497,7 +497,7 @@ async fn prepare_files(
 }
 
 /// Подготовить профиль без входа и без запуска игры: скачать и проверить все файлы и Java.
-/// Для проверки «чистая машина» в CI (`quarry install`).
+/// Для проверки «чистая машина» в CI (`axel install`).
 pub async fn install(
     data: &DataDir,
     instance_id: &str,
@@ -1011,7 +1011,7 @@ mod tests {
 
     #[test]
     fn safe_mode_mods_come_back() {
-        let d = std::env::temp_dir().join(format!("quarry-safe-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-safe-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join(SAFE_MODE_DIR)).unwrap();
         std::fs::write(d.join(SAFE_MODE_DIR).join("a.jar"), b"x").unwrap();
@@ -1027,7 +1027,7 @@ mod tests {
 
     #[test]
     fn log_rotation_keeps_newest() {
-        let d = std::env::temp_dir().join(format!("quarry-rotate-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-rotate-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         for i in 0..5 {
@@ -1049,7 +1049,7 @@ mod tests {
         if DEV_LAUNCH {
             return;
         }
-        let root = std::env::temp_dir().join(format!("quarry-noacc-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-noacc-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let data = DataDir::open(&root).unwrap();
         let store = InstanceStore::new(data.clone());

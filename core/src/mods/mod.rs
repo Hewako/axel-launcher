@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn inventory_and_toggle() {
-        let root = std::env::temp_dir().join(format!("quarry-inv-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-inv-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let game = root.join("game");
         std::fs::create_dir_all(game.join("mods")).unwrap();

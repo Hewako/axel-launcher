@@ -107,7 +107,7 @@ mod tests {
     #[cfg(unix)]
     #[tokio::test]
     async fn runs_in_game_dir_with_profile_env() {
-        let d = std::env::temp_dir().join(format!("quarry-hook-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-hook-{}", std::process::id()));
         std::fs::create_dir_all(&d).unwrap();
         let (code, out) = run(
             "pwd; echo \"$AXEL_PROFILE $QUARRY_PROFILE\"; exit 3",

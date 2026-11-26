@@ -1,7 +1,7 @@
 Axel' — сторонние компоненты и их лицензии
 Axel' — third-party components and their licenses
 
-Axel' распространяется по GPL-3.0-or-later (файл LICENSE в репозитории https://github.com/Hewako/quarry-launcher).
+Axel' распространяется по GPL-3.0-or-later (файл LICENSE в репозитории https://github.com/Hewako/axel-launcher).
 В программу входят следующие сторонние библиотеки (777). Ниже — их лицензии и тексты лицензий.
 
 - @fontsource/ibm-plex-mono 5.3.0 — OFL-1.1 — git+https://github.com/fontsource/font-files.git

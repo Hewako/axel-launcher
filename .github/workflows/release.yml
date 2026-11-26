@@ -77,8 +77,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          QUARRY_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
-          QUARRY_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
+          AXEL_CURSEFORGE_KEY: ${{ secrets.QUARRY_CURSEFORGE_KEY }}
+          AXEL_MS_CLIENT_ID: ${{ secrets.QUARRY_MS_CLIENT_ID }}
         with:
           projectPath: ui
           args: ${{ matrix.args }}
@@ -104,7 +104,7 @@ jobs:
         run: |
           $dir = "portable/Axel Launcher"
           New-Item -ItemType Directory -Force -Path $dir | Out-Null
-          Copy-Item "target/release/quarry-ui.exe" "$dir/Axel Launcher.exe"
+          Copy-Item "target/release/axel-ui.exe" "$dir/Axel Launcher.exe"
           Copy-Item "ui/src-tauri/THIRD-PARTY-NOTICES.txt" $dir
           Copy-Item ".github/release/README-portable.txt" $dir
           Compress-Archive -Path $dir -DestinationPath "Axel-Launcher-Windows-portable.zip" -Force

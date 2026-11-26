@@ -24,7 +24,7 @@ pub struct Rules {
 
 const BUILTIN: &str = include_str!("../../rules/doctor-rules.json");
 const URL: &str =
-    "https://raw.githubusercontent.com/Hewako/quarry-launcher/main/core/rules/doctor-rules.json";
+    "https://raw.githubusercontent.com/Hewako/axel-launcher/main/core/rules/doctor-rules.json";
 const CACHE: &str = "doctor-rules.json";
 
 /// Разобрать и проверить файл правил: известная версия формата, ID модов — только

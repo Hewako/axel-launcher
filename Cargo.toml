@@ -6,7 +6,7 @@ members = ["core", "ui/src-tauri"]
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/Hewako/quarry-launcher"
+repository = "https://github.com/Hewako/axel-launcher"
 
 # Настройки релизной сборки (раньше были в ui/src-tauri, профили действуют только в корне workspace).
 # См. https://tauri.app/concept/size/#cargo-configuration

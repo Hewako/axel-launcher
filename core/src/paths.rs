@@ -26,7 +26,7 @@ impl DataDir {
         Self { root: root.into() }
     }
 
-    /// Папка по умолчанию: `~/.axel`. До переименования лаунчера была `~/.quarry` — её
+    /// Папка по умолчанию: `~/.axel`. До переименования лаунчера была `~/.axel` — её
     /// переносит [`crate::relocate::resolve_root`].
     pub fn default_root() -> Option<PathBuf> {
         dirs::home_dir().map(|h| h.join(".axel"))
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn legacy_layout_is_moved_without_loss() {
-        let root = std::env::temp_dir().join(format!("quarry-migrate-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-migrate-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("profiles/my")).unwrap();
         std::fs::write(root.join("profiles/my/profile.toml"), "x").unwrap();
@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn atomic_write_replaces_content() {
-        let root = std::env::temp_dir().join(format!("quarry-atomic-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-atomic-{}", std::process::id()));
         let path = root.join("a.toml");
         write_atomic(&path, b"one").unwrap();
         write_atomic(&path, b"two").unwrap();

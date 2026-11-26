@@ -1,10 +1,10 @@
 [package]
-name = "quarry-core"
+name = "axel-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Ядро лаунчера Quarry: метаданные, загрузка, Java, запуск, профили, аккаунты"
+description = "Ядро лаунчера Axel': метаданные, загрузка, Java, запуск, профили, аккаунты"
 
 [features]
 # Запуск без входа — только для отладки разработчиком на собственной копии игры,
@@ -12,8 +12,8 @@ description = "Ядро лаунчера Quarry: метаданные, загр�
 dev-launch = []
 
 [[bin]]
-name = "quarry"
-path = "src/bin/quarry.rs"
+name = "axel"
+path = "src/bin/axel.rs"
 
 [dependencies]
 anyhow = "1.0.104"                  # только в CLI (src/bin)

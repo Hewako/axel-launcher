@@ -30,8 +30,8 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// Client ID приложения Ely.by владельца проекта. Не секрет. Можно заменить при сборке:
-/// `QUARRY_ELY_CLIENT_ID=… cargo build`.
-pub const CLIENT_ID: &str = match option_env!("QUARRY_ELY_CLIENT_ID") {
+/// `AXEL_ELY_CLIENT_ID=… cargo build`.
+pub const CLIENT_ID: &str = match option_env!("AXEL_ELY_CLIENT_ID") {
     Some(id) => id,
     None => "axol",
 };
@@ -435,7 +435,7 @@ mod tests {
 
     #[tokio::test]
     async fn password_login_is_blocked_without_microsoft() {
-        let root = std::env::temp_dir().join(format!("quarry-ely-pw-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-ely-pw-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let data = DataDir::open(&root).unwrap();
         let secrets = super::super::MemoryStore::default();
@@ -448,7 +448,7 @@ mod tests {
     #[tokio::test]
     #[cfg(not(feature = "dev-launch"))] // в сборке разработчика Ely.by открыт без Microsoft
     async fn login_is_blocked_without_microsoft() {
-        let root = std::env::temp_dir().join(format!("quarry-ely-gate-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-ely-gate-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let data = DataDir::open(&root).unwrap();
         let secrets = super::super::MemoryStore::default();

@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn keeps_last_runs_newest_first() {
-        let root = std::env::temp_dir().join(format!("quarry-history-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-history-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let store = InstanceStore::new(DataDir::open(&root).unwrap());
         let mut i = store

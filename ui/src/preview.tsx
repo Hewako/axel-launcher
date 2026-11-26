@@ -24,7 +24,7 @@ const withAccount = params.get("account") !== "none";
 mockIPC((cmd, args) => {
   const a = args as Record<string, unknown>;
   switch (cmd) {
-    case "app_info": return { curseforge: true, version: "0.1.0", dev_launch: params.has("dev"), data_dir: "/Users/player/.quarry", microsoft_configured: params.has("ms"), os: "macos" };
+    case "app_info": return { curseforge: true, version: "0.1.0", dev_launch: params.has("dev"), data_dir: "/Users/player/.axel", microsoft_configured: params.has("ms"), os: "macos" };
     case "list_instances": return { instances, broken: [], running: [], mods: { tech: 87, shaders: 44 } };
     case "update_instance": return { ...instances.find((i) => i.id === a.id)!, ...((a.meta as object) ?? {}) };
     case "resources_list": if (a.kind === "datapack") return { game_format: 61, shader_loader: true, packs: [{ file_name: "Towers.zip", description: "Башни в мире", size: 340_000, is_dir: false, enabled: false, formats: [61, 61], compatible: true }] };
@@ -55,7 +55,7 @@ mockIPC((cmd, args) => {
     case "cache_clean": return 240_000_000;
     case "crash_reports": return [{ file: "crash-2026-10-21_09.30.00-client.txt", when: "2026-10-21 09:30:00", size: 18_000, description: "Rendering overlay" }];
     case "support_report_preview": return [{ name: "summary.txt", content: "Отчёт поддержки Axel'\n\nAxel': 0.1.0\nВерсия игры: 26.3" }, { name: "mods.txt", content: "[вкл] Sodium 0.8.14 (sodium.jar)" }];
-    case "first_run_info": return { data_dir: "/Users/player/.quarry", free_bytes: 84_000_000_000, javas: [{ path: "/usr/bin/java", major: 21, version: "21.0.4", arch: "aarch64" }] };
+    case "first_run_info": return { data_dir: "/Users/player/.axel", free_bytes: 84_000_000_000, javas: [{ path: "/usr/bin/java", major: 21, version: "21.0.4", arch: "aarch64" }] };
     case "first_run_done": return null;
     case "account_skin": return null;
     case "profiles_compare": return { basics: [["Minecraft", "26.3", "1.21.11"], ["Загрузчик", "Fabric 0.19.5", "Quilt 0.29.2"]], only_a: ["Fabric API 0.120.0"], only_b: ["Iris Shaders 1.10.8"], versions: [["Sodium", "0.8.14", "0.7.2"]], settings: [["max_memory_mb", "6144", "4096"]], options: [["fov", "70", "90"]] };
@@ -94,10 +94,10 @@ mockIPC((cmd, args) => {
       runs.push({ id: instances[0].id, at: now - 30 * 3600, outcome: "crashed", duration_secs: 11, message: "Indium несовместим с новой версией Sodium", log_file: "game-0.log" } as never);
       return runs.sort((x, y) => y.at - x.at);
     }
-    case "launcher_update": return params.has("update") ? { version: "0.2.0", url: "https://github.com/Hewako/quarry-launcher/releases", notes: "", download_url: "https://github.com/Hewako/quarry-launcher/releases/latest/download/Axel-Launcher-macOS.dmg" } : null;
+    case "launcher_update": return params.has("update") ? { version: "0.2.0", url: "https://github.com/Hewako/axel-launcher/releases", notes: "", download_url: "https://github.com/Hewako/axel-launcher/releases/latest/download/Axel-Launcher-macOS.dmg" } : null;
     case "version_info": return { java_major: 25, java_reason: "javaVersion.majorVersion = 25 в JSON версии" };
     case "loader_versions": return [{ version: "0.20.1", stable: false }, { version: "0.19.5", stable: true }];
-    case "read_log_file": return ["[13:47:02] [main/INFO]: Loading Minecraft 1.21.11 with Quilt Loader 0.29.2", "[13:47:03] [main/WARN]: Mod distanthorizons recommends sodium >=0.7.3", "[13:47:04] [main/INFO]: Game directory: ‹HOME›/.quarry/instances/shaders/game", "[13:47:33] [Render thread/ERROR]: Mixin apply for mod indium failed", "java.lang.RuntimeException: boom", "\tat a.b(C.java:1)"];
+    case "read_log_file": return ["[13:47:02] [main/INFO]: Loading Minecraft 1.21.11 with Quilt Loader 0.29.2", "[13:47:03] [main/WARN]: Mod distanthorizons recommends sodium >=0.7.3", "[13:47:04] [main/INFO]: Game directory: ‹HOME›/.axel/instances/shaders/game", "[13:47:33] [Render thread/ERROR]: Mixin apply for mod indium failed", "java.lang.RuntimeException: boom", "\tat a.b(C.java:1)"];
     case "launch_instance": {
       const id = a.id as string;
       setTimeout(async () => {

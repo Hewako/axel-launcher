@@ -206,16 +206,16 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     } catch (e) { await dialog.alert(t("Не сохранено"), errText(e)); }
   };
 
-  const move = async (toQuarry: boolean) => {
+  const move = async (toAxel: boolean) => {
     let target: string | null = null;
-    if (!toQuarry) {
+    if (!toAxel) {
       const picked = await open({ directory: true, title: t("Куда перенести папку игры") }).catch(() => null);
       if (typeof picked !== "string") return;
       target = picked;
     }
     const ok = await dialog.confirm({
-      title: toQuarry ? t("Вернуть папку игры в Axel'?") : t("Перенести папку игры?"),
-      body: toQuarry
+      title: toAxel ? t("Вернуть папку игры в Axel'?") : t("Перенести папку игры?"),
+      body: toAxel
         ? t("Миры, моды и настройки переедут обратно в папку данных Axel'.")
         : <>{t("Миры, моды и настройки переедут в")} <span className="mono">{target}</span>{t(". На другой диск это займёт время; исходная папка удалится только после полной проверки копии.")}</>,
       confirm: t("Перенести"),
@@ -224,7 +224,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     setMoving(true);
     try {
       const path = await api.moveGameDir(inst.id, target);
-      onChanged({ ...inst, external_game_dir: toQuarry ? undefined : path });
+      onChanged({ ...inst, external_game_dir: toAxel ? undefined : path });
       await dialog.alert(t("Перенесено"), <>{t("Папка игры теперь здесь:")} <span className="mono">{path}</span></>);
     } catch (e) { await dialog.alert(t("Не перенесено"), errText(e)); } finally { setMoving(false); }
   };

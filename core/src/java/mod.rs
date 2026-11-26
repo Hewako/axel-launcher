@@ -622,7 +622,7 @@ mod tests {
 
     #[test]
     fn binary_layout_is_deterministic() {
-        let root = std::env::temp_dir().join(format!("quarry-java-layout-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-java-layout-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let home = root.join("jdk-21.0.8+9-jre/Contents/Home/bin");
         std::fs::create_dir_all(&home).unwrap();

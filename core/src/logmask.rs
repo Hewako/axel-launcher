@@ -174,8 +174,8 @@ mod tests {
     fn home_and_ip() {
         let m = Masker::new().with_home(Some("/Users/steve".into()));
         assert_eq!(
-            m.mask("Game directory: /Users/steve/.quarry/instances/x"),
-            format!("Game directory: {HOME}/.quarry/instances/x")
+            m.mask("Game directory: /Users/steve/.axel/instances/x"),
+            format!("Game directory: {HOME}/.axel/instances/x")
         );
         assert_eq!(
             m.mask("Connecting to 93.184.216.34, 25565"),

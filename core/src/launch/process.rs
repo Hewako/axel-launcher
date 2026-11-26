@@ -333,7 +333,7 @@ mod tests {
     use super::*;
 
     fn tmpdir(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("quarry-proc-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!("axel-proc-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -346,11 +346,11 @@ mod tests {
             program: "/bin/sh".into(),
             args: vec![
                 "-c".into(),
-                "echo 'token is supersecret12345'; echo \"env:$QUARRY_T\"; echo err >&2; exit 3"
+                "echo 'token is supersecret12345'; echo \"env:$AXEL_T\"; echo err >&2; exit 3"
                     .into(),
             ],
             cwd: d.join("game"),
-            env: vec![("QUARRY_T".into(), "envok".into())],
+            env: vec![("AXEL_T".into(), "envok".into())],
             unresolved: vec![],
         };
         let events = Arc::new(Mutex::new(Vec::new()));

@@ -13,9 +13,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::time::Duration;
 
-/// Client ID задаётся при сборке: `QUARRY_MS_CLIENT_ID=<id> cargo build`.
+/// Client ID задаётся при сборке: `AXEL_MS_CLIENT_ID=<id> cargo build`.
 /// Чужой ID (например, другого лаунчера) использовать нельзя — см. docs/MICROSOFT_SETUP.md.
-pub const CLIENT_ID: Option<&str> = option_env!("QUARRY_MS_CLIENT_ID");
+pub const CLIENT_ID: Option<&str> = option_env!("AXEL_MS_CLIENT_ID");
 
 const DEVICE_CODE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode";
 const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";

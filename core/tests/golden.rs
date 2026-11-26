@@ -1,12 +1,12 @@
 //! Golden-тесты команды запуска: каждая фикстура версии × каждая ОС. Без сети.
 //! Эталоны лежат в `tests/golden/`. Обновить после осознанного изменения:
-//! `UPDATE_GOLDEN=1 cargo test -p quarry-core --test golden`.
+//! `UPDATE_GOLDEN=1 cargo test -p axel-core --test golden`.
 
-use quarry_core::download::{Cancel, Verify};
-use quarry_core::install::{Installed, Installer};
-use quarry_core::launch::args::{self, GameAuth, LaunchSpec, QuickPlay};
-use quarry_core::metadata::{Arch, Environment, Os, VersionJson};
-use quarry_core::paths::DataDir;
+use axel_core::download::{Cancel, Verify};
+use axel_core::install::{Installed, Installer};
+use axel_core::launch::args::{self, GameAuth, LaunchSpec, QuickPlay};
+use axel_core::metadata::{Arch, Environment, Os, VersionJson};
+use axel_core::paths::DataDir;
 use std::path::{Path, PathBuf};
 
 fn fixture(name: &str) -> VersionJson {

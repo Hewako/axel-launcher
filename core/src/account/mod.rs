@@ -340,7 +340,7 @@ mod tests {
     use super::*;
 
     fn data(name: &str) -> (DataDir, std::path::PathBuf) {
-        let root = std::env::temp_dir().join(format!("quarry-acc-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-acc-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         (DataDir::open(&root).unwrap(), root)
     }

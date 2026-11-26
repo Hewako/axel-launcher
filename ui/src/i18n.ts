@@ -5,10 +5,12 @@ import { EN } from "./i18n.en";
 import { CORE_EN } from "./i18n.core.en";
 import { coreTranslator } from "./i18n.core";
 
-const KEY = "quarry.lang";
+const KEY = "axel.lang";
+/** Ключ до переименования лаунчера (Quarry): читаем, если нового ещё нет. */
+const OLD_KEY = "quarry.lang";
 
 function initial(): string {
-  try { return localStorage.getItem(KEY) ?? "ru"; } catch { return "ru"; }
+  try { return (localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY)) ?? "ru"; } catch { return "ru"; }
 }
 
 let lang = initial();

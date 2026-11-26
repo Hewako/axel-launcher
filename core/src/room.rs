@@ -684,7 +684,7 @@ mod tests {
     /// Поиск и ответ по-настоящему, через петлю 127.0.0.1 (широковещательные пакеты в тестах
     /// на macOS режет защита «Локальная сеть»). Проверяет и проход гостя до «игры» хозяина.
     #[tokio::test]
-    #[ignore = "сеть компьютера: проверено вручную, `cargo test -p quarry-core room -- --ignored`"]
+    #[ignore = "сеть компьютера: проверено вручную, `cargo test -p axel-core room -- --ignored`"]
     async fn host_answers_search_and_guest_proxies() {
         let code = new_code();
         let h = tokio::spawn(host(code.clone(), Arc::new(|_| {})));
@@ -744,7 +744,7 @@ mod tests {
 
     /// Комната создана, а мир ещё не открыт: гость узнаёт об этом, а не получает тишину.
     #[tokio::test]
-    #[ignore = "сеть компьютера: `cargo test -p quarry-core room -- --ignored`"]
+    #[ignore = "сеть компьютера: `cargo test -p axel-core room -- --ignored`"]
     async fn closed_room_is_reported() {
         let code = new_code();
         let h = tokio::spawn(host(code.clone(), Arc::new(|_| {})));
@@ -758,7 +758,7 @@ mod tests {
     /// каталог и посредника n0. Проверяет и «что за мир», и проход до игры хозяина.
     // Многопоточный, как в приложении: iroh держит фоновые задачи.
     #[tokio::test(flavor = "multi_thread")]
-    #[ignore = "интернет: серверы n0, `cargo test -p quarry-core room -- --ignored`"]
+    #[ignore = "интернет: серверы n0, `cargo test -p axel-core room -- --ignored`"]
     async fn internet_room_round_trip() {
         let code = new_code();
         // «Игра» хозяина: TCP-сервер с эхом.

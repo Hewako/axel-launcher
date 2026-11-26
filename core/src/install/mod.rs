@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn natives_dir_depends_on_archive_set() {
-        let root = std::env::temp_dir().join(format!("quarry-natives-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-natives-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let data = DataDir::new(&root);
         let inst = Installer {

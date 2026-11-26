@@ -6,10 +6,10 @@ cask "axel-launcher" do
   version "VERSION"
   sha256 "SHA256"
 
-  url "https://github.com/Hewako/quarry-launcher/releases/download/v#{version}/Axel-Launcher-macOS.dmg"
+  url "https://github.com/Hewako/axel-launcher/releases/download/v#{version}/Axel-Launcher-macOS.dmg"
   name "Axel Launcher"
   desc "Open-source Minecraft: Java Edition launcher for profiles and modpacks"
-  homepage "https://github.com/Hewako/quarry-launcher"
+  homepage "https://github.com/Hewako/axel-launcher"
 
   livecheck do
     url :url
@@ -20,7 +20,7 @@ cask "axel-launcher" do
 
   app "Axel Launcher.app"
 
-  # Миры и профили (~/.quarry) намеренно не перечислены в zap: решение владельца —
+  # Миры и профили (~/.axel) намеренно не перечислены в zap: решение владельца —
   # удаление программы данные игрока не трогает.
 
   caveats <<~EOS

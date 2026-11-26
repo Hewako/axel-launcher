@@ -68,7 +68,7 @@ function npm() {
 const all = [...rust(), ...npm()].sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
 const missing = all.filter((p) => p.texts.length === 0);
 let s = "Axel' — сторонние компоненты и их лицензии\nAxel' — third-party components and their licenses\n\n";
-s += "Axel' распространяется по GPL-3.0-or-later (файл LICENSE в репозитории https://github.com/Hewako/quarry-launcher).\n";
+s += "Axel' распространяется по GPL-3.0-or-later (файл LICENSE в репозитории https://github.com/Hewako/axel-launcher).\n";
 s += `В программу входят следующие сторонние библиотеки (${all.length}). Ниже — их лицензии и тексты лицензий.\n\n`;
 for (const p of all) s += `- ${p.name} ${p.version} — ${p.license}${p.url ? ` — ${p.url}` : ""}\n`;
 s += "\n";

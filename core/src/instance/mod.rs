@@ -420,7 +420,7 @@ mod tests {
     use super::*;
 
     fn store(name: &str) -> (InstanceStore, PathBuf) {
-        let root = std::env::temp_dir().join(format!("quarry-inst-{name}-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("axel-inst-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         (InstanceStore::new(DataDir::open(&root).unwrap()), root)
     }

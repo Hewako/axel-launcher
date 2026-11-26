@@ -117,7 +117,7 @@ mod tests {
         let mut a = Log4jAssembler::default();
         let input = [
             r#"  <log4j:Event logger="net.minecraft.client.Minecraft" timestamp="1792587133985" level="INFO" thread="Render thread">"#,
-            "    <log4j:Message><![CDATA[Setting user: QuarryDev]]></log4j:Message>",
+            "    <log4j:Message><![CDATA[Setting user: AxelDev]]></log4j:Message>",
             "  </log4j:Event>",
         ];
         let mut out = Vec::new();
@@ -126,7 +126,7 @@ mod tests {
         }
         assert_eq!(out.len(), 1);
         assert!(
-            out[0].ends_with("[Render thread/INFO]: Setting user: QuarryDev"),
+            out[0].ends_with("[Render thread/INFO]: Setting user: AxelDev"),
             "{}",
             out[0]
         );

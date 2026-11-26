@@ -102,7 +102,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
   const restoreWorld = async (w: WorldInfo, b: WorldBackup) => {
     const ok = await dialog.confirm({
       title: t("Вернуть «{0}» к бэкапу?", w.name),
-      body: t("Мир вернётся к состоянию на {0}. Текущий мир не удаляется: сначала он сам сохранится в бэкап и отложится в папку .quarry-replaced внутри папки игры.", new Date(b.created_at * 1000).toLocaleString()),
+      body: t("Мир вернётся к состоянию на {0}. Текущий мир не удаляется: сначала он сам сохранится в бэкап и отложится в папку .axel-replaced внутри папки игры.", new Date(b.created_at * 1000).toLocaleString()),
       confirm: t("Восстановить"),
     });
     if (ok) await act(`r${b.file}`, async () => {

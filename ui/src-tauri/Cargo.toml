@@ -1,21 +1,21 @@
 [package]
-name = "quarry-ui"
+name = "axel-ui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Quarry — открытый лаунчер Minecraft Java Edition"
+description = "Axel' — открытый лаунчер Minecraft Java Edition"
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "quarry_ui_lib"
+name = "axel_ui_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
-# Запуск без входа для отладки (только debug-сборка, см. quarry-core).
-dev-launch = ["quarry-core/dev-launch"]
+# Запуск без входа для отладки (только debug-сборка, см. axel-core).
+dev-launch = ["axel-core/dev-launch"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -26,5 +26,5 @@ tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-quarry-core = { path = "../../core" }
+axel-core = { path = "../../core" }
 
