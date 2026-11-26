@@ -1746,9 +1746,20 @@ async fn launcher_update(
 
 #[tauri::command]
 fn servers_list(state: State<AppState>, id: String) -> CmdResult<Vec<axel_core::servers::Server>> {
-    let game = InstanceStore::new(state.data.clone())
-        .game_dir(&id)
-        .map_err(err)?;
+    let store = InstanceStore::new(state.data.clone());
+    let game = store.game_dir(&id).map_err(err)?;
+    // Общий список линейки — пока игра этой сборки не запущена (она сама перепишет файл при выходе).
+    if let Ok(inst) = store.get(&id)
+        && inst.external_game_dir.is_none()
+        && !state.registry.is_running(&id)
+    {
+        let _ = axel_core::servers::sync_in(
+            &state.data,
+            &store.dir(&id).map_err(err)?,
+            &game,
+            &inst.game_version,
+        );
+    }
     axel_core::servers::read(&game).map_err(err)
 }
 
@@ -1764,10 +1775,21 @@ fn servers_save(
             "Сначала закройте игру в этой сборке: она перезапишет список при выходе".into(),
         );
     }
-    let game = InstanceStore::new(state.data.clone())
-        .game_dir(&id)
+    let store = InstanceStore::new(state.data.clone());
+    let game = store.game_dir(&id).map_err(err)?;
+    axel_core::servers::write(&game, &servers).map_err(err)?;
+    if let Ok(inst) = store.get(&id)
+        && inst.external_game_dir.is_none()
+    {
+        axel_core::servers::sync_out(
+            &state.data,
+            &store.dir(&id).map_err(err)?,
+            &game,
+            &inst.game_version,
+        )
         .map_err(err)?;
-    axel_core::servers::write(&game, &servers).map_err(err)
+    }
+    Ok(())
 }
 
 #[tauri::command]

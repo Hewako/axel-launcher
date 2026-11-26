@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Общий список для всех сборок {0}.x": "Shared by all {0}.x profiles",
   "из сборки «{0}»": "from profile “{0}”",
   "из удалённой сборки": "from a deleted profile",
   "Мир из версии {0}. Игра обновит его до {1}, и открыть его в старой версии потом не получится.": "The world is from version {0}. The game will upgrade it to {1}, and it won’t open in the old version afterwards.",

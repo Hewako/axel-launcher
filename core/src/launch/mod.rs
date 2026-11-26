@@ -559,7 +559,7 @@ async fn run(
     let loader_version = resolve_loader_version(inst).await?;
     inst.loader_version = loader_version.clone();
     let game_dir = store.game_dir(&inst.id)?;
-    // Миры и скриншоты — в общем хранилище, вне папки сборки.
+    // Миры и скриншоты — в общем хранилище, вне папки сборки; список серверов — общий для линейки.
     crate::worlds::ensure_store(
         data,
         &inst.id,
@@ -567,6 +567,9 @@ async fn run(
         inst.external_game_dir.is_some(),
         &inst.name,
     );
+    if inst.external_game_dir.is_none() {
+        let _ = crate::servers::sync_in(data, &store.dir(&inst.id)?, &game_dir, &inst.game_version);
+    }
     if let Some(note) = recover_safe_mode(&game_dir) {
         emit(LaunchEvent::Warning { message: note });
     }
@@ -839,6 +842,10 @@ async fn run(
         });
     }
     drop(safe_guard);
+    if inst.external_game_dir.is_none() {
+        let _ =
+            crate::servers::sync_out(data, &store.dir(&inst.id)?, &game_dir, &inst.game_version);
+    }
     if global.backup_after_exit
         && !info.killed
         && let Some(b) = crate::worlds::backup_latest(&game_dir, &backups_dir)

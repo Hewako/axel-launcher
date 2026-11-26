@@ -82,7 +82,10 @@ export function ServersTab({ inst, running }: { inst: Instance; running: boolean
     <>
       <RoomCard />
       <div className="pagehead" style={{ marginBottom: 14 }}>
-        <h3 style={{ margin: 0 }}>{t("Серверы")}</h3>
+        <div>
+          <h3 style={{ margin: 0 }}>{t("Серверы")}</h3>
+          {!inst.external_game_dir && <span className="muted small">{t("Общий список для всех сборок {0}.x", inst.game_version.split(".").slice(0, 2).join("."))}</span>}
+        </div>
         {allTags.length > 0 && (
           <select className="field auto" aria-label={t("Показывать серверы с тегом")} value={tagFilter} onChange={(e) => setTagFilter(e.target.value)}>
             <option value="">{t("Все серверы")}</option>

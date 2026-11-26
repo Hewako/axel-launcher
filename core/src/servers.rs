@@ -98,6 +98,73 @@ pub fn write(game_dir: &Path, servers: &[Server]) -> Result<()> {
     write_atomic(&path, &nbt::write(&root))
 }
 
+// ── Общий список серверов линейки ────────────────────────────────────────────────────────
+//
+// Решение владельца 26.11.2026: список серверов общий для всех сборок одной линейки версий
+// (1.16.x). Он лежит в `<данные>/servers/<линейка>/servers.dat`; перед запуском копируется в
+// сборку, после выхода из игры — обратно. При первом подключении сборки её собственные серверы
+// добавляются к общему списку; потом общий главный, чтобы удалённый сервер не вернулся из
+// другой сборки. Сборки во внешних папках (официальный лаунчер) не участвуют.
+
+/// Папка общего списка серверов линейки (внутри — обычный `servers.dat`).
+pub fn shared_dir(data: &crate::paths::DataDir, game_version: &str) -> std::path::PathBuf {
+    data.root()
+        .join("servers")
+        .join(crate::worlds::version_line(game_version))
+}
+
+const SHARED_MARKER: &str = "servers-shared";
+
+/// Взять общий список в сборку (перед запуском и при открытии вкладки «Серверы»).
+pub fn sync_in(
+    data: &crate::paths::DataDir,
+    instance_dir: &Path,
+    game_dir: &Path,
+    game_version: &str,
+) -> Result<()> {
+    let shared = shared_dir(data, game_version);
+    let marker = instance_dir.join(SHARED_MARKER);
+    let mine = read(game_dir)?;
+    let common = read(&shared)?;
+    let merged = if marker.exists() {
+        common.clone()
+    } else {
+        let mut all = common.clone();
+        for s in &mine {
+            let key = s.ip.trim().to_ascii_lowercase();
+            if !all.iter().any(|x| x.ip.trim().to_ascii_lowercase() == key) {
+                all.push(s.clone());
+            }
+        }
+        all
+    };
+    if merged != common {
+        write(&shared, &merged)?;
+    }
+    if merged != mine {
+        write(game_dir, &merged)?;
+    }
+    write_atomic(&marker, b"")
+}
+
+/// Отдать список сборки в общий (после выхода из игры и после правки на вкладке).
+pub fn sync_out(
+    data: &crate::paths::DataDir,
+    instance_dir: &Path,
+    game_dir: &Path,
+    game_version: &str,
+) -> Result<()> {
+    if !instance_dir.join(SHARED_MARKER).exists() {
+        return Ok(());
+    }
+    let shared = shared_dir(data, game_version);
+    let mine = read(game_dir)?;
+    if mine != read(&shared)? {
+        write(&shared, &mine)?;
+    }
+    Ok(())
+}
+
 const TAGS: &str = "server-tags.toml";
 
 /// Теги серверов профиля (адрес → теги). Хранятся отдельно: игра перезаписывает servers.dat.
@@ -481,5 +548,41 @@ mod tests {
                 .await
                 .map(|l| l.answers().len())
         );
+    }
+
+    #[test]
+    fn server_list_is_shared_within_a_version_line() {
+        let root = std::env::temp_dir().join(format!("axel-srv-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let data = crate::paths::DataDir::open(&root).unwrap();
+        let (ia, ga, ib, gb) = (
+            root.join("a"),
+            root.join("a/game"),
+            root.join("b"),
+            root.join("b/game"),
+        );
+        let srv = |n: &str, ip: &str| Server {
+            name: n.into(),
+            ip: ip.into(),
+            icon: None,
+            accept_textures: None,
+        };
+        write(&ga, &[srv("A", "a.example.org")]).unwrap();
+        write(&gb, &[srv("B", "b.example.org")]).unwrap();
+        sync_in(&data, &ia, &ga, "1.16.5").unwrap();
+        sync_in(&data, &ib, &gb, "1.16.4").unwrap();
+        assert_eq!(
+            read(&gb).unwrap().len(),
+            2,
+            "сервер из сборки A виден в сборке B той же линейки"
+        );
+        // Удалили сервер в B — после выхода из игры он пропадает и в A.
+        write(&gb, &[srv("B", "b.example.org")]).unwrap();
+        sync_out(&data, &ib, &gb, "1.16.4").unwrap();
+        sync_in(&data, &ia, &ga, "1.16.5").unwrap();
+        assert_eq!(read(&ga).unwrap(), vec![srv("B", "b.example.org")]);
+        // Другая линейка — свой список.
+        assert!(read(&shared_dir(&data, "1.20.1")).unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&root);
     }
 }
