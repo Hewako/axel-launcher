@@ -149,6 +149,22 @@ pub struct BrokenInstance {
     pub reason: String,
 }
 
+/// Дата для названия копии сборки: «26.11.2026».
+pub fn date_label(unix: u64) -> String {
+    let days = (unix / 86_400) as i64;
+    // Перевод дней с 1970-01-01 в дату (алгоритм Хиннанта).
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + i64::from(m <= 2);
+    format!("{d:02}.{m:02}.{y}")
+}
+
 pub fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -441,6 +457,12 @@ pub fn slugify(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn date_labels() {
+        assert_eq!(date_label(0), "01.01.1970");
+        assert_eq!(date_label(1_795_651_200), "26.11.2026");
+    }
 
     fn store(name: &str) -> (InstanceStore, PathBuf) {
         let root = std::env::temp_dir().join(format!("axel-inst-{name}-{}", std::process::id()));

@@ -846,6 +846,8 @@ async fn run(
         let _ =
             crate::servers::sync_out(data, &store.dir(&inst.id)?, &game_dir, &inst.game_version);
     }
+    // Игра сама меняет настройки (options.txt, config) — записать это в историю сборки.
+    let _ = crate::history::record(store, &inst.id);
     if global.backup_after_exit
         && !info.killed
         && let Some(b) = crate::worlds::backup_latest(&game_dir, &backups_dir)

@@ -21,6 +21,8 @@ struct AppState {
     login_cancel: Mutex<Option<Cancel>>,
     /// Комната для игры с друзьями в одной сети: одна на лаунчер (хозяин или гость).
     room: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+    /// Сборки, для которых уже ждёт запись истории (несколько правок подряд — одна запись).
+    history_pending: Arc<Mutex<std::collections::HashSet<String>>>,
 }
 
 type CmdResult<T> = Result<T, String>;
@@ -214,10 +216,56 @@ fn trash_instance(state: State<AppState>, id: String) -> CmdResult<String> {
     if state.registry.is_running(&id) {
         return Err("Сначала закройте игру в этой сборке".into());
     }
-    InstanceStore::new(state.data.clone())
+    // Рецепт перед удалением: по нему сборку можно вернуть, даже когда корзину очистят.
+    let store = InstanceStore::new(state.data.clone());
+    let _ = axel_core::history::record(&store, &id);
+    store
         .trash(&id)
         .map(|p| p.display().to_string())
         .map_err(err)
+}
+
+/// Сборку изменили — через две секунды записать её рецепт в историю (правки подряд — одна запись).
+#[tauri::command]
+fn history_touch(state: State<AppState>, id: String) {
+    if !state.history_pending.lock().unwrap().insert(id.clone()) {
+        return;
+    }
+    let (data, pending) = (state.data.clone(), state.history_pending.clone());
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        pending.lock().unwrap().remove(&id);
+        let _ = axel_core::history::record(&InstanceStore::new(data), &id);
+    });
+}
+
+/// Сборки в истории (живые и удалённые).
+#[tauri::command]
+fn history_items(state: State<AppState>) -> Vec<axel_core::history::Item> {
+    axel_core::history::items(&InstanceStore::new(state.data.clone()))
+}
+
+/// Карта изменений сборки.
+#[tauri::command]
+fn history_timeline(state: State<AppState>, id: String) -> Vec<axel_core::history::Point> {
+    axel_core::history::timeline(&state.data, &id)
+}
+
+/// Вернуть сборку из записи истории (удалённую — под прежним id, живую — копией).
+#[tauri::command]
+async fn history_restore(
+    state: State<'_, AppState>,
+    id: String,
+    at: u64,
+) -> CmdResult<axel_core::history::Restored> {
+    axel_core::history::restore(
+        &InstanceStore::new(state.data.clone()),
+        &id,
+        at,
+        &Cancel::new(),
+    )
+    .await
+    .map_err(err)
 }
 
 /// Сборки в корзине.
@@ -2145,6 +2193,16 @@ pub fn run() {
             }
             // Миры и скриншоты сборок — вне папок сборок (переносит и старые, см. worlds::ensure_store).
             InstanceStore::new(data.clone()).ensure_stores();
+            // История: записать сборки, изменённые, пока лаунчер был закрыт (в фоне).
+            let d = data.clone();
+            std::thread::spawn(move || {
+                let store = InstanceStore::new(d);
+                if let Ok((list, _)) = store.list() {
+                    for inst in list {
+                        let _ = axel_core::history::record(&store, &inst.id);
+                    }
+                }
+            });
             // Корзина: сборки, пролежавшие дольше срока из настроек, удаляются (рецепт — в истории).
             let days = GlobalSettings::load(&data)
                 .map(|g| g.trash_days)
@@ -2171,6 +2229,7 @@ pub fn run() {
                 registry: LaunchRegistry::default(),
                 login_cancel: Mutex::new(None),
                 room: Mutex::new(None),
+                history_pending: Arc::default(),
             });
             Ok(())
         })
@@ -2224,6 +2283,10 @@ pub fn run() {
             snapshot_restore,
             snapshot_pin,
             worlds_list,
+            history_touch,
+            history_items,
+            history_timeline,
+            history_restore,
             trash_list,
             trash_restore,
             trash_delete,

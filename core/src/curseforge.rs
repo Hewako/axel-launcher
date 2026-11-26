@@ -241,6 +241,14 @@ async fn mod_info(mod_id: u64) -> Result<CfMod> {
     Ok(d.data)
 }
 
+/// Конкретный файл мода по номеру — для возврата сборки из истории.
+pub async fn file_by_id(mod_id: u64, file_id: u64) -> Result<CfFile> {
+    let d: Data<CfFile> =
+        serde_json::from_str(&get_json(&format!("{API}/mods/{mod_id}/files/{file_id}")).await?)
+            .map_err(|e| Error::parse("ответ CurseForge", e))?;
+    Ok(d.data)
+}
+
 /// Более новый файл (стабильный, если есть), чем установленный `current_file_id`.
 /// ID файлов CurseForge растут со временем: файл не новее установленного — не обновление.
 pub fn newer_file<'a>(files: &'a [CfFile], current_file_id: &str) -> Option<&'a CfFile> {

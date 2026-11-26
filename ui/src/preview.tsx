@@ -154,6 +154,16 @@ mockIPC((cmd, args) => {
       { folder: "Creative", name: "Творческий", version_name: "26.4-snapshot-2", data_version: 5101, game_mode: "творчество", hardcore: true, last_played: now - 86400 * 9, size: 4_200_000, backups: [] },
     ];
     case "world_restore": return "New World";
+    case "history_items": return [
+      { id: "tech", name: "Технология+", game_version: "26.3", loader: "fabric", entries: 4, last_at: now - 3600, alive: true },
+      { id: "survival", name: "Выживание с друзьями", game_version: "1.20.1", loader: "forge", entries: 9, last_at: now - 86400 * 40, alive: false },
+    ];
+    case "history_timeline": return [
+      { at: now - 86400 * 9, mods: 42, changes: [{ kind: "created", files: 48 }] },
+      { at: now - 86400 * 6, mods: 43, changes: [{ kind: "added", folder: "mods", title: "Iris Shaders", version: "1.10.8" }, { kind: "configs", changed: 2 }] },
+      { at: now - 86400 * 2, mods: 43, changes: [{ kind: "updated", folder: "mods", title: "Sodium", from: "0.8.12", to: "0.8.14" }, { kind: "disabled", title: "Indium" }] },
+      { at: now - 3600, mods: 44, changes: [{ kind: "added", folder: "mods", title: "Distant Horizons", version: "2.3.4" }, { kind: "added", folder: "shaderpacks", title: "BSL" }, { kind: "removed", folder: "resourcepacks", title: "Old Pack" }, { kind: "settings" }] },
+    ];
     case "trash_list": return [{ key: "survival-1764100000", id: "survival", name: "Выживание с друзьями", game_version: "1.20.1", loader: "forge", deleted_at: now - 86400 * 3, size: 312_000_000 }];
     case "worlds_foreign": return [
       { owner_id: "old", owner_name: null, owner_loader: null, older: false, world: { folder: "Island", name: "Остров", version_name: "26.3", data_version: 5023, game_mode: "выживание", hardcore: false, last_played: now - 86400 * 20, size: 54_000_000, backups: [] } },

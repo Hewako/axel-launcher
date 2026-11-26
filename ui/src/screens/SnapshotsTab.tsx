@@ -1,5 +1,6 @@
 // Вкладка «Откат» (макет 03): снимки с метками и сравнением, журнал изменений модов; справа миры и их бэкапы.
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { HistoryMap } from "../ui/HistoryMap";
 import { pressable } from "../ui/common";
 import { errText, relTime, sizeText, snapshots, type Instance, type JournalEntry, type SnapshotDiff, type SnapshotInfo, type WorldBackup, type WorldInfo, type ForeignWorld } from "../api";
 import { useDialog } from "../ui/Dialog";
@@ -70,7 +71,7 @@ function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
   );
 }
 
-export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Instance; running: boolean; journal: JournalEntry[]; onRestored: () => void }) {
+export function SnapshotsTab({ inst, running, journal, onRestored, onOpenBuild }: { inst: Instance; running: boolean; journal: JournalEntry[]; onRestored: () => void; onOpenBuild: (i: Instance) => void }) {
   const dialog = useDialog();
   const [list, setList] = useState<SnapshotInfo[] | null>(null);
   const [diffs, setDiffs] = useState<Record<string, SnapshotDiff>>({});
@@ -211,6 +212,10 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
           <button className="btn link" onClick={() => setComparing(focus.id)} disabled={!fd}>{t("Подробнее: сравнить")}</button>
         </section>
       )}
+      <section className="card">
+        <h3>{t("История сборки")}</h3>
+        <HistoryMap id={inst.id} alive onRestored={onOpenBuild} />
+      </section>
       <section className="card">
         <h3>{t("Миры и их бэкапы")}</h3>
         <p className="muted small" style={{ margin: "0 0 10px" }}>

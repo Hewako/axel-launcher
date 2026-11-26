@@ -1,14 +1,15 @@
 // «Все профили» (макет 17): список всех профилей с поиском, фильтрами, сортировкой и размером на диске.
 // Заменяет прежние экраны «Главная» и «Профили»; открывается кнопкой вверху рельсы.
 import { useEffect, useMemo, useState } from "react";
-import { api, errText, loaderName, relTime, sizeText, type Instance, type TrashEntry } from "../api";
+import { api, errText, loaderName, relTime, sizeText, type HistoryItem, type Instance, type TrashEntry } from "../api";
+import { HistoryMap } from "../ui/HistoryMap";
 import { isActive, launches, type LaunchState } from "../launches";
 import { ProfileIcon, pressable } from "../ui/common";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t } from "../i18n";
 
-type Chip = "all" | "fav" | "attention" | "archive" | "trash";
+type Chip = "all" | "fav" | "attention" | "archive" | "trash" | "history";
 type Sort = "launch" | "name" | "size" | "mods";
 type Status = { text: string; cls?: string };
 
@@ -50,6 +51,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew, on
     attention: instances.filter(attention).length,
     archive: instances.filter((i) => i.archived).length,
     trash: trash?.length ?? 0,
+    history: 0,
   };
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,7 +72,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew, on
     try { launches.begin(i.id); await api.launch(i.id, undefined, false, false); onOpen(i.id); }
     catch (e) { await dialog.alert(t("Не удалось начать запуск"), errText(e)); }
   };
-  const CHIPS: [Chip, string][] = [["all", t("Все")], ["fav", t("Избранные")], ["attention", t("Требуют внимания")], ["archive", t("Архив")], ["trash", t("Корзина")]];
+  const CHIPS: [Chip, string][] = [["all", t("Все")], ["fav", t("Избранные")], ["attention", t("Требуют внимания")], ["archive", t("Архив")], ["trash", t("Корзина")], ["history", t("История")]];
 
   return (
     <>
@@ -83,21 +85,21 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew, on
       </div>
       <div className="modbar">
         <div className="chips" role="group" aria-label={t("Какие сборки показывать")}>
-          {CHIPS.map(([k, l]) => <button key={k} className={`fchip ${chip === k ? "on" : ""}`} aria-pressed={chip === k} onClick={() => setChip(k)}>{l} <span className="muted">{counts[k]}</span></button>)}
+          {CHIPS.map(([k, l]) => <button key={k} className={`fchip ${chip === k ? "on" : ""}`} aria-pressed={chip === k} onClick={() => setChip(k)}>{l}{k !== "history" && <> <span className="muted">{counts[k]}</span></>}</button>)}
         </div>
         <span style={{ flex: 1 }} />
         <span className="searchbox">
           <Icon name="search" size={16} />
           <input className="field" type="search" placeholder={t("Найти сборку")} aria-label={t("Найти сборку")} value={query} onChange={(e) => setQuery(e.target.value)} />
         </span>
-        {chip !== "trash" && <select className="field auto" aria-label={t("Сортировка")} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+        {chip !== "trash" && chip !== "history" && <select className="field auto" aria-label={t("Сортировка")} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="launch">{t("Сортировка: по запуску")}</option>
           <option value="name">{t("Сортировка: по названию")}</option>
           <option value="size">{t("Сортировка: по размеру")}</option>
           <option value="mods">{t("Сортировка: по числу модов")}</option>
         </select>}
       </div>
-      {chip === "trash" ? <TrashView list={trash} onChanged={loadTrash} onRestored={onRestored} /> : <>
+      {chip === "history" ? <HistoryView onRestored={onRestored} /> : chip === "trash" ? <TrashView list={trash} onChanged={loadTrash} onRestored={onRestored} /> : <>
       <div className="card" style={{ padding: 0, overflow: "auto" }}>
         <table className="modtable proftable">
           <thead><tr><th>{t("Сборка")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("Моды")}</th><th className="num">{t("На диске")}</th><th>{t("Состояние")}</th><th>{t("Запуск")}</th><th /></tr></thead>
@@ -187,6 +189,42 @@ function TrashView({ list, onChanged, onRestored }: { list: TrashEntry[] | null;
         </table>
       </div>
       <p className="muted small">{t("Миры удалённых сборок не удаляются: их можно перенести в другую сборку на вкладке «Откат». Сборку можно вернуть и после удаления навсегда, из истории.")}</p>
+    </>
+  );
+}
+
+/** История всех сборок, в том числе удалённых: выбрать сборку — увидеть карту её изменений. */
+function HistoryView({ onRestored }: { onRestored: (i: Instance) => void }) {
+  const [items, setItems] = useState<HistoryItem[] | null>(null);
+  const [sel, setSel] = useState("");
+  useEffect(() => { api.historyItems().then((l) => { setItems(l); setSel((s) => s || l[0]?.id || ""); }).catch(() => setItems([])); }, []);
+  const current = items?.find((i) => i.id === sel);
+  return (
+    <>
+      <div className="card" style={{ padding: 0, overflow: "auto" }}>
+        <table className="modtable proftable">
+          <thead><tr><th>{t("Сборка")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("Записей")}</th><th>{t("Последнее изменение")}</th><th /></tr></thead>
+          <tbody>
+            {items === null && <tr><td colSpan={5} className="muted"><span className="spinner" /> {t("Загружаем…")}</td></tr>}
+            {items?.length === 0 && <tr><td colSpan={5} className="muted">{t("История пока пуста.")}</td></tr>}
+            {items?.map((i) => (
+              <tr key={i.id} className={`pick ${sel === i.id ? "sel" : ""}`} aria-selected={sel === i.id} {...pressable(() => setSel(i.id))}>
+                <td><b>{i.name}</b></td>
+                <td>{i.game_version}, {i.loader === "vanilla" ? t("без модов") : loaderName[i.loader]}</td>
+                <td className="num mono">{i.entries}</td>
+                <td className="muted">{relTime(i.last_at)}</td>
+                <td>{!i.alive && <span className="badge warn">{t("удалена")}</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {current && (
+        <section className="card">
+          <h3>{current.alive ? t("История «{0}»", current.name) : t("История удалённой сборки «{0}»", current.name)}</h3>
+          <HistoryMap id={current.id} alive={current.alive} onRestored={onRestored} />
+        </section>
+      )}
     </>
   );
 }

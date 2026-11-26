@@ -1,6 +1,22 @@
 // Типизированные обёртки над командами Tauri. Формы данных совпадают с serde в axel-core.
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import { currentLang, t, tc } from "./i18n";
+
+/** Команды, после которых сборка изменилась: история сборки запишет её рецепт. */
+const CHANGES_BUILD = new Set([
+  "mods_toggle", "mods_remove", "mods_pin", "mods_add_files", "mods_apply", "mods_set_group", "mods_toggle_group",
+  "mods_auto_groups", "snapshot_restore", "resources_set_enabled", "shader_set", "resource_remove", "resource_install",
+  "config_save", "options_set", "options_preset_apply", "options_layout_import", "update_instance", "copy_between",
+  "pack_update_apply",
+]);
+
+/** Вызов команды ядра; после изменения сборки — запись в историю (ядро соберёт правки подряд в одну). */
+async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  const result = await tauriInvoke<T>(cmd, args);
+  const id = args && (cmd === "copy_between" ? args.to : args.id);
+  if (CHANGES_BUILD.has(cmd) && typeof id === "string") tauriInvoke("history_touch", { id }).catch(() => {});
+  return result;
+}
 
 export type LoaderKind = "vanilla" | "fabric" | "quilt" | "neoforge" | "forge";
 export type AuthMode = "microsoft" | "ely_by";
@@ -164,6 +180,22 @@ export interface WorldInfo {
 export interface ForeignWorld { owner_id: string; owner_name?: string | null; owner_loader?: string | null; older: boolean; world: WorldInfo }
 /** Удалённая сборка в корзине; `key` — имя папки в корзине. */
 export interface TrashEntry { key: string; id: string; name: string; game_version: string; loader: LoaderKind; deleted_at: number; size: number }
+/** Сборка в истории; `alive` — есть сейчас, иначе удалена. */
+export interface HistoryItem { id: string; name: string; game_version: string; loader: LoaderKind; entries: number; last_at: number; alive: boolean }
+/** Что изменилось в записи истории по сравнению с предыдущей. */
+export type HistoryChange =
+  | { kind: "created"; files: number }
+  | { kind: "added"; folder: string; title: string; version?: string | null }
+  | { kind: "removed"; folder: string; title: string }
+  | { kind: "updated"; folder: string; title: string; from?: string | null; to?: string | null }
+  | { kind: "enabled"; title: string }
+  | { kind: "disabled"; title: string }
+  | { kind: "configs"; changed: number }
+  | { kind: "game"; from: string; to: string }
+  | { kind: "loader"; from: string; to: string }
+  | { kind: "renamed"; from: string; to: string }
+  | { kind: "settings" };
+export interface HistoryPoint { at: number; changes: HistoryChange[]; mods: number }
 export interface DeviceCode { device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number; message: string }
 
 export type QuickPlay = { kind: "singleplayer" | "multiplayer" | "realms"; target: string };
@@ -193,6 +225,9 @@ export const api = {
   trashList: () => invoke<TrashEntry[]>("trash_list"),
   trashRestore: (key: string) => invoke<Instance>("trash_restore", { key }),
   trashDelete: (key: string) => invoke<void>("trash_delete", { key }),
+  historyItems: () => invoke<HistoryItem[]>("history_items"),
+  historyTimeline: (id: string) => invoke<HistoryPoint[]>("history_timeline", { id }),
+  historyRestore: (id: string, at: number) => invoke<{ instance: Instance; missing: string[] }>("history_restore", { id, at }),
   updateInstance: (id: string, patch: { name?: string; settings?: LaunchOverrides; authMode?: AuthMode; account?: string | null; meta?: ProfileMeta; hooks?: Hooks }) =>
     invoke<Instance>("update_instance", {
       id,

@@ -501,7 +501,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
           {subOf("mods") === "deps" && <DepsTab key={inst.id} inst={inst} running={isActive(state)} onChanged={() => setReload((n) => n + 1)} onCatalog={onCatalog} />}
         </>
       )}
-      {main === "rollback" && <SnapshotsTab inst={inst} running={isActive(state)} journal={doctor?.journal ?? []} onRestored={() => setReload((n) => n + 1)} />}
+      {main === "rollback" && <SnapshotsTab inst={inst} running={isActive(state)} journal={doctor?.journal ?? []} onRestored={() => setReload((n) => n + 1)} onOpenBuild={onCloned} />}
       {main === "game" && (
         <>
           <TabStrip className="seg subtabs" label={t("Разделы игры")} items={SUBS.game} value={subOf("game")} onPick={(s) => setPlace(["game", s])} />
