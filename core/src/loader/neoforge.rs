@@ -163,6 +163,39 @@ fn read_zip_text(zip_path: &Path, name: &str) -> Result<String> {
     Ok(text)
 }
 
+/// Библиотеки, которые лежат прямо в установщике (`maven/…`), а не в Maven: у Forge 1.13–1.16
+/// это сам Forge и его universal-часть. В профиле у них пустая ссылка; официальный установщик их
+/// просто распаковывает в libraries — делаем так же. Возвращает пути распакованных файлов.
+fn extract_bundled(installer: &Path, libs: &Path) -> Result<Vec<PathBuf>> {
+    let file = std::fs::File::open(installer).at(installer)?;
+    let mut zip =
+        zip::ZipArchive::new(file).map_err(|e| Error::parse("установщик загрузчика", e))?;
+    let mut out = Vec::new();
+    for i in 0..zip.len() {
+        let mut entry = zip
+            .by_index(i)
+            .map_err(|e| Error::parse("установщик загрузчика", e))?;
+        let name = entry.name().map(|n| n.to_string()).unwrap_or_default();
+        let Some(rel) = name.strip_prefix("maven/").map(str::to_string) else {
+            continue;
+        };
+        if entry.is_dir() || !rel.ends_with(".jar") {
+            continue;
+        }
+        let dest = safe_join(libs, &rel)
+            .ok_or_else(|| Error::invalid(format!("Недопустимый путь в установщике: {rel}")))?;
+        if std::fs::metadata(&dest).is_ok_and(|m| m.len() == entry.size()) {
+            out.push(dest);
+            continue;
+        }
+        let mut bytes = Vec::with_capacity(entry.size() as usize);
+        entry.read_to_end(&mut bytes).at(installer)?;
+        write_atomic(&dest, &bytes)?;
+        out.push(dest);
+    }
+    Ok(out)
+}
+
 /// Профиль версии без процессоров — для сборки classpath и аргументов.
 pub async fn profile(data: &DataDir, f: &Flavor, game: &str, version: &str) -> Result<VersionJson> {
     let mv = f.maven_version(game, version);
@@ -305,6 +338,7 @@ pub async fn run_processors(
         serde_json::from_str(&read_zip_text(&installer, "install_profile.json")?)
             .map_err(|e| Error::parse("install_profile.json загрузчика", e))?;
     let libs = data.libraries();
+    let bundled = extract_bundled(&installer, &libs)?;
 
     // Библиотеки процессоров — с хэшами из профиля.
     let mut tasks = Vec::new();
@@ -410,6 +444,11 @@ pub async fn run_processors(
         }
     }
 
+    // Распакованное из установщика тоже должно быть на месте: иначе запуск не найдёт Forge.
+    for p in bundled {
+        let bytes = std::fs::read(&p).at(&p)?;
+        produced.insert(p, sha1_hex(&bytes));
+    }
     // Результат — пропатченный клиент (data.PATCHED); его наличие и хэш — маркер готовности.
     if let Some(patched) = vars.get("PATCHED") {
         let p = PathBuf::from(patched);
