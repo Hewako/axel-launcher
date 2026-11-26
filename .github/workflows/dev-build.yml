@@ -1,5 +1,6 @@
-# Сборка разработчика «d»: те же установщики, что у обычного релиза (Windows .exe и zip, macOS .dmg,
-# Linux .deb/.rpm/AppImage, SHA256SUMS.txt), но с dev-launch — вход через Ely.by без Microsoft.
+# Сборка разработчика «d»: те же установщики и то же оформление релиза, что у обычного (текст,
+# имена файлов Axel-Launcher-*, SHA256SUMS.txt), но с dev-launch — вход через Ely.by без Microsoft.
+# Отличие на GitHub — только «-d» в конце тега и названия (правило владельца 26.11.2026).
 # Название по схеме владельца: следующий номер после последнего rc с пометкой -d (v0.1.0-rc.10-d).
 #
 # Запуск: отправка коммита в ветку `dev-build` (git push origin HEAD:refs/heads/dev-build) или вручную.
@@ -58,22 +59,9 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          # Что изменилось: коммиты после прошлой сборки «d» (или после последнего rc), кроме служебных.
-          prev=$(gh api "repos/$REPO/releases?per_page=100" \
-            --jq '[.[] | select(.tag_name | endswith("-d"))][0].target_commitish // empty')
-          if [ -z "$prev" ] || ! git cat-file -e "$prev^{commit}" 2>/dev/null; then
-            prev=$(git tag --list 'v*-rc.*' --sort=-creatordate | grep -v -- '-d$' | head -1)
-          fi
-          {
-            echo "> **Сборка разработчика (d).** Вход через Ely.by без Microsoft. Приложение называется"
-            echo "> «Axel Launcher Dev»; на Windows установщик сам заменяет обычный Axel Launcher, миры и профили остаются."
-            echo
-            echo "## Что изменилось"
-            echo
-            git log --no-merges --format='- %s' "${prev:+$prev..}HEAD" | grep -v '^- Служебное:' | head -60 || true
-            echo
-            sed 's/Axel-Launcher-/Axel-Launcher-Dev-/g' .github/release/body.md
-          } > notes.md
+          # Правило владельца 26.11.2026: оформление полностью как у обычного релиза
+          # (тот же текст, те же имена файлов), отличие — только «-d» в конце названия.
+          { cat .github/release/body-rc.md; echo; cat .github/release/body.md; } > notes.md
           gh release create "$TAG" --repo "$REPO" --draft --prerelease --target "$SHA" \
             --title "Axel' $TAG" --notes-file notes.md
 
@@ -138,17 +126,17 @@ jobs:
         run: |
           mkdir up
           case "$RUNNER_OS" in
-            macOS) cp "$OUT"/dmg/*.dmg up/Axel-Launcher-Dev-macOS.dmg ;;
+            macOS) cp "$OUT"/dmg/*.dmg up/Axel-Launcher-macOS.dmg ;;
             Windows)
-              cp "$OUT"/nsis/*.exe up/Axel-Launcher-Dev-Windows.exe
+              cp "$OUT"/nsis/*.exe up/Axel-Launcher-Windows.exe
               dir="portable/Axel Launcher Dev"; mkdir -p "$dir"
               cp target/debug/axel-ui.exe "$dir/Axel Launcher Dev.exe"
               cp ui/src-tauri/THIRD-PARTY-NOTICES.txt .github/release/README-portable.txt "$dir/"
-              (cd portable && 7z a -tzip ../up/Axel-Launcher-Dev-Windows-portable.zip "Axel Launcher Dev" >/dev/null) ;;
+              (cd portable && 7z a -tzip ../up/Axel-Launcher-Windows-portable.zip "Axel Launcher Dev" >/dev/null) ;;
             Linux)
-              cp "$OUT"/deb/*.deb up/Axel-Launcher-Dev-Linux.deb
-              cp "$OUT"/rpm/*.rpm up/Axel-Launcher-Dev-Linux.rpm
-              cp "$OUT"/appimage/*.AppImage up/Axel-Launcher-Dev-Linux.AppImage ;;
+              cp "$OUT"/deb/*.deb up/Axel-Launcher-Linux.deb
+              cp "$OUT"/rpm/*.rpm up/Axel-Launcher-Linux.rpm
+              cp "$OUT"/appimage/*.AppImage up/Axel-Launcher-Linux.AppImage ;;
           esac
           ls -la up
           gh release upload "$TAG" up/* --repo "$REPO" --clobber
@@ -165,15 +153,15 @@ jobs:
       - name: Набор файлов и контрольные суммы
         run: |
           expected=$(printf '%s\n' \
-            Axel-Launcher-Dev-Linux.AppImage Axel-Launcher-Dev-Linux.deb Axel-Launcher-Dev-Linux.rpm \
-            Axel-Launcher-Dev-Windows-portable.zip Axel-Launcher-Dev-Windows.exe Axel-Launcher-Dev-macOS.dmg | sort)
+            Axel-Launcher-Linux.AppImage Axel-Launcher-Linux.deb Axel-Launcher-Linux.rpm \
+            Axel-Launcher-Windows-portable.zip Axel-Launcher-Windows.exe Axel-Launcher-macOS.dmg | sort)
           mkdir files && cd files
-          gh release download "$TAG" --repo "$REPO" --pattern 'Axel-Launcher-Dev-*'
+          gh release download "$TAG" --repo "$REPO" --pattern 'Axel-Launcher-*'
           actual=$(ls | sort)
           if [ "$expected" != "$actual" ]; then
             echo "Набор файлов не совпал."; echo "Ожидалось:"; echo "$expected"; echo "Есть:"; echo "$actual"; exit 1
           fi
-          sha256sum Axel-Launcher-Dev-* > ../SHA256SUMS.txt
+          sha256sum Axel-Launcher-* > ../SHA256SUMS.txt
           cd .. && cat SHA256SUMS.txt
           gh release upload "$TAG" SHA256SUMS.txt --repo "$REPO" --clobber
 
