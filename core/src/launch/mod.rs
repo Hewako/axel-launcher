@@ -559,6 +559,14 @@ async fn run(
     let loader_version = resolve_loader_version(inst).await?;
     inst.loader_version = loader_version.clone();
     let game_dir = store.game_dir(&inst.id)?;
+    // Миры и скриншоты — в общем хранилище, вне папки сборки.
+    crate::worlds::ensure_store(
+        data,
+        &inst.id,
+        &game_dir,
+        inst.external_game_dir.is_some(),
+        &inst.name,
+    );
     if let Some(note) = recover_safe_mode(&game_dir) {
         emit(LaunchEvent::Warning { message: note });
     }

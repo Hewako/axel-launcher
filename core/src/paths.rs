@@ -88,6 +88,14 @@ impl DataDir {
     pub fn backups(&self) -> PathBuf {
         self.root.join("backups")
     }
+    /// Миры сборок: `worlds/<id сборки>/<мир>` (в папке игры `saves` — ссылка сюда).
+    pub fn worlds(&self) -> PathBuf {
+        self.root.join("worlds")
+    }
+    /// Скриншоты сборок: `screenshots/<id сборки>/`.
+    pub fn screenshots(&self) -> PathBuf {
+        self.root.join("screenshots")
+    }
     pub fn trash(&self) -> PathBuf {
         self.root.join("trash")
     }

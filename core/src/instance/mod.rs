@@ -286,6 +286,23 @@ impl InstanceStore {
         Ok(inst)
     }
 
+    /// Миры и скриншоты всех сборок — в общем хранилище (см. `worlds::ensure_store`).
+    /// При старте лаунчера: переносит миры старых сборок и чинит ссылки после смены папки данных.
+    pub fn ensure_stores(&self) {
+        let Ok((list, _)) = self.list() else { return };
+        for inst in list {
+            if let Ok(game) = self.game_dir(&inst.id) {
+                crate::worlds::ensure_store(
+                    &self.data,
+                    &inst.id,
+                    &game,
+                    inst.external_game_dir.is_some(),
+                    &inst.name,
+                );
+            }
+        }
+    }
+
     pub fn save(&self, inst: &Instance) -> Result<()> {
         crate::settings::validate(&inst.settings)?;
         let dir = self.dir(&inst.id)?;
@@ -322,7 +339,12 @@ impl InstanceStore {
         }
         let mut id = base.clone();
         let mut n = 2;
-        while self.data.instances().join(&id).exists() {
+        // id, под которым в хранилище остались миры удалённой сборки, не занимаем: иначе новая
+        // сборка с тем же названием подхватила бы чужие миры.
+        while self.data.instances().join(&id).exists()
+            || std::fs::read_dir(crate::worlds::store_dir(&self.data, &id))
+                .is_ok_and(|mut r| r.next().is_some())
+        {
             id = format!("{base}-{n}");
             n += 1;
         }
@@ -352,6 +374,7 @@ impl InstanceStore {
             hooks: Default::default(),
         };
         self.save(&inst)?;
+        crate::worlds::ensure_store(&self.data, &inst.id, &dir.join("game"), false, &inst.name);
         Ok(inst)
     }
 

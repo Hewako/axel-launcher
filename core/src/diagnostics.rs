@@ -249,8 +249,18 @@ pub fn storage(data: &crate::paths::DataDir) -> Vec<StoragePart> {
     let safe: u64 = safe_dirs(data).iter().map(|d| dir_size(d)).sum();
     let mut parts = vec![
         StoragePart {
-            label: "Сборки (миры, моды, настройки)".into(),
+            label: "Сборки (моды, настройки)".into(),
             size: dir_size(&data.instances()),
+            cleanable: false,
+        },
+        StoragePart {
+            label: "Миры".into(),
+            size: dir_size(&data.worlds()),
+            cleanable: false,
+        },
+        StoragePart {
+            label: "Скриншоты".into(),
+            size: dir_size(&data.screenshots()),
             cleanable: false,
         },
         StoragePart {

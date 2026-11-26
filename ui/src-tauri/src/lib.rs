@@ -2073,6 +2073,8 @@ pub fn run() {
             if let Ok(g) = GlobalSettings::load(&data) {
                 axel_core::download::throttle().set_limit_kbps(g.download_limit_kbps.into());
             }
+            // Миры и скриншоты сборок — вне папок сборок (переносит и старые, см. worlds::ensure_store).
+            InstanceStore::new(data.clone()).ensure_stores();
             // Правила Mod Doctor: сначала кеш, свежие — в фоне (не чаще раза в сутки).
             axel_core::mods::rules::load_cached(&data);
             let d = data.clone();

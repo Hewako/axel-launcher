@@ -114,7 +114,14 @@ pub fn disk_usage(store: &InstanceStore, id: &str) -> Result<DiskUsage> {
             size,
         });
     }
-    let game_total = dir_size(&game);
+    // Миры и скриншоты — ссылки в общее хранилище: обход папки по ссылкам не идёт, досчитываем.
+    let linked: u64 = ["saves", "screenshots"]
+        .iter()
+        .map(|r| game.join(r))
+        .filter(|p| crate::worlds::is_link(p))
+        .map(|p| dir_size(&p))
+        .sum();
+    let game_total = dir_size(&game) + linked;
     parts.push(DiskPart {
         label: "Прочее в папке игры".into(),
         size: game_total.saturating_sub(counted),
@@ -291,7 +298,17 @@ pub fn move_game_dir(
         Some(p) => {
             // Сравниваем настоящие пути (символические ссылки раскрыты).
             let real = std::fs::canonicalize(p).at(p)?;
-            if real.starts_with(std::fs::canonicalize(&from).at(&from)?) {
+            // И не в хранилище её миров или скриншотов: saves и screenshots — ссылки туда.
+            let inside = [
+                Some(from.clone()),
+                Some(crate::worlds::store_dir(store.data(), id)),
+                Some(store.data().screenshots().join(id)),
+            ]
+            .into_iter()
+            .flatten()
+            .filter_map(|p| std::fs::canonicalize(p).ok())
+            .any(|p| real.starts_with(p));
+            if inside {
                 return Err(Error::invalid("Нельзя перенести папку внутрь неё самой"));
             }
             p.join(&inst.id)
@@ -370,7 +387,10 @@ mod tests {
         .unwrap();
         let gb = store.game_dir(&b.id).unwrap();
         assert!(gb.join("mods/x.jar").is_file());
-        assert!(!gb.join("saves").exists());
+        assert!(
+            crate::worlds::list(&gb, &store.data().backups()).is_empty(),
+            "миры без галочки не копируются"
+        );
         assert!(!gb.join("options.txt").exists());
         assert_eq!(b.settings.max_memory_mb, Some(6144));
         assert_eq!(b.color.as_deref(), Some("#4a8"));

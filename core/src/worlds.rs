@@ -197,7 +197,12 @@ pub fn restore(game_dir: &Path, backups_dir: &Path, backup_file: &Path) -> Resul
     let current = saves.join(&world);
     if current.exists() {
         snapshot::backup_world(game_dir, backups_dir, &world)?;
-        let replaced = game_dir.join(".axel-replaced");
+        // Рядом с настоящей папкой миров: saves может быть ссылкой в хранилище на другом диске.
+        let real_saves = std::fs::canonicalize(&saves).at(&saves)?;
+        let replaced = real_saves
+            .parent()
+            .unwrap_or(game_dir)
+            .join(".axel-replaced");
         std::fs::create_dir_all(&replaced).at(&replaced)?;
         let aside = replaced.join(format!("{world}-{}", crate::instance::now()));
         std::fs::rename(&current, &aside).at(&current)?;
@@ -264,6 +269,145 @@ pub fn backup_latest(game_dir: &Path, backups_dir: &Path) -> Option<WorldBackup>
 
 pub fn backups_dir(data: &crate::paths::DataDir, instance_id: &str) -> PathBuf {
     data.backups().join(instance_id)
+}
+
+// ── Миры и скриншоты вне папки сборки ──────────────────────────────────────────────────────
+//
+// Миры сборки лежат в `<данные>/worlds/<id>/`, скриншоты — в `<данные>/screenshots/<id>/`.
+// В папке игры `saves` и `screenshots` — ссылки туда (на Windows — junction: прав администратора
+// не нужно). Игра ничего не замечает, а удаление сборки (в корзину уезжает только ссылка) миры
+// не трогает. Решение владельца 26.11.2026, см. docs/plans/worlds-trash-history.md.
+
+/// Папки игры, которые живут вне сборки, и где их хранилище.
+fn linked_dirs(data: &crate::paths::DataDir, instance_id: &str) -> [(&'static str, PathBuf); 2] {
+    [
+        ("saves", data.worlds().join(instance_id)),
+        ("screenshots", data.screenshots().join(instance_id)),
+    ]
+}
+
+/// Хранилище миров сборки (существует, даже если сборку удалили).
+pub fn store_dir(data: &crate::paths::DataDir, instance_id: &str) -> PathBuf {
+    data.worlds().join(instance_id)
+}
+
+pub(crate) fn is_link(p: &Path) -> bool {
+    std::fs::symlink_metadata(p).is_ok_and(|m| m.file_type().is_symlink()) || is_junction(p)
+}
+
+#[cfg(windows)]
+fn is_junction(p: &Path) -> bool {
+    junction::exists(p).unwrap_or(false)
+}
+#[cfg(not(windows))]
+fn is_junction(_: &Path) -> bool {
+    false
+}
+
+#[cfg(windows)]
+fn make_link(target: &Path, link: &Path) -> std::io::Result<()> {
+    junction::create(target, link)
+}
+#[cfg(not(windows))]
+fn make_link(target: &Path, link: &Path) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(target, link)
+}
+
+/// Убрать саму ссылку, не трогая то, на что она указывает.
+fn remove_link(p: &Path) -> std::io::Result<()> {
+    std::fs::remove_dir(p).or_else(|_| std::fs::remove_file(p))
+}
+
+fn is_empty_dir(p: &Path) -> bool {
+    std::fs::read_dir(p).is_ok_and(|mut r| r.next().is_none())
+}
+
+/// Свободное имя в папке: `Мир`, `Мир (Сборка)`, `Мир (Сборка 2)`…
+pub fn free_name(dir: &Path, name: &str, label: &str) -> PathBuf {
+    let first = dir.join(name);
+    if !first.exists() {
+        return first;
+    }
+    (1..)
+        .map(|n| {
+            if n == 1 {
+                dir.join(format!("{name} ({label})"))
+            } else {
+                dir.join(format!("{name} ({label} {n})"))
+            }
+        })
+        .find(|p| !p.exists())
+        .expect("бесконечный ряд имён")
+}
+
+/// Привести `saves` и `screenshots` сборки к ссылкам в общее хранилище. Безопасно вызывать
+/// сколько угодно раз: при старте лаунчера, перед запуском, после создания и возврата сборки.
+/// `external` — папка игры вне Axel' (официальный лаунчер, другой диск): там настоящие папки не
+/// трогаем, ставим ссылку, только если папки нет, а в хранилище уже что-то лежит.
+/// `label` — название сборки, для имён при совпадении.
+pub fn ensure_store(
+    data: &crate::paths::DataDir,
+    instance_id: &str,
+    game_dir: &Path,
+    external: bool,
+    label: &str,
+) {
+    for (name, store) in linked_dirs(data, instance_id) {
+        let _ = ensure_linked(&game_dir.join(name), &store, external, label);
+    }
+}
+
+fn ensure_linked(dir: &Path, store: &Path, external: bool, label: &str) -> Result<()> {
+    if is_link(dir) {
+        let same =
+            std::fs::canonicalize(dir).ok() == std::fs::canonicalize(store).ok() && store.is_dir();
+        if same {
+            return Ok(());
+        }
+        // Ссылка ведёт не туда: папку данных перенесли или переименовали.
+        remove_link(dir).at(dir)?;
+    } else if dir.is_dir() {
+        if external {
+            return Ok(());
+        }
+        move_into_store(dir, store, label)?;
+    } else if external && (!store.is_dir() || is_empty_dir(store)) {
+        return Ok(());
+    }
+    std::fs::create_dir_all(store).at(store)?;
+    if let Some(parent) = dir.parent() {
+        std::fs::create_dir_all(parent).at(parent)?;
+    }
+    if let Err(e) = make_link(store, dir) {
+        // Ссылку поставить нельзя (например, файловая система без ссылок): возвращаем всё как было.
+        if !dir.exists() {
+            let _ = std::fs::rename(store, dir);
+        }
+        return Err(Error::io(dir, e));
+    }
+    Ok(())
+}
+
+/// Перенести настоящую папку в хранилище. Тот же диск — одним переименованием; если в хранилище
+/// уже что-то есть — по одному элементу, совпадающие имена получают суффикс с названием сборки.
+/// Оборвалось на полпути — при следующем вызове продолжится с оставшегося.
+fn move_into_store(dir: &Path, store: &Path, label: &str) -> Result<()> {
+    if let Some(parent) = store.parent() {
+        std::fs::create_dir_all(parent).at(parent)?;
+    }
+    if !store.exists() || is_empty_dir(store) {
+        let _ = std::fs::remove_dir(store);
+        if std::fs::rename(dir, store).is_ok() {
+            return Ok(());
+        }
+    }
+    std::fs::create_dir_all(store).at(store)?;
+    for e in std::fs::read_dir(dir).at(dir)?.flatten() {
+        let name = e.file_name().to_string_lossy().into_owned();
+        let to = free_name(store, &name, label);
+        std::fs::rename(e.path(), &to).at(e.path())?;
+    }
+    std::fs::remove_dir(dir).at(dir)
 }
 
 #[cfg(test)]
@@ -409,5 +553,101 @@ mod tests {
         assert!(backup_due(&world(now - 10, &[now - 4 * day]), 3, now));
         // Бэкап старый, но в мир с тех пор не заходили — копировать нечего.
         assert!(!backup_due(&world(now - 5 * day, &[now - 4 * day]), 3, now));
+    }
+
+    fn tmp_data(tag: &str) -> crate::paths::DataDir {
+        let root = std::env::temp_dir().join(format!("axel-store-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        crate::paths::DataDir::open(&root).unwrap()
+    }
+
+    #[test]
+    fn existing_worlds_move_into_the_store() {
+        let data = tmp_data("move");
+        let game = data.instances().join("tech/game");
+        make_world(&game, "W1", "Мой мир", 3700, 1);
+        std::fs::create_dir_all(game.join("screenshots")).unwrap();
+        std::fs::write(game.join("screenshots/a.png"), b"png").unwrap();
+        ensure_store(&data, "tech", &game, false, "Технология+");
+        assert!(is_link(&game.join("saves")), "saves стала ссылкой");
+        assert!(
+            store_dir(&data, "tech").join("W1/level.dat").is_file(),
+            "мир в хранилище"
+        );
+        assert!(
+            game.join("saves/W1/level.dat").is_file(),
+            "игра видит мир по ссылке"
+        );
+        assert!(data.screenshots().join("tech/a.png").is_file());
+        assert_eq!(list(&game, &data.backups()).len(), 1);
+        // Повторный вызов ничего не ломает.
+        ensure_store(&data, "tech", &game, false, "Технология+");
+        assert!(game.join("saves/W1/level.dat").is_file());
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn same_names_get_the_build_name() {
+        let data = tmp_data("merge");
+        let game = data.instances().join("tech/game");
+        std::fs::create_dir_all(store_dir(&data, "tech").join("Новый мир")).unwrap();
+        std::fs::create_dir_all(game.join("saves/Новый мир")).unwrap();
+        ensure_store(&data, "tech", &game, false, "Технология+");
+        assert!(store_dir(&data, "tech").join("Новый мир").is_dir());
+        assert!(
+            store_dir(&data, "tech")
+                .join("Новый мир (Технология+)")
+                .is_dir()
+        );
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn wrong_link_is_fixed_and_external_folders_are_left_alone() {
+        let data = tmp_data("relink");
+        let game = data.instances().join("tech/game");
+        let elsewhere = data.root().join("old-store");
+        std::fs::create_dir_all(&elsewhere).unwrap();
+        std::fs::create_dir_all(&game).unwrap();
+        make_link(&elsewhere, &game.join("saves")).unwrap();
+        ensure_store(&data, "tech", &game, false, "T");
+        assert_eq!(
+            std::fs::canonicalize(game.join("saves")).unwrap(),
+            std::fs::canonicalize(store_dir(&data, "tech")).unwrap()
+        );
+        assert!(elsewhere.is_dir(), "то, на что вела ссылка, не удалено");
+        // Папка официального лаунчера: настоящие saves остаются на месте.
+        let official = data.root().join(".minecraft");
+        make_world(&official, "W", "Мир", 3700, 1);
+        ensure_store(&data, "official", &official, true, "Официальный");
+        assert!(!is_link(&official.join("saves")));
+        assert!(official.join("saves/W/level.dat").is_file());
+        assert!(
+            !official.join("screenshots").exists(),
+            "лишних ссылок в чужой папке нет"
+        );
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn new_build_does_not_take_worlds_of_a_deleted_one() {
+        let data = tmp_data("reuse");
+        let store = crate::instance::InstanceStore::new(data.clone());
+        let a = store
+            .create("Тест", "26.3", crate::loader::LoaderKind::Vanilla, None)
+            .unwrap();
+        let game = store.game_dir(&a.id).unwrap();
+        make_world(&game, "W", "Мир", 3700, 1);
+        store.trash(&a.id).unwrap();
+        assert!(
+            store_dir(&data, &a.id).join("W/level.dat").is_file(),
+            "мир пережил удаление"
+        );
+        let b = store
+            .create("Тест", "26.3", crate::loader::LoaderKind::Vanilla, None)
+            .unwrap();
+        assert_ne!(a.id, b.id);
+        assert!(list(&store.game_dir(&b.id).unwrap(), &data.backups()).is_empty());
+        let _ = std::fs::remove_dir_all(data.root());
     }
 }

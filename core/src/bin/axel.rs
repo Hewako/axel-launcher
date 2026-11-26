@@ -154,6 +154,7 @@ fn data_dir(root: Option<PathBuf>) -> Result<DataDir> {
         .or_else(axel_core::relocate::resolve_root)
         .context("Не удалось определить домашнюю папку")?;
     let data = DataDir::open(root)?;
+    axel_core::instance::InstanceStore::new(data.clone()).ensure_stores();
     axel_core::mods::rules::load_cached(&data);
     Ok(data)
 }
