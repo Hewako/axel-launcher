@@ -2,6 +2,9 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Недопустимое имя в корзине": "Invalid name in the trash",
+  "В корзине нет «{0}»": "“{0}” is not in the trash",
+  "instance.toml в корзине не прочитан": "Couldn’t read instance.toml in the trash",
   "Сборки (моды, настройки)": "Profiles (mods, settings)",
   "модпак {0} {1} → {2}": "modpack {0} {1} → {2}",
   "Комната {0} не отвечает. Проверьте код и что у хозяина открыт Axel' с этой комнатой.": "Room {0} isn’t answering. Check the code and that the host has Axel' open with this room.",

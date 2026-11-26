@@ -184,6 +184,13 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           </select>
           <span />
         </div>
+        <div className="setting">
+          <div className="lbl">{t("Удалённые сборки в корзине")}<span className="hint">{t("потом папка удаляется, рецепт остаётся в истории")}</span></div>
+          <select className="field" value={s.trash_days} onChange={(e) => setS({ ...s, trash_days: Number(e.target.value) })}>
+            {[[1, t("24 часа")], [3, t("3 дня")], [7, t("7 дней")], [14, t("14 дней")], [30, t("30 дней")], [60, t("60 дней")]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <span />
+        </div>
             <h4 className="subhead">{t("Место на диске")}</h4>
         {storage === null ? (
           <button className="btn" onClick={loadStorage}>{t("Посчитать, сколько занимают данные Axel'")}</button>

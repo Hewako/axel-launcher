@@ -220,6 +220,24 @@ fn trash_instance(state: State<AppState>, id: String) -> CmdResult<String> {
         .map_err(err)
 }
 
+/// Сборки в корзине.
+#[tauri::command]
+fn trash_list(state: State<AppState>) -> Vec<axel_core::trash::TrashEntry> {
+    axel_core::trash::list(&InstanceStore::new(state.data.clone()))
+}
+
+/// Вернуть сборку из корзины целиком.
+#[tauri::command]
+fn trash_restore(state: State<AppState>, key: String) -> CmdResult<Instance> {
+    axel_core::trash::restore(&InstanceStore::new(state.data.clone()), &key).map_err(err)
+}
+
+/// Удалить папку сборки из корзины навсегда (миры и рецепт остаются).
+#[tauri::command]
+fn trash_delete(state: State<AppState>, key: String) -> CmdResult<()> {
+    axel_core::trash::delete_forever(&InstanceStore::new(state.data.clone()), &key).map_err(err)
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 fn update_instance(
@@ -2127,6 +2145,15 @@ pub fn run() {
             }
             // Миры и скриншоты сборок — вне папок сборок (переносит и старые, см. worlds::ensure_store).
             InstanceStore::new(data.clone()).ensure_stores();
+            // Корзина: сборки, пролежавшие дольше срока из настроек, удаляются (рецепт — в истории).
+            let days = GlobalSettings::load(&data)
+                .map(|g| g.trash_days)
+                .unwrap_or(30);
+            axel_core::trash::purge_expired(
+                &InstanceStore::new(data.clone()),
+                days,
+                axel_core::instance::now(),
+            );
             // Правила Mod Doctor: сначала кеш, свежие — в фоне (не чаще раза в сутки).
             axel_core::mods::rules::load_cached(&data);
             let d = data.clone();
@@ -2197,6 +2224,9 @@ pub fn run() {
             snapshot_restore,
             snapshot_pin,
             worlds_list,
+            trash_list,
+            trash_restore,
+            trash_delete,
             worlds_foreign,
             world_adopt,
             world_backup,

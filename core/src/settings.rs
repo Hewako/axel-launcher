@@ -325,6 +325,14 @@ pub struct GlobalSettings {
     /// Проверять, вышла ли новая версия Axel' (страница релизов GitHub).
     #[serde(default = "yes")]
     pub check_launcher_updates: bool,
+    /// Сколько дней удалённая сборка лежит в корзине целиком (1–60, по умолчанию 30). Потом её
+    /// папка удаляется, а рецепт остаётся в истории.
+    #[serde(default = "default_trash_days")]
+    pub trash_days: u32,
+}
+
+fn default_trash_days() -> u32 {
+    30
 }
 
 fn default_theme() -> String {
@@ -361,6 +369,7 @@ impl Default for GlobalSettings {
             backup_every_days: 0,
             download_limit_kbps: 0,
             check_launcher_updates: true,
+            trash_days: default_trash_days(),
         }
     }
 }

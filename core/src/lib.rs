@@ -35,6 +35,7 @@ pub mod servers;
 pub mod settings;
 pub mod skin;
 pub mod snapshot;
+pub mod trash;
 pub mod updates;
 pub mod worlds;
 

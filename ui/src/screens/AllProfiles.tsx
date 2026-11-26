@@ -1,27 +1,32 @@
 // «Все профили» (макет 17): список всех профилей с поиском, фильтрами, сортировкой и размером на диске.
 // Заменяет прежние экраны «Главная» и «Профили»; открывается кнопкой вверху рельсы.
 import { useEffect, useMemo, useState } from "react";
-import { api, errText, loaderName, relTime, sizeText, type Instance } from "../api";
+import { api, errText, loaderName, relTime, sizeText, type Instance, type TrashEntry } from "../api";
 import { isActive, launches, type LaunchState } from "../launches";
 import { ProfileIcon, pressable } from "../ui/common";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t } from "../i18n";
 
-type Chip = "all" | "fav" | "attention" | "archive";
+type Chip = "all" | "fav" | "attention" | "archive" | "trash";
 type Sort = "launch" | "name" | "size" | "mods";
 type Status = { text: string; cls?: string };
 
-export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: {
+export function AllProfiles({ instances, mods, states, status, onOpen, onNew, onRestored }: {
   instances: Instance[];
   mods: Record<string, number>;
   states: Map<string, LaunchState>;
   status: (i: Instance) => Status;
   onOpen: (id: string) => void;
   onNew: () => void;
+  /** Сборку вернули из корзины. */
+  onRestored: (i: Instance) => void;
 }) {
   const dialog = useDialog();
   const [chip, setChip] = useState<Chip>("all");
+  const [trash, setTrash] = useState<TrashEntry[] | null>(null);
+  const loadTrash = () => { api.trashList().then(setTrash).catch(() => setTrash([])); };
+  useEffect(loadTrash, [instances.length]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("launch");
   const [sizes, setSizes] = useState<Record<string, number>>({});
@@ -44,6 +49,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
     fav: instances.filter((i) => i.favorite && !i.archived).length,
     attention: instances.filter(attention).length,
     archive: instances.filter((i) => i.archived).length,
+    trash: trash?.length ?? 0,
   };
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,7 +70,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
     try { launches.begin(i.id); await api.launch(i.id, undefined, false, false); onOpen(i.id); }
     catch (e) { await dialog.alert(t("Не удалось начать запуск"), errText(e)); }
   };
-  const CHIPS: [Chip, string][] = [["all", t("Все")], ["fav", t("Избранные")], ["attention", t("Требуют внимания")], ["archive", t("Архив")]];
+  const CHIPS: [Chip, string][] = [["all", t("Все")], ["fav", t("Избранные")], ["attention", t("Требуют внимания")], ["archive", t("Архив")], ["trash", t("Корзина")]];
 
   return (
     <>
@@ -84,13 +90,14 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
           <Icon name="search" size={16} />
           <input className="field" type="search" placeholder={t("Найти сборку")} aria-label={t("Найти сборку")} value={query} onChange={(e) => setQuery(e.target.value)} />
         </span>
-        <select className="field auto" aria-label={t("Сортировка")} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+        {chip !== "trash" && <select className="field auto" aria-label={t("Сортировка")} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="launch">{t("Сортировка: по запуску")}</option>
           <option value="name">{t("Сортировка: по названию")}</option>
           <option value="size">{t("Сортировка: по размеру")}</option>
           <option value="mods">{t("Сортировка: по числу модов")}</option>
-        </select>
+        </select>}
       </div>
+      {chip === "trash" ? <TrashView list={trash} onChanged={loadTrash} onRestored={onRestored} /> : <>
       <div className="card" style={{ padding: 0, overflow: "auto" }}>
         <table className="modtable proftable">
           <thead><tr><th>{t("Сборка")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("Моды")}</th><th className="num">{t("На диске")}</th><th>{t("Состояние")}</th><th>{t("Запуск")}</th><th /></tr></thead>
@@ -121,6 +128,65 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew }: 
         </table>
       </div>
       <p className="muted small">{t("Архивные сборки остаются на диске, их видно в фильтре «Архив». Чтобы вернуть сборку, снимите «Архив» в «Игра → О сборке».")}</p>
+      </>}
+    </>
+  );
+}
+
+/** Корзина: вернуть сборку целиком или удалить навсегда. «Удалить навсегда» появляется только
+ *  после «Удалить» и не там, где был курсор, и включается через секунду — двойной щелчок
+ *  ничего не сотрёт. Миры при этом остаются, рецепт сборки — в истории. */
+function TrashView({ list, onChanged, onRestored }: { list: TrashEntry[] | null; onChanged: () => void; onRestored: (i: Instance) => void }) {
+  const dialog = useDialog();
+  const [days, setDays] = useState(30);
+  const [asking, setAsking] = useState("");
+  const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState("");
+  useEffect(() => { api.globalSettings().then((g) => setDays(g.trash_days || 30)).catch(() => {}); }, []);
+  useEffect(() => {
+    setArmed(false);
+    if (!asking) return;
+    const timer = setTimeout(() => setArmed(true), 1000);
+    return () => clearTimeout(timer);
+  }, [asking]);
+  const run = async (key: string, f: () => Promise<unknown>, fail: string) => {
+    setBusy(key);
+    try { await f(); } catch (e) { await dialog.alert(fail, errText(e)); } finally { setBusy(""); setAsking(""); onChanged(); }
+  };
+  const left = (e: TrashEntry) => Math.max(0, Math.ceil((e.deleted_at + days * 86400 - Date.now() / 1000) / 86400));
+  return (
+    <>
+      <div className="card" style={{ padding: 0, overflow: "auto" }}>
+        <table className="modtable proftable">
+          <thead><tr><th>{t("Сборка")}</th><th>{t("Игра и загрузчик")}</th><th className="num">{t("На диске")}</th><th>{t("Удалена")}</th><th /></tr></thead>
+          <tbody>
+            {list === null && <tr><td colSpan={5} className="muted"><span className="spinner" /> {t("Загружаем…")}</td></tr>}
+            {list?.length === 0 && <tr><td colSpan={5} className="muted">{t("Корзина пуста.")}</td></tr>}
+            {list?.map((e) => (
+              <tr key={e.key}>
+                <td><b>{e.name}</b></td>
+                <td>{e.game_version}, {e.loader === "vanilla" ? t("без модов") : loaderName[e.loader]}</td>
+                <td className="num mono">{sizeText(e.size)}</td>
+                <td className="muted">{relTime(e.deleted_at)} · {t("удалится через {0} дн.", left(e))}</td>
+                <td className="trashacts">
+                  {asking === e.key ? (
+                    <>
+                      <button className="btn small danger" disabled={!armed || busy !== ""} onClick={() => run(e.key, () => api.trashDelete(e.key), t("Не удалось удалить"))}>{t("Удалить навсегда")}</button>
+                      <button className="btn small" autoFocus onClick={() => setAsking("")}>{t("Отмена")}</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn small" disabled={busy !== ""} onClick={() => run(e.key, async () => onRestored(await api.trashRestore(e.key)), t("Не удалось вернуть"))}>{busy === e.key ? t("Возвращаем…") : t("Вернуть")}</button>
+                      <button className="btn small link" disabled={busy !== ""} onClick={() => setAsking(e.key)}>{t("Удалить")}</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted small">{t("Миры удалённых сборок не удаляются: их можно перенести в другую сборку на вкладке «Откат». Сборку можно вернуть и после удаления навсегда, из истории.")}</p>
     </>
   );
 }

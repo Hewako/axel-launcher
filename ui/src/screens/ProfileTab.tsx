@@ -341,7 +341,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
           <span />
         </div>
         <div className="setting">
-          <div className="lbl">{t("В корзину")}<span className="hint">{t("Сборку вместе с мирами можно будет вернуть")}</span></div>
+          <div className="lbl">{t("В корзину")}<span className="hint">{t("Вернуть можно из корзины, миры останутся")}</span></div>
           <span />
           <button className="btn danger" disabled={running} onClick={onTrash}>{t("В корзину")}</button>
         </div>

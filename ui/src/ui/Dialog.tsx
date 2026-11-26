@@ -84,8 +84,9 @@ export function DialogProvider({ children }: { children: ReactNode }) {
           <div className="acts">
             {pending.kind === "confirm" ? (
               <>
-                <button className="btn" onClick={() => close(false)}>{pending.o.cancel ?? t("Отмена")}</button>
-                <button className={pending.o.danger ? "btn danger" : "btn pri"} data-autofocus onClick={() => close(true)}>{pending.o.confirm}</button>
+                {/* У опасного действия фокус на «Отмене»: случайный Enter ничего не удалит. */}
+                <button className="btn" data-autofocus={pending.o.danger ? true : undefined} onClick={() => close(false)}>{pending.o.cancel ?? t("Отмена")}</button>
+                <button className={pending.o.danger ? "btn danger" : "btn pri"} data-autofocus={pending.o.danger ? undefined : true} onClick={() => close(true)}>{pending.o.confirm}</button>
               </>
             ) : (
               <button className="btn pri" data-autofocus onClick={() => close(true)}>{t("Понятно")}</button>

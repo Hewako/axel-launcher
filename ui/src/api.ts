@@ -150,7 +150,7 @@ export interface AccountRef { provider: Provider; uuid: string; name: string; ow
 export interface GlobalSettings {
   launch: LaunchOverrides; theme: string; streamer_mode: boolean; default_account?: string;
   language: string; accent?: string; ui_scale: number; compact: boolean; font: string; first_run_done: boolean;
-  backup_before_risky_launch: boolean; backup_after_exit: boolean; backup_every_days: number; download_limit_kbps: number; check_launcher_updates: boolean;
+  backup_before_risky_launch: boolean; backup_after_exit: boolean; backup_every_days: number; download_limit_kbps: number; check_launcher_updates: boolean; trash_days: number;
 }
 export interface WorldBackup { world: string; file: string; size: number; created_at: number }
 /** Строка различия: что, в первом профиле, во втором. */
@@ -162,6 +162,8 @@ export interface WorldInfo {
 }
 /** Мир из хранилища другой сборки; `owner_name` пусто — ту сборку удалили. */
 export interface ForeignWorld { owner_id: string; owner_name?: string | null; owner_loader?: string | null; older: boolean; world: WorldInfo }
+/** Удалённая сборка в корзине; `key` — имя папки в корзине. */
+export interface TrashEntry { key: string; id: string; name: string; game_version: string; loader: LoaderKind; deleted_at: number; size: number }
 export interface DeviceCode { device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number; message: string }
 
 export type QuickPlay = { kind: "singleplayer" | "multiplayer" | "realms"; target: string };
@@ -188,6 +190,9 @@ export const api = {
   createInstance: (name: string, gameVersion: string, loader: LoaderKind, loaderVersion?: string) =>
     invoke<Instance>("create_instance", { name, gameVersion, loader, loaderVersion: loaderVersion ?? null }),
   trashInstance: (id: string) => invoke<string>("trash_instance", { id }),
+  trashList: () => invoke<TrashEntry[]>("trash_list"),
+  trashRestore: (key: string) => invoke<Instance>("trash_restore", { key }),
+  trashDelete: (key: string) => invoke<void>("trash_delete", { key }),
   updateInstance: (id: string, patch: { name?: string; settings?: LaunchOverrides; authMode?: AuthMode; account?: string | null; meta?: ProfileMeta; hooks?: Hooks }) =>
     invoke<Instance>("update_instance", {
       id,

@@ -154,6 +154,7 @@ mockIPC((cmd, args) => {
       { folder: "Creative", name: "Творческий", version_name: "26.4-snapshot-2", data_version: 5101, game_mode: "творчество", hardcore: true, last_played: now - 86400 * 9, size: 4_200_000, backups: [] },
     ];
     case "world_restore": return "New World";
+    case "trash_list": return [{ key: "survival-1764100000", id: "survival", name: "Выживание с друзьями", game_version: "1.20.1", loader: "forge", deleted_at: now - 86400 * 3, size: 312_000_000 }];
     case "worlds_foreign": return [
       { owner_id: "old", owner_name: null, owner_loader: null, older: false, world: { folder: "Island", name: "Остров", version_name: "26.3", data_version: 5023, game_mode: "выживание", hardcore: false, last_played: now - 86400 * 20, size: 54_000_000, backups: [] } },
       { owner_id: "shaders", owner_name: "Шейдеры", owner_loader: "Quilt", older: true, world: { folder: "Old", name: "Старый город", version_name: "1.21.11", data_version: 4671, game_mode: "творчество", hardcore: false, last_played: now - 86400 * 90, size: 120_000_000, backups: [] } },

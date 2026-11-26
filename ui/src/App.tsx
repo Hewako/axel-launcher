@@ -274,7 +274,8 @@ function Shell() {
               </div>
             </div>
           ))}
-          {screen === "all" && <AllProfiles instances={instances} mods={modsCount} states={states} status={status} onOpen={(id) => open(id)} onNew={() => setScreen("new")} />}
+          {screen === "all" && <AllProfiles instances={instances} mods={modsCount} states={states} status={status} onOpen={(id) => open(id)} onNew={() => setScreen("new")}
+            onRestored={(i) => refresh().then(() => open(i.id))} />}
           {screen === "catalog" && (
             <Catalog instances={instances} target={catalogAt ?? (selectedId ? { id: selectedId, kind: "mod", query: "", n: 0 } : undefined)}
               onPack={(hit) => { setPack({ hit, n: Date.now() }); setScreen("new"); }} onNew={() => setScreen("new")}
