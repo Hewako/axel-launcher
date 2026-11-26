@@ -23,11 +23,37 @@ pub fn pointer_file() -> Option<PathBuf> {
 /// Папка данных: из файла-указателя или по умолчанию. Если записанной папки нет (например,
 /// внешний диск не подключён), берём папку по умолчанию, а не создаём пустую на месте диска.
 pub fn resolve_root() -> Option<PathBuf> {
-    pointer_file()
+    if let Some(p) = pointer_file()
         .and_then(|f| std::fs::read_to_string(f).ok())
         .map(|s| PathBuf::from(s.trim()))
         .filter(|p| p.is_absolute() && p.is_dir())
-        .or_else(DataDir::default_root)
+    {
+        return Some(p);
+    }
+    let root = DataDir::default_root()?;
+    Some(migrate_old_default(
+        &root,
+        DataDir::old_default_root().as_deref(),
+    ))
+}
+
+/// Лаунчер раньше назывался Quarry и хранил данные в `~/.quarry`. Если новой папки ещё нет,
+/// переименовываем старую (тот же диск — мгновенно) и правим в настройках полные пути.
+/// Не вышло (например, папка занята) — продолжаем работать со старой, ничего не теряя.
+fn migrate_old_default(root: &Path, old: Option<&Path>) -> PathBuf {
+    let Some(old) = old.filter(|o| o.is_dir()) else {
+        return root.to_path_buf();
+    };
+    if root.exists() {
+        return root.to_path_buf();
+    }
+    match std::fs::rename(old, root) {
+        Ok(()) => {
+            rewrite_paths(root, old);
+            root.to_path_buf()
+        }
+        Err(_) => old.to_path_buf(),
+    }
 }
 
 /// Запомнить папку данных. Папка по умолчанию — указатель просто удаляется.
@@ -260,6 +286,25 @@ mod tests {
         )
         .unwrap();
         std::fs::write(root.join("instances/a/instance.toml"), "name = \"A\"\n").unwrap();
+    }
+
+    #[test]
+    fn old_quarry_folder_moves_to_the_new_name() {
+        let base = tmp("migrate");
+        let (old, new) = (base.join(".quarry"), base.join(".axel"));
+        data(&old);
+        assert_eq!(migrate_old_default(&new, Some(&old)), new);
+        assert!(!old.exists() && new.join("instances/a/instance.toml").is_file());
+        let settings = std::fs::read_to_string(new.join("launcher.toml")).unwrap();
+        assert!(
+            settings.contains(".axel"),
+            "пути в настройках ведут в новую папку: {settings}"
+        );
+        // Новая папка уже есть — старую не трогаем.
+        data(&old);
+        assert_eq!(migrate_old_default(&new, Some(&old)), new);
+        assert!(old.exists());
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]

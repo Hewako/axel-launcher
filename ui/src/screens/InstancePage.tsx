@@ -294,7 +294,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
               <span />
             </div>
           ))}
-          <p className="muted small">{t("Команда выполняется в папке игры; доступны переменные QUARRY_PROFILE и QUARRY_GAME_DIR. Если команда перед запуском завершится с ошибкой, игра не запустится.")}</p>
+          <p className="muted small">{t("Команда выполняется в папке игры; доступны переменные AXEL_PROFILE и AXEL_GAME_DIR. Если команда перед запуском завершится с ошибкой, игра не запустится.")}</p>
           <button className="btn" onClick={saveHooks}>{t("Сохранить команды…")}</button>
         </details>
 

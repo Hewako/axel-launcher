@@ -26,8 +26,14 @@ impl DataDir {
         Self { root: root.into() }
     }
 
-    /// Папка по умолчанию: `~/.quarry` (так было с первой версии, не переносим без нужды).
+    /// Папка по умолчанию: `~/.axel`. До переименования лаунчера была `~/.quarry` — её
+    /// переносит [`crate::relocate::resolve_root`].
     pub fn default_root() -> Option<PathBuf> {
+        dirs::home_dir().map(|h| h.join(".axel"))
+    }
+
+    /// Прежняя папка по умолчанию, когда лаунчер назывался Quarry.
+    pub fn old_default_root() -> Option<PathBuf> {
         dirs::home_dir().map(|h| h.join(".quarry"))
     }
 

@@ -167,7 +167,9 @@ pub trait SecretStore: Send + Sync {
     fn delete(&self, key: &str) -> Result<()>;
 }
 
-const KEYRING_SERVICE: &str = "quarry-launcher";
+const KEYRING_SERVICE: &str = "axel-launcher";
+/// Прежнее имя службы (лаунчер назывался Quarry): входы оттуда переносятся при первом чтении.
+const OLD_KEYRING_SERVICE: &str = "quarry-launcher";
 
 pub struct KeyringStore;
 
@@ -176,7 +178,21 @@ impl SecretStore for KeyringStore {
         let entry = keyring::Entry::new(KEYRING_SERVICE, key).map_err(keyring_err)?;
         match entry.get_password() {
             Ok(v) => Ok(Some(v)),
-            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(keyring::Error::NoEntry) => {
+                // Вход, сохранённый ещё под старым именем: переносим, чтобы не входить заново.
+                let Ok(old) = keyring::Entry::new(OLD_KEYRING_SERVICE, key) else {
+                    return Ok(None);
+                };
+                match old.get_password() {
+                    Ok(v) => {
+                        if entry.set_password(&v).is_ok() {
+                            let _ = old.delete_credential();
+                        }
+                        Ok(Some(v))
+                    }
+                    Err(_) => Ok(None),
+                }
+            }
             Err(e) => Err(keyring_err(e)),
         }
     }
@@ -186,6 +202,10 @@ impl SecretStore for KeyringStore {
             .map_err(keyring_err)
     }
     fn delete(&self, key: &str) -> Result<()> {
+        // Выход стирает вход и под старым именем, если он там остался.
+        if let Ok(old) = keyring::Entry::new(OLD_KEYRING_SERVICE, key) {
+            let _ = old.delete_credential();
+        }
         let entry = keyring::Entry::new(KEYRING_SERVICE, key).map_err(keyring_err)?;
         match entry.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),

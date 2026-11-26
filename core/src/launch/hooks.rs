@@ -61,6 +61,9 @@ pub async fn run(cmd: &str, cwd: &Path, profile: &str) -> Result<(i32, String)> 
         c
     };
     c.current_dir(cwd)
+        .env("AXEL_PROFILE", profile)
+        .env("AXEL_GAME_DIR", cwd)
+        // Прежние имена (лаунчер назывался Quarry): чтобы не сломать уже написанные команды.
         .env("QUARRY_PROFILE", profile)
         .env("QUARRY_GAME_DIR", cwd)
         .stdin(std::process::Stdio::null())
@@ -106,9 +109,13 @@ mod tests {
     async fn runs_in_game_dir_with_profile_env() {
         let d = std::env::temp_dir().join(format!("quarry-hook-{}", std::process::id()));
         std::fs::create_dir_all(&d).unwrap();
-        let (code, out) = run("pwd; echo \"$QUARRY_PROFILE\"; exit 3", &d, "мой-профиль")
-            .await
-            .unwrap();
+        let (code, out) = run(
+            "pwd; echo \"$AXEL_PROFILE $QUARRY_PROFILE\"; exit 3",
+            &d,
+            "мой-профиль",
+        )
+        .await
+        .unwrap();
         assert_eq!(code, 3);
         assert!(
             out.contains("мой-профиль") && out.contains(d.file_name().unwrap().to_str().unwrap()),

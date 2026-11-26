@@ -989,7 +989,7 @@ export const EN: Record<string, string> = {
   "После выхода": "After exit",
   "После краша": "After a crash",
   "Обёртка (только Linux)": "Wrapper (Linux only)",
-  "Команда выполняется в папке игры; доступны переменные QUARRY_PROFILE и QUARRY_GAME_DIR. Если команда перед запуском завершится с ошибкой, игра не запустится.": "Commands run in the game folder; QUARRY_PROFILE and QUARRY_GAME_DIR are available. If the pre-launch command fails, the game won't start.",
+  "Команда выполняется в папке игры; доступны переменные AXEL_PROFILE и AXEL_GAME_DIR. Если команда перед запуском завершится с ошибкой, игра не запустится.": "Commands run in the game folder; AXEL_PROFILE and AXEL_GAME_DIR are available. If the pre-launch command fails, the game won't start.",
   "Сохранить команды…": "Save commands…",
   "Сборка из каталога Modrinth": "Pack from the Modrinth catalog",
   "Найти сборку…": "Find a pack…",
