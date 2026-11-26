@@ -328,7 +328,7 @@ pub fn backup_world(game_dir: &Path, backups_dir: &Path, world: &str) -> Result<
     }
     let src = game_dir.join("saves").join(world);
     if !src.join("level.dat").is_file() {
-        return Err(Error::NotFound(format!("Мир «{world}» не найдена")));
+        return Err(Error::NotFound(format!("Мир «{world}» не найден")));
     }
     std::fs::create_dir_all(backups_dir).at(backups_dir)?;
     let created_at = now();

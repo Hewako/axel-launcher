@@ -1109,6 +1109,36 @@ fn worlds_list(state: State<AppState>, id: String) -> CmdResult<Vec<axel_core::w
     ))
 }
 
+/// Миры других сборок (и удалённых), которые можно перенести в эту.
+#[tauri::command]
+fn worlds_foreign(
+    state: State<AppState>,
+    id: String,
+) -> CmdResult<Vec<axel_core::worlds::ForeignWorld>> {
+    let store = InstanceStore::new(state.data.clone());
+    let inst = store.get(&id).map_err(err)?;
+    Ok(axel_core::worlds::foreign_worlds(
+        &store,
+        &id,
+        &inst.game_version,
+    ))
+}
+
+/// Перенести мир другой сборки в эту (с бэкапом сразу после переноса).
+#[tauri::command]
+fn world_adopt(
+    state: State<AppState>,
+    id: String,
+    from: String,
+    world: String,
+) -> CmdResult<String> {
+    if state.registry.is_running(&id) || state.registry.is_running(&from) {
+        return Err("Сначала закройте игру".into());
+    }
+    let store = InstanceStore::new(state.data.clone());
+    axel_core::worlds::adopt_world(&store, &from, &world, &id).map_err(err)
+}
+
 #[tauri::command]
 fn world_backup(
     state: State<AppState>,
@@ -2145,6 +2175,8 @@ pub fn run() {
             snapshot_restore,
             snapshot_pin,
             worlds_list,
+            worlds_foreign,
+            world_adopt,
             world_backup,
             world_restore,
             clone_instance,

@@ -1,6 +1,18 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "из сборки «{0}»": "from profile “{0}”",
+  "из удалённой сборки": "from a deleted profile",
+  "Мир из версии {0}. Игра обновит его до {1}, и открыть его в старой версии потом не получится.": "The world is from version {0}. The game will upgrade it to {1}, and it won’t open in the old version afterwards.",
+  "В той сборке были моды ({0}). Если здесь их нет, блоки и предметы модов из мира пропадут.": "That profile had mods ({0}). If this one doesn’t have them, blocks and items from those mods will disappear from the world.",
+  "Сразу после переноса Axel' сделает бэкап мира, вернуть его можно в любой момент.": "Right after moving, Axel' backs up the world; you can restore it any time.",
+  "Перенести «{0}» {1}?": "Move “{0}” {1}?",
+  "Бэкап и перенести": "Back up and move",
+  "Перенести сюда": "Move here",
+  "Мир не перенесён": "The world wasn’t moved",
+  "Миры из других сборок": "Worlds from other profiles",
+  "сборка «{0}»": "profile “{0}”",
+  "сборка удалена": "profile deleted",
   "Разделы": "Profiles and sections",
   "Не удалось прочитать сборки": "Couldn't read profiles",
   "Не удалось прочитать сборки:": "Couldn't read profiles:",

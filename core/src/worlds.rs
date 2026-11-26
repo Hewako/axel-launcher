@@ -100,7 +100,12 @@ pub fn backups_of(backups_dir: &Path, world: &str) -> Vec<WorldBackup> {
 }
 
 pub fn read_world(game_dir: &Path, backups_dir: &Path, folder: &str) -> Result<WorldInfo> {
-    let dir = game_dir.join("saves").join(folder);
+    read_world_at(&game_dir.join("saves"), backups_dir, folder)
+}
+
+/// То же, но мир ищется прямо в папке миров (`saves` или хранилище сборки).
+fn read_world_at(saves: &Path, backups_dir: &Path, folder: &str) -> Result<WorldInfo> {
+    let dir = saves.join(folder);
     let level = dir.join("level.dat");
     let root = nbt::read(&std::fs::read(&level).at(&level)?)?;
     let data = root
@@ -338,6 +343,130 @@ pub fn free_name(dir: &Path, name: &str, label: &str) -> PathBuf {
         })
         .find(|p| !p.exists())
         .expect("бесконечный ряд имён")
+}
+
+/// Линейка версий игры: миры внутри неё совместимы. `1.16.5` → `1.16`, `26.3.1` → `26.3`;
+/// снапшоты и прочее — как есть.
+pub fn version_line(version: &str) -> String {
+    let parts: Vec<&str> = version.split('.').collect();
+    let numeric = parts
+        .iter()
+        .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
+    if numeric && parts.len() >= 2 {
+        parts[..2].join(".")
+    } else {
+        version.to_string()
+    }
+}
+
+/// Сравнить линейки: `Less` — первая старше. Нечисловые (снапшоты) несравнимы.
+fn line_order(a: &str, b: &str) -> Option<std::cmp::Ordering> {
+    let key = |s: &str| -> Option<Vec<u64>> { s.split('.').map(|p| p.parse().ok()).collect() };
+    Some(key(a)?.cmp(&key(b)?))
+}
+
+/// Мир из хранилища другой сборки (живой или удалённой), который можно перенести сюда.
+#[derive(Debug, Clone, Serialize)]
+pub struct ForeignWorld {
+    /// Сборка, где мир лежит сейчас (id папки хранилища).
+    pub owner_id: String,
+    /// Её название; `None` — сборку удалили, а мир остался.
+    pub owner_name: Option<String>,
+    /// Загрузчик той сборки и сколько в ней модов — чтобы предупредить о модах.
+    pub owner_loader: Option<String>,
+    /// Мир из более старой линейки: игра его обновит, назад он уже не откроется.
+    pub older: bool,
+    pub world: WorldInfo,
+}
+
+/// Миры других сборок, которые подходят этой: той же линейки или старше. Миры новее не
+/// показываются — игра старой версии их не откроет.
+pub fn foreign_worlds(
+    store: &crate::instance::InstanceStore,
+    target_id: &str,
+    target_version: &str,
+) -> Vec<ForeignWorld> {
+    let data = store.data();
+    let line = version_line(target_version);
+    let Ok(owners) = std::fs::read_dir(data.worlds()) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for owner in owners.flatten() {
+        let owner_id = owner.file_name().to_string_lossy().into_owned();
+        if owner_id == target_id || owner_id.starts_with('.') || !owner.path().is_dir() {
+            continue;
+        }
+        let inst = store.get(&owner_id).ok();
+        let backups = backups_dir(data, &owner_id);
+        for w in std::fs::read_dir(owner.path())
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            let folder = w.file_name().to_string_lossy().into_owned();
+            if !w.path().join("level.dat").is_file() {
+                continue;
+            }
+            let Ok(info) = read_world_at(&owner.path(), &backups, &folder) else {
+                continue;
+            };
+            // Совсем старые миры (до 1.9) не пишут версию — считаем их старыми.
+            let wline = info.version_name.as_deref().map(version_line);
+            let older = match wline.as_deref() {
+                Some(l) if l == line => false,
+                Some(l) => match line_order(l, &line) {
+                    Some(std::cmp::Ordering::Less) => true,
+                    _ => continue,
+                },
+                None => true,
+            };
+            out.push(ForeignWorld {
+                owner_id: owner_id.clone(),
+                owner_name: inst.as_ref().map(|i| i.name.clone()),
+                owner_loader: inst.as_ref().map(|i| format!("{:?}", i.loader)),
+                older,
+                world: info,
+            });
+        }
+    }
+    out.sort_by_key(|f| (f.older, std::cmp::Reverse(f.world.last_played)));
+    out
+}
+
+/// Перенести мир из хранилища другой сборки в эту и сразу сделать бэкап (на случай, если моды
+/// этой сборки или новая версия игры его испортят). Возвращает имя папки мира здесь.
+pub fn adopt_world(
+    store: &crate::instance::InstanceStore,
+    from_id: &str,
+    folder: &str,
+    to_id: &str,
+) -> Result<String> {
+    if !crate::paths::is_plain_file_name(folder) {
+        return Err(Error::invalid("Недопустимое имя мира"));
+    }
+    crate::instance::validate_id(from_id)?;
+    let data = store.data();
+    let to = store.get(to_id)?;
+    let game = store.game_dir(to_id)?;
+    ensure_store(data, to_id, &game, to.external_game_dir.is_some(), &to.name);
+    let src = store_dir(data, from_id).join(folder);
+    if !src.join("level.dat").is_file() {
+        return Err(Error::NotFound(format!("Мир «{folder}» не найден")));
+    }
+    let label = store
+        .get(from_id)
+        .map(|i| i.name)
+        .unwrap_or_else(|_| from_id.to_string());
+    let saves = std::fs::canonicalize(game.join("saves")).at(game.join("saves"))?;
+    let dest = free_name(&saves, folder, &label);
+    std::fs::rename(&src, &dest).at(&src)?;
+    let name = dest
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    snapshot::backup_world(&game, &backups_dir(data, to_id), &name)?;
+    Ok(name)
 }
 
 /// Привести `saves` и `screenshots` сборки к ссылкам в общее хранилище. Безопасно вызывать
@@ -648,6 +777,50 @@ mod tests {
             .unwrap();
         assert_ne!(a.id, b.id);
         assert!(list(&store.game_dir(&b.id).unwrap(), &data.backups()).is_empty());
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn version_lines() {
+        assert_eq!(version_line("1.16.5"), "1.16");
+        assert_eq!(version_line("1.16"), "1.16");
+        assert_eq!(version_line("26.3.1"), "26.3");
+        assert_eq!(version_line("26.4-snapshot-2"), "26.4-snapshot-2");
+        assert_eq!(line_order("1.12", "1.16"), Some(std::cmp::Ordering::Less));
+        assert_eq!(
+            line_order("26.3", "1.21"),
+            Some(std::cmp::Ordering::Greater)
+        );
+    }
+
+    #[test]
+    fn worlds_of_other_builds_can_be_moved_here() {
+        let data = tmp_data("adopt");
+        let store = crate::instance::InstanceStore::new(data.clone());
+        let old = store
+            .create("Старая", "1.21.10", crate::loader::LoaderKind::Fabric, None)
+            .unwrap();
+        let new = store
+            .create("Новая", "1.21.11", crate::loader::LoaderKind::Vanilla, None)
+            .unwrap();
+        // make_world пишет версию 1.21.11 — та же линейка 1.21.
+        make_world(&store.game_dir(&old.id).unwrap(), "W", "Мир", 4000, 5);
+        store.trash(&old.id).unwrap();
+        let found = foreign_worlds(&store, &new.id, "1.21.11");
+        assert_eq!(found.len(), 1, "мир удалённой сборки виден");
+        assert!(found[0].owner_name.is_none() && !found[0].older);
+        // Сборка 1.20 этот мир (1.21) не видит: он новее.
+        assert!(foreign_worlds(&store, &new.id, "1.20.1").is_empty());
+        let name = adopt_world(&store, &old.id, "W", &new.id).unwrap();
+        assert_eq!(name, "W");
+        let game = store.game_dir(&new.id).unwrap();
+        assert!(game.join("saves/W/level.dat").is_file());
+        assert_eq!(
+            list(&game, &backups_dir(&data, &new.id))[0].backups.len(),
+            1,
+            "сразу бэкап"
+        );
+        assert!(foreign_worlds(&store, &new.id, "1.21.11").is_empty());
         let _ = std::fs::remove_dir_all(data.root());
     }
 }

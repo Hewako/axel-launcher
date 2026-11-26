@@ -154,6 +154,10 @@ mockIPC((cmd, args) => {
       { folder: "Creative", name: "Творческий", version_name: "26.4-snapshot-2", data_version: 5101, game_mode: "творчество", hardcore: true, last_played: now - 86400 * 9, size: 4_200_000, backups: [] },
     ];
     case "world_restore": return "New World";
+    case "worlds_foreign": return [
+      { owner_id: "old", owner_name: null, owner_loader: null, older: false, world: { folder: "Island", name: "Остров", version_name: "26.3", data_version: 5023, game_mode: "выживание", hardcore: false, last_played: now - 86400 * 20, size: 54_000_000, backups: [] } },
+      { owner_id: "shaders", owner_name: "Шейдеры", owner_loader: "Quilt", older: true, world: { folder: "Old", name: "Старый город", version_name: "1.21.11", data_version: 4671, game_mode: "творчество", hardcore: false, last_played: now - 86400 * 90, size: 120_000_000, backups: [] } },
+    ];
     case "import_sources": return { prism: [["/Users/player/Library/Application Support/PrismLauncher/instances/Tech", "Технология+ (1.21.11 · Fabric)"]], official: "/Users/player/Library/Application Support/minecraft" };
     case "mods_check_updates": return { changes: [{ kind: "update", title: "Sodium", old_version: "0.8.12", new_version: "0.8.14", reason: "новая версия", size: 1914874 }], notes: ["Моды, которых нет на Modrinth, проверить на обновления нельзя"] };
     case "catalog_installed": return [{ project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "", client_side: "required", categories: [] }];

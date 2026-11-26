@@ -1,7 +1,7 @@
 // Вкладка «Откат» (макет 03): снимки с метками и сравнением, журнал изменений модов; справа миры и их бэкапы.
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { pressable } from "../ui/common";
-import { errText, relTime, sizeText, snapshots, type Instance, type JournalEntry, type SnapshotDiff, type SnapshotInfo, type WorldBackup, type WorldInfo } from "../api";
+import { errText, relTime, sizeText, snapshots, type Instance, type JournalEntry, type SnapshotDiff, type SnapshotInfo, type WorldBackup, type WorldInfo, type ForeignWorld } from "../api";
 import { useDialog } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
@@ -78,18 +78,35 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
   const [comparing, setComparing] = useState("");
   const [picked, setPicked] = useState("");
   const [worlds, setWorlds] = useState<WorldInfo[]>([]);
+  const [foreign, setForeign] = useState<ForeignWorld[]>([]);
   const [open, setOpen] = useState("");
   const [busy, setBusy] = useState("");
 
   const load = useCallback(() => {
     snapshots.list(inst.id).then(setList).catch(() => setList([]));
     snapshots.worlds(inst.id).then(setWorlds).catch(() => setWorlds([]));
+    snapshots.foreignWorlds(inst.id).then(setForeign).catch(() => setForeign([]));
   }, [inst.id]);
   useEffect(load, [load]);
 
   const act = async (key: string, f: () => Promise<unknown>, fail: string) => {
     setBusy(key);
     try { await f(); load(); } catch (e) { await dialog.alert(fail, errText(e)); } finally { setBusy(""); }
+  };
+  /** Перенести мир другой сборки сюда: с предупреждением о модах и версии, бэкап — сразу. */
+  const adopt = async (f: ForeignWorld) => {
+    const from = f.owner_name ? t("из сборки «{0}»", f.owner_name) : t("из удалённой сборки");
+    const notes = [
+      f.older && t("Мир из версии {0}. Игра обновит его до {1}, и открыть его в старой версии потом не получится.", f.world.version_name ?? "?", inst.game_version),
+      f.owner_loader && f.owner_loader !== "Vanilla" && t("В той сборке были моды ({0}). Если здесь их нет, блоки и предметы модов из мира пропадут.", f.owner_loader),
+      t("Сразу после переноса Axel' сделает бэкап мира, вернуть его можно в любой момент."),
+    ].filter(Boolean) as string[];
+    const ok = await dialog.confirm({
+      title: t("Перенести «{0}» {1}?", f.world.name, from),
+      body: <>{notes.map((n, i) => <p key={i} style={{ margin: "0 0 8px" }}>{n}</p>)}</>,
+      confirm: f.older ? t("Бэкап и перенести") : t("Перенести сюда"),
+    });
+    if (ok) await act(`a${f.owner_id}/${f.world.folder}`, () => snapshots.adoptWorld(inst.id, f.owner_id, f.world.folder), t("Мир не перенесён"));
   };
   const restore = async (s: SnapshotInfo) => {
     const ok = await dialog.confirm({
@@ -232,6 +249,28 @@ export function SnapshotsTab({ inst, running, journal, onRestored }: { inst: Ins
               </Fragment>
             ))}
           </div>
+        )}
+        {foreign.length > 0 && (
+          <>
+            <h4 className="subhead">{t("Миры из других сборок")}</h4>
+            <div className="worlds">
+              {foreign.map((f) => (
+                <div className="world" key={`${f.owner_id}/${f.world.folder}`}>
+                  <div className="grow">
+                    <b>{f.world.name}</b>
+                    <div className="muted small">
+                      {f.world.version_name ?? t("версия неизвестна")} · {sizeText(f.world.size)} · {f.owner_name ? t("сборка «{0}»", f.owner_name) : t("сборка удалена")}
+                    </div>
+                  </div>
+                  <div className="acts">
+                    <button className="btn" disabled={running || busy !== ""} onClick={() => adopt(f)}>
+                      {busy === `a${f.owner_id}/${f.world.folder}` ? t("Переносим…") : f.older ? t("Бэкап и перенести") : t("Перенести сюда")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
       </div>

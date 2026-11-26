@@ -160,6 +160,8 @@ export interface WorldInfo {
   folder: string; name: string; version_name?: string; data_version?: number; game_mode: string; hardcore: boolean;
   last_played: number; size: number; backups: WorldBackup[];
 }
+/** Мир из хранилища другой сборки; `owner_name` пусто — ту сборку удалили. */
+export interface ForeignWorld { owner_id: string; owner_name?: string | null; owner_loader?: string | null; older: boolean; world: WorldInfo }
 export interface DeviceCode { device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number; message: string }
 
 export type QuickPlay = { kind: "singleplayer" | "multiplayer" | "realms"; target: string };
@@ -362,6 +364,9 @@ export const snapshots = {
   restore: (id: string, snapshot: string) => invoke<SnapshotInfo>("snapshot_restore", { id, snapshot }),
   pin: (id: string, snapshot: string, pinned: boolean) => invoke<void>("snapshot_pin", { id, snapshot, pinned }),
   worlds: (id: string) => invoke<WorldInfo[]>("worlds_list", { id }),
+  /** Миры других сборок (и удалённых), которые подходят этой. */
+  foreignWorlds: (id: string) => invoke<ForeignWorld[]>("worlds_foreign", { id }),
+  adoptWorld: (id: string, from: string, world: string) => invoke<string>("world_adopt", { id, from, world }),
   backupWorld: (id: string, world: string) => invoke<WorldBackup>("world_backup", { id, world }),
   restoreWorld: (id: string, file: string) => invoke<string>("world_restore", { id, file }),
 };

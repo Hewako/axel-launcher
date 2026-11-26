@@ -438,7 +438,7 @@ export const CORE_EN: Record<string, string> = {
   "Снимок не найден": "Snapshot not found",
   "Перед откатом к «{0}»": "Before rolling back to “{0}”",
   "Недопустимое имя мира": "Invalid world name",
-  "Мир «{0}» не найдена": "World “{0}” not found",
+  "Мир «{0}» не найден": "World “{0}” not found",
   "ответ GitHub": "GitHub reply",
   "клиент игры": "game client",
   "В клиенте игры нет version.json": "The game client has no version.json",
