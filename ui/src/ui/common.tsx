@@ -6,14 +6,8 @@ import { t } from "../i18n";
 import { Icon } from "./icons";
 import { MOD } from "../keys";
 
-const ICONS = [
-  "linear-gradient(#5d9e3a 0 30%,#7a5537 30% 100%)",
-  "linear-gradient(#3a78c9 0 30%,#a78bfa 30% 100%)",
-  "linear-gradient(#8bc34a 0 30%,#8d6e63 30% 100%)",
-  "linear-gradient(#d0543c 0 30%,#5d4037 30% 100%)",
-  "linear-gradient(#555 0 30%,#222 30% 100%)",
-  "linear-gradient(#e8b04a 0 30%,#a0660a 30% 100%)",
-];
+// Цвета значков сборок без выбранного цвета: спокойные, белая буква читается на каждом.
+const ICONS = ["#3f7d4e", "#3a6fb0", "#6d52c2", "#a8532f", "#2f7f76", "#7a6234", "#55606e"];
 
 /** Строка таблицы или списка, которая нажимается: мышью, а с клавиатуры — Tab и Enter или пробел. */
 export function pressable(fn: () => void) {
@@ -32,8 +26,22 @@ export function iconFor(id: string): string {
   return ICONS[h % ICONS.length];
 }
 
-export function ProfileIcon({ id, color, size = 36, className = "pi" }: { id: string; color?: string; size?: number; className?: string }) {
-  return <div className={className} style={{ width: size, height: size, background: color ?? iconFor(id) }} aria-hidden />;
+/** Светлый ли цвет (#rrggbb): на светлом букву пишем тёмной. */
+const isLight = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  return Number.isFinite(n) && 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160;
+};
+
+/** Значок сборки: первая буква названия на цвете сборки. */
+export function ProfileIcon({ id, name, color, size = 36, className = "pi" }: { id: string; name: string; color?: string; size?: number; className?: string }) {
+  const bg = color ?? iconFor(id);
+  const letter = [...name.trim()][0]?.toUpperCase() ?? "";
+  return (
+    <div className={className} aria-hidden
+      style={{ width: size, height: size, background: bg, color: isLight(bg) ? "#111" : "#fff", fontSize: Math.round(size * 0.46), borderRadius: Math.max(6, Math.round(size / 5)) }}>
+      {letter}
+    </div>
+  );
 }
 
 export function StatusBadge({ inst, state }: { inst: Instance; state?: LaunchState }) {

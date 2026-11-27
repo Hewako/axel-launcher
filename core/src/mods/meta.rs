@@ -112,6 +112,69 @@ pub fn read_jar(path: &Path) -> Result<Vec<ModMeta>> {
     Ok(out)
 }
 
+/// Значок мода как `data:`-адрес: `icon` из fabric.mod.json / quilt.mod.json или `logoFile`
+/// из mods.toml. Больше 64 КБ — не берём: список модов уходит в интерфейс целиком.
+pub fn read_icon(path: &Path) -> Option<String> {
+    use base64::Engine as _;
+    const MAX: u64 = 64 * 1024;
+    let mut zip = zip::ZipArchive::new(std::fs::File::open(path).ok()?).ok()?;
+    let json_icon = |v: &serde_json::Value| -> Option<String> {
+        match v {
+            serde_json::Value::String(s) => Some(s.clone()),
+            // Набор размеров: {"16": "a.png", "128": "b.png"} — берём ближайший к 64 сверху.
+            serde_json::Value::Object(m) => {
+                let mut sizes: Vec<(u32, &str)> = m
+                    .iter()
+                    .filter_map(|(k, v)| Some((k.parse().ok()?, v.as_str()?)))
+                    .collect();
+                sizes.sort_by_key(|(n, _)| (*n < 64, n.abs_diff(64)));
+                sizes.first().map(|(_, p)| p.to_string())
+            }
+            _ => None,
+        }
+    };
+    let icon = read_entry(&mut zip, "quilt.mod.json")
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| json_icon(v.pointer("/quilt_loader/metadata/icon")?))
+        .or_else(|| {
+            read_entry(&mut zip, "fabric.mod.json")
+                .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                .and_then(|v| json_icon(v.get("icon")?))
+        })
+        .or_else(|| {
+            ["META-INF/neoforge.mods.toml", "META-INF/mods.toml"]
+                .iter()
+                .find_map(|f| {
+                    let v = toml::from_str::<toml::Value>(&read_entry(&mut zip, f)?).ok()?;
+                    let top = v.get("logoFile").and_then(|x| x.as_str());
+                    let first = v
+                        .get("mods")
+                        .and_then(|m| m.as_array())
+                        .and_then(|a| a.first())
+                        .and_then(|m| m.get("logoFile"))
+                        .and_then(|x| x.as_str());
+                    first.or(top).map(str::to_string)
+                })
+        })?;
+    let icon = icon.trim_start_matches('/');
+    let mime = match icon.rsplit('.').next()?.to_ascii_lowercase().as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        _ => return None,
+    };
+    let e = zip.by_name(icon).ok()?;
+    if e.size() > MAX {
+        return None;
+    }
+    let mut buf = Vec::new();
+    e.take(MAX).read_to_end(&mut buf).ok()?;
+    Some(format!(
+        "data:{mime};base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(buf)
+    ))
+}
+
 /// Добавляет ли мод что-то в сам мир: генерацию, измерения или новые блоки.
 /// Удаление такого мода может испортить сохранённые чанки — перед этим нужен бэкап.
 pub fn adds_world_content(path: &Path) -> bool {
@@ -434,6 +497,104 @@ pub(crate) mod tests {
             w.write_all(data).unwrap();
         }
         w.finish().unwrap();
+    }
+
+    #[test]
+    fn icon_from_fabric_quilt_and_mods_toml() {
+        let d = std::env::temp_dir().join(format!("axel-icon-{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        let fabric = d.join("f.jar");
+        make_jar(
+            &fabric,
+            &[
+                (
+                    "fabric.mod.json",
+                    br#"{"id":"a","version":"1","icon":{"16":"s.png","128":"assets/a/icon.png"}}"#,
+                ),
+                ("assets/a/icon.png", b"PNG"),
+            ],
+        );
+        assert_eq!(
+            read_icon(&fabric).as_deref(),
+            Some("data:image/png;base64,UE5H")
+        );
+        let forge = d.join("g.jar");
+        make_jar(
+            &forge,
+            &[
+                (
+                    "META-INF/mods.toml",
+                    b"modLoader=\"javafml\"\n[[mods]]\nmodId=\"g\"\nlogoFile=\"logo.jpg\"\n",
+                ),
+                ("logo.jpg", b"JPG"),
+            ],
+        );
+        assert_eq!(
+            read_icon(&forge).as_deref(),
+            Some("data:image/jpeg;base64,SlBH")
+        );
+        let quilt = d.join("q.jar");
+        make_jar(
+            &quilt,
+            &[
+                (
+                    "quilt.mod.json",
+                    br#"{"quilt_loader":{"id":"q","version":"1","metadata":{"icon":"q.png"}}}"#,
+                ),
+                ("q.png", b"Q"),
+            ],
+        );
+        assert!(
+            read_icon(&quilt)
+                .unwrap()
+                .starts_with("data:image/png;base64,")
+        );
+    }
+
+    #[test]
+    fn no_icon_when_missing_too_big_or_not_an_image() {
+        let d = std::env::temp_dir().join(format!("axel-noicon-{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        let none = d.join("n.jar");
+        make_jar(
+            &none,
+            &[("fabric.mod.json", br#"{"id":"n","version":"1"}"#)],
+        );
+        assert_eq!(read_icon(&none), None);
+        let gone = d.join("g.jar");
+        make_jar(
+            &gone,
+            &[(
+                "fabric.mod.json",
+                br#"{"id":"g","version":"1","icon":"nope.png"}"#,
+            )],
+        );
+        assert_eq!(read_icon(&gone), None);
+        let big = d.join("b.jar");
+        let data = vec![0u8; 70 * 1024];
+        make_jar(
+            &big,
+            &[
+                (
+                    "fabric.mod.json",
+                    br#"{"id":"b","version":"1","icon":"i.png"}"#,
+                ),
+                ("i.png", &data),
+            ],
+        );
+        assert_eq!(read_icon(&big), None);
+        let svg = d.join("s.jar");
+        make_jar(
+            &svg,
+            &[
+                (
+                    "fabric.mod.json",
+                    br#"{"id":"s","version":"1","icon":"i.svg"}"#,
+                ),
+                ("i.svg", b"<svg/>"),
+            ],
+        );
+        assert_eq!(read_icon(&svg), None);
     }
 
     #[test]

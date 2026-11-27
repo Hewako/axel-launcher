@@ -312,6 +312,7 @@ mod tests {
     fn file(name: &str, id: &str, mixins: &[&str]) -> ModFile {
         ModFile {
             world_content: false,
+            icon: None,
             file_name: name.into(),
             rel_path: format!("mods/{name}"),
             enabled: true,

@@ -353,7 +353,7 @@ export function statusOf(i: Instance, phase?: "preparing" | "running" | "done" |
 export type Side = "client" | "server" | "both" | "unknown";
 export interface ModMeta { loader: string; id: string; name: string; version: string; side: Side; dependencies: { id: string; range: string; kind: string }[]; mixins: string[] }
 export interface LockEntry { path: string; sha1: string; source: "modrinth" | "curseforge" | "import" | "manual"; project_id?: string; version_number?: string; title?: string; layer: "base" | "user"; pinned?: boolean }
-export interface ModFile { file_name: string; rel_path: string; enabled: boolean; size: number; sha1: string; mods: ModMeta[]; read_error?: string; source?: LockEntry; world_content: boolean }
+export interface ModFile { file_name: string; rel_path: string; enabled: boolean; size: number; sha1: string; mods: ModMeta[]; read_error?: string; source?: LockEntry; world_content: boolean; icon?: string }
 export type ModState = "ok" | "warning" | "blocked" | "disabled" | "unknown";
 export type Fix = { kind: "install"; mod_id: string } | { kind: "disable"; file_name: string } | { kind: "keep_one"; file_names: string[] };
 export interface Finding { severity: "blocking" | "warning"; title: string; detail: string; evidence: string; files: string[]; fixes: Fix[] }

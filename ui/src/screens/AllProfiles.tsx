@@ -112,7 +112,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew, on
                 <tr key={i.id} className={`pick ${i.archived ? "off" : ""}`} {...pressable(() => onOpen(i.id))}>
                   <td>
                     <button className="rowname profrow" onClick={(e) => { e.stopPropagation(); onOpen(i.id); }}>
-                      <ProfileIcon id={i.id} color={i.color} size={28} />
+                      <ProfileIcon id={i.id} name={i.name} color={i.color} size={28} />
                       <span><b>{i.name}</b>{(i.favorite || i.group) && <small className="muted">{[i.favorite && t("Избранный"), i.group].filter(Boolean).join(" · ")}</small>}</span>
                     </button>
                   </td>

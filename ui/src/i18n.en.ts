@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Кнопка «Починить и играть» вверху сохранит снимок, выключит мешающие моды и запустит игру. Вернуть можно из снимка.": "The Fix and play button at the top saves a snapshot, turns off the conflicting mods and starts the game. You can undo it from the snapshot.",
   "Наборы ({0})": "Sets ({0})",
   "Включить или выключить моды набором": "Turn mods on or off as a set",
   "Инструменты": "Tools",
@@ -25,7 +26,7 @@ export const EN: Record<string, string> = {
   "обновит мир": "upgrades the world",
   "нет подходящей сборки": "no matching profile",
   "Миры лежат отдельно от сборок: удаление сборки их не трогает. Перенести можно в сборку той же версии или новее.": "Worlds live apart from profiles: deleting a profile doesn’t touch them. You can move a world to a profile of the same version or newer.",
-  "Лаунчер обращается только к нужным сервисам: Mojang и Microsoft (игра и вход), Modrinth и CurseForge (моды), Adoptium (Java), GitHub (проверка новой версии Axel'), а для комнаты через интернет — к серверам iroh (каталог адресов и посредник, через которого игра идёт в зашифрованном виде).": "The launcher only talks to the services it needs: Mojang and Microsoft (game and sign-in), Modrinth and CurseForge (mods), Adoptium (Java), GitHub (Axel' update check), and for a room over the internet, iroh servers (an address directory and a relay that carries the game encrypted).",
+  "Лаунчер обращается только к нужным сервисам: Mojang и Microsoft (игра и вход), Modrinth и CurseForge (моды), Adoptium (Java), GitHub (проверка новой версии Axel'), а для комнаты через интернет к серверам iroh (каталог адресов и посредник, через которого игра идёт в зашифрованном виде).": "The launcher only talks to the services it needs: Mojang and Microsoft (game and sign-in), Modrinth and CurseForge (mods), Adoptium (Java), GitHub (Axel' update check), and for a room over the internet, iroh servers (an address directory and a relay that carries the game encrypted).",
   "История": "History",
   "Записей": "Entries",
   "Последнее изменение": "Last change",

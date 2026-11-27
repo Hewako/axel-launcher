@@ -46,7 +46,7 @@ export function BuildPicker({ instances, current, onPick, onClose }: {
           return (
             <li key={i.id} id={optId(n)} role="option" aria-selected={n === active} className={`${n === active ? "on" : ""} ${i.id === current ? "cur" : ""}`}
               onMouseEnter={() => setActive(n)} onClick={() => pick(i)}>
-              <ProfileIcon id={i.id} color={i.color} size={28} />
+              <ProfileIcon id={i.id} name={i.name} color={i.color} size={28} />
               <span className="grow"><b>{i.name}</b><small className="muted">{i.game_version}, {i.loader === "vanilla" ? t("без модов") : loaderName[i.loader]}{i.id === current ? ` · ${t("открыта сейчас")}` : ""}</small></span>
               {hotkey < 9 && <kbd>{MOD} {hotkey + 1}</kbd>}
             </li>

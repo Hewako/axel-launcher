@@ -891,6 +891,7 @@ mod tests {
                 pinned: true,
             }),
             world_content: false,
+            icon: None,
         };
         let files = vec![
             mk("a.jar", true, false),

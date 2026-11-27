@@ -197,6 +197,9 @@ export function FindingCard({ f, files, onToggle, onSearch }: { f: Finding; file
   );
 }
 
+/** Название мода; если описания внутри файла нет — имя файла без «.jar» и «.disabled». */
+export const modTitle = (f: ModFile): string => f.mods[0]?.name ?? f.file_name.replace(/\.disabled$/i, "").replace(/\.jar$/i, "");
+
 export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }: {
   inst: Instance;
   /** Открыть экран «Каталог» для этого профиля. */
@@ -317,7 +320,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     const world = f.world_content
       ? t(" Этот мод добавляет в мир блоки, измерения или генерацию: без него часть построек и чанков может пропасть. Axel' сначала сделает бэкап последнего мира.")
       : "";
-    const ok = await dialog.confirm({ title: t("Удалить {0}?", f.mods[0]?.name ?? f.file_name), body: t("Перед удалением сохранится снимок, вернуть мод можно на вкладке «Откат». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
+    const ok = await dialog.confirm({ title: t("Удалить {0}?", modTitle(f)), body: t("Перед удалением сохранится снимок, вернуть мод можно на вкладке «Откат». Если сомневаетесь, лучше выключите мод.") + world, confirm: t("Удалить"), danger: true });
     if (!ok) return;
     try { await mods.remove(inst.id, f.file_name); load(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
   };
@@ -360,9 +363,9 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     return (
       <Fragment key={f.rel_path}>
       <tr className={`pick ${f.enabled ? "" : "off"} ${sel?.file_name === f.file_name ? "sel" : ""}`} aria-selected={sel?.file_name === f.file_name} {...pressable(() => setSelected(f.file_name))}>
-        <td><button className={`tog ${f.enabled ? "on" : ""}`} role="switch" aria-checked={f.enabled} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${m?.name ?? f.file_name}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
-        <td><button className="rowname" aria-pressed={sel?.file_name === f.file_name} onClick={() => setSelected(f.file_name)}><b>{m?.name ?? f.file_name}</b>{(st?.notes.length ?? 0) > 0 && <span className="muted"> {tc(st!.notes[0])}</span>}</button></td>
-        <td className="mono">{m?.version ?? "?"}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")} aria-label={t("закреплена")}> <Icon name="lock" size={14} /></span>}</td>
+        <td><button className={`tog ${f.enabled ? "on" : ""}`} role="switch" aria-checked={f.enabled} disabled={running} aria-label={`${f.enabled ? t("Выключить") : t("Включить")} ${modTitle(f)}`} onClick={(e) => { e.stopPropagation(); toggle(f.file_name, !f.enabled); }} /></td>
+        <td><button className="rowname" aria-pressed={sel?.file_name === f.file_name} onClick={() => setSelected(f.file_name)}>{f.icon ? <img className="modico" src={f.icon} alt="" /> : <span className="modico none" aria-hidden>{[...modTitle(f)][0]?.toUpperCase()}</span>}<b>{modTitle(f)}</b>{!f.enabled && <span className="muted"> {t("выключен")}</span>}{(st?.notes.length ?? 0) > 0 && <span className="muted"> {tc(st!.notes[0])}</span>}</button></td>
+        <td className="mono">{m?.version ?? ""}{u && <span className="upd"> → {u.new_version}</span>}{f.source?.pinned && <span className="muted" title={t("закреплена")} aria-label={t("закреплена")}> <Icon name="lock" size={14} /></span>}</td>
         <td>{f.source ? sourceName[f.source.source] : t("вручную")}</td>
         <td>{st && <span className={`state ${stateCls[st.state]}`}>{st.state === "blocked" ? <Icon name="error" size={14} /> : stateCls[st.state] === "warn" ? <Icon name="warn" size={14} /> : null} {tc(st.state_label)}</span>}</td>
         {errCol && <td>{issue(f) && (
@@ -390,7 +393,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     const needs = m ? data.files.filter((o) => o.mods.some((x) => x.dependencies.some((d) => d.id === m.id && d.kind === "required"))).map((o) => o.mods[0]?.name ?? o.file_name) : [];
     return (
       <aside className="card modcard" aria-label={t("Карточка мода")}>
-        <h2>{m?.name ?? f.file_name} {m?.version && <span className="mono muted">{m.version}</span>}</h2>
+        <h2>{modTitle(f)} {m?.version && <span className="mono muted">{m.version}</span>}</h2>
         <p className="muted small">{f.file_name}</p>
         {r.findings.filter((x) => x.files.includes(f.file_name)).map((x, i) => <FindingCard key={i} f={x} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
         <dl className="kv">
@@ -401,7 +404,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
           <dt>{t("Размер")}</dt><dd>{sizeText(f.size)}</dd>
           <dt>{t("Группа")}</dt>
           <dd>
-            <select className="field auto mini" aria-label={t("Группа для {0}", m?.name ?? f.file_name)} value={groups.groups[f.file_name] ?? ""}
+            <select className="field auto mini" aria-label={t("Группа для {0}", modTitle(f))} value={groups.groups[f.file_name] ?? ""}
               onChange={(e) => mods.setGroup(inst.id, f.file_name, e.target.value || null).then(load).catch((er) => dialog.alert(t("Не получилось"), errText(er)))}>
               <option value="">—</option>
               {groups.names.map((g) => <option key={g} value={g}>{tc(g)}</option>)}

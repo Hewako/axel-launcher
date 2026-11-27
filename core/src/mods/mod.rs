@@ -36,6 +36,8 @@ pub struct ModFile {
     pub source: Option<LockEntry>,
     /// Мод добавляет блоки, измерения или генерацию мира.
     pub world_content: bool,
+    /// Значок из JAR (`data:`-адрес), если есть.
+    pub icon: Option<String>,
 }
 
 impl ModFile {
@@ -83,6 +85,7 @@ pub fn inventory(game_dir: &Path, instance_dir: &Path) -> Result<Vec<ModFile>> {
         out.push(ModFile {
             source: lock.find(&rel_path, &sha1).cloned(),
             world_content: meta::adds_world_content(&path),
+            icon: meta::read_icon(&path),
             file_name,
             rel_path,
             enabled,

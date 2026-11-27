@@ -43,13 +43,13 @@ input, select, textarea { font: inherit; color: inherit; }
 /* Боковая панель */
 .head { width: 32px; height: 32px; border-radius: 6px; image-rendering: pixelated; flex: none; background: linear-gradient(#6b4a2b 0 30%, #c69c6d 30% 100%); }
 
-.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 1px 7px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 1px 7px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .badge.ms { color: var(--blue); border-color: rgba(90,169,230,.35); }
 .badge.ely { color: var(--violet); border-color: rgba(167,139,250,.4); }
 .badge.ok { color: var(--accent); border-color: rgba(76,195,138,.35); }
 .badge.warn { color: var(--warn); border-color: var(--warn-line); }
 .badge.err { color: var(--err); border-color: rgba(239,107,107,.4); }
-.badge.src { font-size: 10.5px; }
+.badge.src { font-size: 12px; }
 
 /* Основная область */
 .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -112,7 +112,7 @@ h3 { font-size: 1em; margin-block: 1.33em; }
 
 .pre { list-style: none; padding: 0; margin: 0; display: grid; gap: 7px; }
 .pre li { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; }
-.pre .s { width: 18px; height: 18px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.pre .s { width: 18px; height: 18px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
 .s.ok { background: rgba(76,195,138,.16); color: var(--accent); }
 .s.warn { background: rgba(232,176,74,.18); color: var(--warn); }
 .s.err { background: rgba(239,107,107,.18); color: var(--err); }
@@ -182,7 +182,7 @@ select.field.mini { padding: 3px 24px 3px 6px; background-position: right 4px ce
 .modbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
 .modtable td small { display: block; color: var(--muted); font-size: 12px; }
 .modtable tr.off td { opacity: .55; }
-.layer { font-size: 11px; color: var(--muted); }
+.layer { font-size: 12px; color: var(--muted); }
 .findings { display: grid; gap: 10px; margin-bottom: 14px; }
 .hits { display: grid; gap: 8px; max-height: 420px; overflow: auto; }
 .hit { display: flex; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); }
@@ -218,7 +218,7 @@ details.card[open] summary { margin-bottom: 8px; }
 /* Вкладка «Профиль» */
 .swatch { width: 24px; height: 24px; border-radius: 6px; border: 2px solid transparent; padding: 0; cursor: pointer; }
 .swatch.on { border-color: var(--text); }
-.swatch.auto { background: var(--panel2); color: var(--muted); font-size: 11px; }
+.swatch.auto { background: var(--panel2); color: var(--muted); font-size: 12px; }
 .usage { display: grid; gap: 8px; }
 .urow { display: grid; grid-template-columns: 210px 1fr 80px; gap: 12px; align-items: center; }
 .urow .bar { height: 8px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
@@ -253,7 +253,7 @@ tr.conflict td { background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .skip { position: absolute; left: 8px; top: -40px; z-index: 100; background: var(--panel); color: var(--text); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--accent); }
 .skip:focus { top: 8px; }
 main.content:focus { outline: none; }
-kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; color: var(--muted); }
+kbd { font: 12px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; color: var(--muted); }
 .btn.search { color: var(--muted); }
 /* Уведомления */
 /* Компактный режим */
@@ -265,7 +265,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 /* Мастер первого запуска */
 .wizard { width: min(560px, calc(100vw - 40px)); }
 .steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 14px; flex-wrap: wrap; }
-.steps li { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; background: var(--panel2); color: var(--muted); }
+.steps li { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--panel2); color: var(--muted); }
 .steps li.on { background: var(--accent); color: var(--accent-ink); }
 .steps li.done { color: var(--text); }
 .privacy li { margin-bottom: 6px; }
@@ -314,12 +314,14 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .proftable tbody tr.pick { cursor: pointer; }
 /* Форма несёт смысл, а не только цвет: круг — готов, ромб — мешает запуску, треугольник — замечания, кольцо — новый. */
 .rail-tools { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; }
-.rail-btn { position: relative; width: 40px; height: 36px; border: 0; background: none; color: var(--muted); border-radius: 8px; display: grid; place-items: center; }
+/* Значок и подпись под ним (идея 34): подписи видны всегда, имя для диктора — в aria-label. */
+.rail-btn { position: relative; width: 68px; min-height: 48px; padding: 6px 0 5px; border: 0; background: none; color: var(--muted); border-radius: 8px; display: grid; justify-items: center; align-content: center; gap: 3px; }
+.rail-lbl { font-size: 12px; line-height: 1.1; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-btn .ico { display: block; }
-.rail-btn.on::before { content: ""; position: absolute; left: -16px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
+.rail-btn.on::before { content: ""; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
 .rail-btn:hover, .rail-btn.on { color: var(--text); background: var(--panel2); }
-.rail-btn.avatar { height: 40px; padding: 0; margin-top: 6px; }
-.adot { position: absolute; right: 9px; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.rail-btn.avatar { margin-top: 2px; }
+.adot { position: absolute; right: 21px; top: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
 .bottombar { display: flex; justify-content: space-between; align-items: center; gap: 12px; height: 34px; padding: 0 20px; border-top: 1px solid var(--line); background: var(--panel); font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .bottombar .keys kbd { margin: 0 2px 0 10px; }
 .bottombar .keys kbd:first-child { margin-left: 0; }
@@ -329,7 +331,8 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .dlbar i { display: block; height: 100%; background: var(--accent); }
 .dlbar.wide { display: block; width: 100%; height: 8px; }
 .phead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.phead-ico { flex: none; border-radius: 7px; }
+.pi { flex: none; display: grid; place-items: center; font-weight: 700; line-height: 1; user-select: none; }
+.phead-ico { flex: none; }
 .phead-text { flex: 1; min-width: 220px; }
 .phead-text h1, .pname-h { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2; }
 /* Название сборки — кнопка быстрого перехода: выглядит как заголовок, стрелка проявляется при наведении. */
@@ -462,7 +465,7 @@ details.adv summary::-webkit-details-marker { display: none; }
 .btn.square .ico, .more .ico { margin: 0; vertical-align: middle; }
 .dialog-x .ico { transform: rotate(45deg); vertical-align: middle; }
 .btn kbd { color: inherit; border-color: color-mix(in srgb, currentColor 45%, transparent); }
-.play .go kbd { margin-left: 8px; background: rgba(0,0,0,.14); border-color: rgba(0,0,0,.2); color: inherit; font-size: 11px; }
+.play .go kbd { margin-left: 8px; background: rgba(0,0,0,.14); border-color: rgba(0,0,0,.2); color: inherit; font-size: 12px; }
 
 .bisectbar { margin: 0 0 12px; }
 .searchbox { position: relative; display: inline-flex; align-items: center; width: 240px; }
@@ -559,6 +562,8 @@ input[type=radio]:checked::before { border: 5px solid var(--accent); background:
 tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .modtable tr.sel { background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
 .modtable tr.grp td { background: var(--bg); font-weight: 600; font-size: 12.5px; cursor: default; }
+.modtable .modico { width: 20px; height: 20px; border-radius: 4px; margin-right: 8px; vertical-align: middle; object-fit: cover; }
+.modtable .modico.none { display: inline-grid; place-items: center; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 600; }
 .modtable .rowname { border: 0; background: none; padding: 3px 0; margin-block: -3px; color: inherit; text-align: left; font: inherit; }
 .modtable .upd, .modcard .upd { color: var(--info); }
 .state { font-size: 12.5px; font-weight: 600; color: var(--muted); }

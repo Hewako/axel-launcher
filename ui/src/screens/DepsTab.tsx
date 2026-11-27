@@ -5,6 +5,7 @@ import { errText, mods, type DoctorReport, type JournalEntry, type ModFile, type
 import { useDialog } from "../ui/Dialog";
 import { FindingCard, PlanDialog } from "./ModsTab";
 import type { CatalogKind } from "./Catalog";
+import { modTitle } from "./ModsTab";
 import { t, tc } from "../i18n";
 
 type Pt = { x: number; y: number };
@@ -29,7 +30,7 @@ type View = "all" | "around" | "problems";
 function buildGraph(files: ModFile[], report: DoctorReport, journal: JournalEntry[]) {
   const owner = new Map<string, string>();
   for (const f of files) for (const m of f.mods) owner.set(m.id, f.file_name);
-  const name = (f: ModFile) => `${f.mods[0]?.name ?? f.file_name} ${f.mods[0]?.version ?? ""}`.trim();
+  const name = (f: ModFile) => `${modTitle(f)} ${f.mods[0]?.version ?? ""}`.trim();
   const edges: Edge[] = [];
   const missing = new Map<string, string[]>();
   for (const f of files.filter((x) => x.enabled)) {

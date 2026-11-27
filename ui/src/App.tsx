@@ -250,19 +250,20 @@ function Shell() {
         <div className="rail-div" aria-hidden />
         {/* Сборки (профили) — отдельным экраном, на рельсе их больше нет. */}
         <button className={`rail-btn ${screen === "all" || screen === "profile" || screen === "new" ? "on" : ""}`} aria-label={t("Сборки")} title={t("Сборки")}
-          aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /></button>
+          aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /><span className="rail-lbl" aria-hidden>{t("Сборки")}</span></button>
         <button className={`rail-btn ${screen === "catalog" ? "on" : ""}`} aria-label={t("Каталог")} title={t("Каталог")} aria-current={screen === "catalog" ? "page" : undefined}
-          onClick={() => { setCatalogFromProfile(false); setScreen("catalog"); }}><Icon name="search" size={20} /></button>
+          onClick={() => { setCatalogFromProfile(false); setScreen("catalog"); }}><Icon name="search" size={20} /><span className="rail-lbl" aria-hidden>{t("Каталог")}</span></button>
         <div className="rail-space" />
         <div className="rail-div" aria-hidden />
         <div className="rail-tools">
           <button aria-current={screen === "logs" ? "page" : undefined} className={`rail-btn ${screen === "logs" ? "on" : ""}`} aria-label={t("Логи и краши{0}", notes.unread ? t(": новых {0}", notes.unread) : "")} title={t("Логи и краши")}
             onClick={() => { markRead(); setScreen("logs"); }}>
-            <Icon name="bell" size={20} />{notes.unread > 0 && <span className="adot" aria-hidden />}
+            <Icon name="bell" size={20} />{notes.unread > 0 && <span className="adot" aria-hidden />}<span className="rail-lbl" aria-hidden>{t("Логи")}</span>
           </button>
-          <button aria-current={screen === "settings" ? "page" : undefined} className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /></button>
+          <button aria-current={screen === "settings" ? "page" : undefined} className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /><span className="rail-lbl" aria-hidden>{t("Настройки")}</span></button>
           <button aria-current={screen === "accounts" ? "page" : undefined} className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
             <Avatar account={ms} />
+            <span className="rail-lbl" aria-hidden>{t("Аккаунт")}</span>
           </button>
         </div>
       </nav>

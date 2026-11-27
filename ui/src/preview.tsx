@@ -131,7 +131,7 @@ mockIPC((cmd, args) => {
       return {
         files,
         report: {
-          findings: [{ severity: "blocking", title: "Indium требует sodium <0.6, а стоит 0.8.14", detail: "Версии не подходят друг к другу — загрузчик остановит запуск.", evidence: "fabric.mod.json: зависимость sodium <0.6", files: ["indium.jar"], fixes: [{ kind: "disable", file_name: "indium.jar" }] }],
+          findings: [{ severity: "blocking", title: "Indium требует sodium <0.6, а стоит 0.8.14", detail: "Версии не подходят друг к другу, загрузчик остановит запуск.", evidence: "fabric.mod.json: зависимость sodium <0.6", files: ["indium.jar"], fixes: [{ kind: "disable", file_name: "indium.jar" }] }],
           mods: [
             { file_name: "sodium.jar", state: "ok", state_label: "конфликтов не найдено", notes: [] },
             { file_name: "indium.jar", state: "blocked", state_label: "блокирует запуск", notes: ["Indium требует sodium <0.6, а стоит 0.8.14"] },
