@@ -322,7 +322,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   );
 }
 
-export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor, onCatalog }: {
+export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor, onCatalog, onSwitch }: {
   inst: Instance;
   mods?: number;
   instances: Instance[];
@@ -337,6 +337,8 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
   onDoctor: (id: string, r: DoctorReport) => void;
   /** Экран «Каталог» с этим профилем. */
   onCatalog: (kind: CatalogKind, query: string) => void;
+  /** Открыть быстрый переход к другой сборке. */
+  onSwitch: () => void;
 }) {
   const dialog = useDialog();
   const [[main, sub], setPlace] = useState<[Main, Sub | undefined]>(() => place(initialTab ?? "overview"));
@@ -447,7 +449,11 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
       <div className="phead">
         <ProfileIcon id={inst.id} color={inst.color} size={44} className="pi phead-ico" />
         <div className="phead-text">
-          <h2>{inst.name}</h2>
+          <h1 className="pname-h">
+            <button className="pname" aria-haspopup="dialog" title={t("Перейти к другой сборке ({0} K)", MOD)} onClick={onSwitch}>
+              {inst.name}<span className="pname-chev" aria-hidden><Icon name="chevron" size={16} /></span>
+            </button>
+          </h1>
           <p className="sub">Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}{modCount !== undefined && inst.loader !== "vanilla" ? `, ${modsLabel(modCount)}` : ""}{disk !== null ? `, ${t("{0} на диске", sizeText(disk))}` : ""} · <StatusBadge inst={inst} state={state} /></p>
         </div>
         <div className="phead-acts">

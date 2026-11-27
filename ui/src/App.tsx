@@ -5,6 +5,7 @@ import { api, isPackPath, mb, mods, statusOf, type AccountRef, type AppInfo, typ
 import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
 import { Catalog, type CatalogKind, type CatalogTarget } from "./screens/Catalog";
+import { BuildPicker, buildOrder } from "./ui/BuildPicker";
 import { AllProfiles } from "./screens/AllProfiles";
 import { CreateInstance } from "./screens/CreateInstance";
 import { ImportDialog } from "./screens/Import";
@@ -102,6 +103,7 @@ function Shell() {
   const [catalogAt, setCatalogAt] = useState<CatalogTarget | undefined>();
   const [catalogFromProfile, setCatalogFromProfile] = useState(false);
   const [pack, setPack] = useState<{ hit: SearchHit; n: number } | null>(null);
+  const [picker, setPicker] = useState(false);
   useEffect(() => {
     let off: (() => void) | undefined;
     let alive = true;
@@ -195,6 +197,19 @@ function Shell() {
   const msAll = accounts.filter((a) => a.provider === "microsoft");
   const ms = msAll.find((a) => `${a.provider}:${a.uuid}` === defaultKey) ?? msAll[0];
 
+  // ⌘/Ctrl K — быстрый переход к сборке; ⌘/Ctrl 1–9 — сразу первые девять сборок (как в списке перехода).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!isMod(e) || document.querySelector("[role=dialog]")) return;
+      if (e.code === "KeyK") { e.preventDefault(); setPicker(true); return; }
+      const n = /^Digit([1-9])$/.exec(e.code);
+      const target = n && buildOrder(instances)[Number(n[1]) - 1];
+      if (target) { e.preventDefault(); setSelectedId(target.id); setProfileTab(undefined); setScreen("profile"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [instances]);
+
   // Ctrl Enter (⌘ Enter на Mac) — главная кнопка в шапке профиля («Играть» или «Починить и играть»), но не из поля и не из диалога.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -265,7 +280,7 @@ function Shell() {
               onCloned={async (i) => { await refresh(); open(i.id, "profile"); }}
               onChanged={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))}
               onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onNew={() => setScreen("new")} onDoctor={noteDoctor}
-              onCatalog={(kind, query) => openCatalog(selected.id, kind, query)} />
+              onCatalog={(kind, query) => openCatalog(selected.id, kind, query)} onSwitch={() => setPicker(true)} />
           ) : (
             <div className="card empty">
               <p>{t("Сборок нет.")}</p>
@@ -336,6 +351,8 @@ function Shell() {
           </span>
         </footer>
       </div>
+
+      {picker && <BuildPicker instances={instances} current={screen === "profile" ? selectedId : undefined} onPick={(id) => open(id)} onClose={() => setPicker(false)} />}
 
       {firstRun && (
         <FirstRun onDone={(next) => {

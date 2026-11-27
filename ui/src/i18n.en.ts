@@ -1,6 +1,10 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Перейти к сборке": "Go to profile",
+  "Название или версия": "Name or version",
+  "открыта сейчас": "open now",
+  "Перейти к другой сборке ({0} K)": "Go to another profile ({0} K)",
   "Играли": "Played",
   "Миров пока нет.": "No worlds yet.",
   "неизвестна": "unknown",
