@@ -181,11 +181,11 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
             <p>{tc(blocking[0].detail)}</p>
             {blocking.length > 1 && <p className="muted small">{t("И ещё замечаний, мешающих запуску: {0}", blocking.length - 1)}</p>}
             <div className="acts">
-              {fix && <button className="btn pri" disabled={active} onClick={() => play(undefined, false, fix)}><Icon name="wrench" size={16} /> {t("Починить и играть")}</button>}
-              {inst.loader !== "vanilla" && <button className="btn" disabled={active} onClick={() => play(undefined, true)}>{t("Безопасный запуск")}</button>}
-              <button className="btn" onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button>
+              {/* Главная кнопка одна — «Починить и играть» в шапке, здесь только тихие ссылки. */}
+              <button className={fix ? "btn link" : "btn"} onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button>
+              {inst.loader !== "vanilla" && <button className="btn link" disabled={active} onClick={() => play(undefined, true)}>{t("Безопасный запуск")}</button>}
             </div>
-            {fix && <p className="muted small">{t("«Починить и играть»: сохранит снимок, выключит мешающие моды и запустит игру. Вернуть можно из снимка.")}</p>}
+            {fix && <p className="muted small">{t("Кнопка «Починить и играть» вверху сохранит снимок, выключит мешающие моды и запустит игру. Вернуть можно из снимка.")}</p>}
             {warnings.length > 0 && <p className="small"><b>{t("Ещё предупреждений, запуску не мешают: {0}.", warnings.length)}</b> {warnings.map((w) => tc(w.title)).join("; ")}</p>}
           </section>
         )}
