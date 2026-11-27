@@ -26,10 +26,13 @@ export function iconFor(id: string): string {
   return ICONS[h % ICONS.length];
 }
 
-/** Светлый ли цвет (#rrggbb): на светлом букву пишем тёмной. */
+/** Тёмная буква читается лучше белой (по контрасту WCAG)? Цвет — #rrggbb. */
 const isLight = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
-  return Number.isFinite(n) && 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160;
+  if (!Number.isFinite(n)) return false;
+  const ch = (c: number) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  const l = 0.2126 * ch(n >> 16) + 0.7152 * ch((n >> 8) & 255) + 0.0722 * ch(n & 255);
+  return (l + 0.05) / 0.05 > 1.05 / (l + 0.05); // чёрная буква против белой
 };
 
 /** Значок сборки: первая буква названия на цвете сборки. */
@@ -38,7 +41,7 @@ export function ProfileIcon({ id, name, color, size = 36, className = "pi" }: { 
   const letter = [...name.trim()][0]?.toUpperCase() ?? "";
   return (
     <div className={className} aria-hidden
-      style={{ width: size, height: size, background: bg, color: isLight(bg) ? "#111" : "#fff", fontSize: Math.round(size * 0.46), borderRadius: Math.max(6, Math.round(size / 5)) }}>
+      style={{ width: size, height: size, background: bg, color: isLight(bg) ? "#000" : "#fff", fontSize: Math.round(size * 0.46), borderRadius: Math.max(6, Math.round(size / 5)) }}>
       {letter}
     </div>
   );
