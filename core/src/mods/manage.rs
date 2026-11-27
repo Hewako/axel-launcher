@@ -423,6 +423,11 @@ pub async fn add_files(
                 "{name} не мод: в файле нет метаданных Fabric, Quilt, Forge или NeoForge"
             )));
         }
+        if let Some(threat) = super::malware::scan_jar(p)? {
+            return Err(Error::invalid(format!(
+                "{name} заражён вредоносной программой {threat}. Файл не добавлен. Скачивайте моды с Modrinth и CurseForge, а этот файл удалите и проверьте компьютер антивирусом."
+            )));
+        }
         let sha1 = crate::download::hash_file::<sha1::Sha1>(p)?;
         checked.push((p.clone(), name, metas, sha1));
     }

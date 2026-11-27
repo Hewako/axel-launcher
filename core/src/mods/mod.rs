@@ -6,6 +6,7 @@ pub mod crash;
 pub mod doctor;
 pub mod groups;
 pub mod lock;
+pub mod malware;
 pub mod manage;
 pub mod meta;
 pub mod range;

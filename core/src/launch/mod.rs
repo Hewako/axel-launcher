@@ -592,8 +592,30 @@ async fn run(
     }
     // Mod Doctor до запуска: объявленные конфликты и недостающие моды останавливают запуск
     // сразу, а не после минуты загрузки.
+    // Следы Fractureiser на компьютере: запуск не останавливаем, но говорим прямо.
+    for t in crate::mods::malware::system_traces() {
+        emit(LaunchEvent::Warning {
+            message: format!(
+                "На компьютере есть следы вируса {}: {}. Он крадёт входы и пароли. Проверьте компьютер антивирусом и смените пароли.",
+                t.name, t.file
+            ),
+        });
+    }
     if inst.loader != crate::loader::LoaderKind::Vanilla && !options.safe_mode {
         let files = crate::mods::inventory(&game_dir, &store.dir(&inst.id)?)?;
+        // Заражённый мод не запускаем: вирус срабатывает при загрузке класса.
+        let enabled: Vec<_> = files.iter().filter(|f| f.enabled).cloned().collect();
+        let threats = crate::mods::malware::scan_mods(&enabled, &game_dir, &data.cache());
+        if !threats.is_empty() {
+            let list: Vec<String> = threats
+                .iter()
+                .map(|t| format!("• {} ({})", t.file, t.name))
+                .collect();
+            return Err(Error::invalid(format!(
+                "В сборке заражённые моды:\n{}\nЗапуск остановлен. Удалите эти файлы на вкладке «Моды» и проверьте компьютер антивирусом.",
+                list.join("\n")
+            )));
+        }
         let report = crate::mods::doctor::check(
             &files,
             inst.loader,

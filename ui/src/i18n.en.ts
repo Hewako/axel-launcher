@@ -648,7 +648,7 @@ export const EN: Record<string, string> = {
   "Начать": "Start",
   "Нашли на компьютере:": "Found on this computer:",
   "Не JAR-файлы": "Not JAR files",
-  "Не найдены в каталоге Modrinth: {0}. Происхождение этих файлов неизвестно. Ставьте моды только из надёжных источников: через заражённые моды распространялся вирус Fractureiser. Перед добавлением создан снимок.": "Not found in the Modrinth catalog: {0}. The origin of these files is unknown — install mods only from trusted sources (the Fractureiser virus spread through infected mods). A snapshot was created before adding.",
+  "Не найдены в каталоге Modrinth: {0}. Известных вирусов в них нет, но откуда эти файлы, неизвестно. Ставьте моды только из надёжных источников. Перед добавлением создан снимок.": "Not found in the Modrinth catalog: {0}. No known viruses in them, but where these files came from is unknown. Only install mods from sources you trust. A snapshot was taken before adding.",
   "Не отвечает": "Not responding",
   "Не открылась": "Couldn't open",
   "Не открылся": "Couldn't open",
