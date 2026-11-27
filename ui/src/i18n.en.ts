@@ -1,6 +1,13 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Вернуть значение по умолчанию": "Restore the default value",
+  "Сбросить: {0}": "Reset: {0}",
+  "Сбросить": "Reset",
+  "Найти настройку": "Find a setting",
+  "Поиск по настройкам": "Settings search",
+  "Найдено по «{0}»": "Results for “{0}”",
+  "Таких настроек нет. Попробуйте другое слово.": "No settings match. Try another word.",
   "Кнопка «Починить и играть» вверху сохранит снимок, выключит мешающие моды и запустит игру. Вернуть можно из снимка.": "The Fix and play button at the top saves a snapshot, turns off the conflicting mods and starts the game. You can undo it from the snapshot.",
   "Наборы ({0})": "Sets ({0})",
   "Включить или выключить моды набором": "Turn mods on or off as a set",

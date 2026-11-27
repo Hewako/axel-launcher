@@ -480,6 +480,12 @@ fn global_settings(state: State<AppState>) -> CmdResult<GlobalSettings> {
     GlobalSettings::load(&state.data).map_err(err)
 }
 
+/// Значения настроек по умолчанию — для кнопок «Сбросить» в «Настройках».
+#[tauri::command]
+fn global_settings_default() -> GlobalSettings {
+    GlobalSettings::default()
+}
+
 #[tauri::command]
 fn save_global_settings(state: State<AppState>, settings: GlobalSettings) -> CmdResult<()> {
     settings.save(&state.data).map_err(err)?;
@@ -2251,6 +2257,7 @@ pub fn run() {
             update_instance,
             launch_settings,
             global_settings,
+            global_settings_default,
             save_global_settings,
             list_versions,
             version_info,

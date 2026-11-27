@@ -267,6 +267,7 @@ export const api = {
   launchSettings: (id: string) =>
     invoke<{ resolved: ResolvedLaunch; profile: LaunchOverrides; global: LaunchOverrides; total_memory_mb?: number; memory_range?: [number, number] | null }>("launch_settings", { id }),
   globalSettings: () => invoke<GlobalSettings>("global_settings"),
+  globalSettingsDefault: () => invoke<GlobalSettings>("global_settings_default"),
   saveGlobalSettings: (settings: GlobalSettings) => invoke<void>("save_global_settings", { settings }),
   listVersions: (snapshots: boolean, old: boolean) =>
     invoke<{ versions: VersionEntry[]; latest_release: string; offline: boolean }>("list_versions", { snapshots, old }),

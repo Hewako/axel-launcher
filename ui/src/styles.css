@@ -639,3 +639,8 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 .roomcode::placeholder { letter-spacing: normal; font-family: var(--font, inherit); color: var(--muted); }
 .roomcode.big { font-size: 22px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-sm); background: var(--panel2); width: auto; flex: none; }
 .roomstate { margin: 10px 0 0; }
+/* Настройки: «Сбросить» и поиск. */
+.setting .send { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 64px; }
+.secnav .field[type=search] { margin-bottom: 8px; width: 100%; }
+.sgroup:not(:has(.setting)) { display: none; }
+.scard:has(.setting) .snone { display: none; }
