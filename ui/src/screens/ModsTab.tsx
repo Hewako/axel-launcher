@@ -15,6 +15,39 @@ const stateCls: Record<ModState, string> = { ok: "ok", warning: "warn", blocked:
 const sideName: Record<string, string> = { client: t("клиент"), server: t("сервер"), both: t("обе"), unknown: "—" };
 const sourceName: Record<string, string> = { modrinth: "Modrinth", curseforge: "CurseForge", import: t("импорт"), manual: t("вручную") };
 
+/** Markdown автора мода без разметки: заголовки, жирный, ссылки — простым текстом. */
+const plainMd = (md: string) => md
+  .replace(/^#{1,6}\s*/gm, "")
+  .replace(/\*\*(.+?)\*\*/g, "$1")
+  .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+  .replace(/^\s*[-*]\s+/gm, "• ")
+  .replace(/\n{3,}/g, "\n\n")
+  .trim();
+
+/** «Что нового» в обновлении мода (идея 6): Modrinth присылает текст с версией, CurseForge — по запросу. */
+function WhatsNew({ c }: { c: Change }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState<string | null>(c.version ? plainMd(c.version.changelog ?? "") : null);
+  const [err, setErr] = useState("");
+  const toggle = () => {
+    setOpen(!open);
+    if (!open && text === null && c.cf_file) {
+      mods.cfChangelog(c.cf_file.mod_id, c.cf_file.id).then(setText).catch((e) => setErr(errText(e)));
+    }
+  };
+  return (
+    <div className="whatsnew">
+      <button className="btn link small" aria-expanded={open} onClick={toggle}>{open ? t("Скрыть, что нового") : t("Что нового")}</button>
+      {open && (
+        err ? <p className="muted small">{t("Не удалось получить: {0}", err)}</p>
+          : text === null ? <p className="muted small"><span className="spinner" /> {t("Загружаем…")}</p>
+          : text ? <pre className="changelog">{text}</pre>
+          : <p className="muted small">{t("Автор не написал, что изменилось.")}</p>
+      )}
+    </div>
+  );
+}
+
 /** Предпросмотр изменений с галочками. Перед применением создаётся снимок. */
 export function PlanDialog({ title, plan, onClose, onApply }: { title: string; plan: Plan; onClose: () => void; onApply: (p: Plan) => Promise<void> }) {
   const [on, setOn] = useState<boolean[]>(plan.changes.map(() => true));
@@ -32,14 +65,17 @@ export function PlanDialog({ title, plan, onClose, onApply }: { title: string; p
       {plan.changes.length === 0 ? <p className="muted">{t("Изменений нет.")}</p> : (
         <div className="planlist">
           {plan.changes.map((c, i) => (
-            <label key={i}>
-              <input type="checkbox" checked={on[i]} onChange={(e) => setOn(on.map((v, j) => (j === i ? e.target.checked : v)))} />
-              <div>
-                <b>{c.kind === "add" ? "+ " : c.kind === "update" ? "~ " : "− "}{c.title}</b>{" "}
-                <span className="muted small">{c.old_version ? `${c.old_version} → ` : ""}{c.new_version ?? ""}</span>
-                <small>{tc(c.reason)}{c.size ? ` · ${sizeText(c.size)}` : ""}</small>
-              </div>
-            </label>
+            <div key={i} className="planitem">
+              <label>
+                <input type="checkbox" checked={on[i]} onChange={(e) => setOn(on.map((v, j) => (j === i ? e.target.checked : v)))} />
+                <div>
+                  <b>{c.kind === "add" ? "+ " : c.kind === "update" ? "~ " : "− "}{c.title}</b>{" "}
+                  <span className="muted small">{c.old_version ? `${c.old_version} → ` : ""}{c.new_version ?? ""}</span>
+                  <small>{tc(c.reason)}{c.size ? ` · ${sizeText(c.size)}` : ""}</small>
+                </div>
+              </label>
+              {c.kind === "update" && (c.version || c.cf_file) && <WhatsNew c={c} />}
+            </div>
           ))}
         </div>
       )}

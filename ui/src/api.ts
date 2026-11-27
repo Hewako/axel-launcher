@@ -360,7 +360,7 @@ export type Fix = { kind: "install"; mod_id: string } | { kind: "disable"; file_
 export interface Finding { severity: "blocking" | "warning"; title: string; detail: string; evidence: string; files: string[]; fixes: Fix[] }
 export interface DoctorReport { findings: Finding[]; mods: { file_name: string; state: ModState; state_label: string; notes: string[] }[]; total: number; ok: number; warnings: number; blocked: number; can_launch: boolean }
 export interface JournalEntry { at: number; action: string; what: string; reason: string; snapshot?: string }
-export interface Change { kind: "add" | "update" | "remove"; title: string; file_name?: string; old_file?: string; old_version?: string; new_version?: string; reason: string; size: number; version?: unknown }
+export interface Change { kind: "add" | "update" | "remove"; title: string; file_name?: string; old_file?: string; old_version?: string; new_version?: string; reason: string; size: number; version?: { changelog?: string | null; [k: string]: unknown }; cf_file?: { id: number; mod_id: number; [k: string]: unknown } }
 export interface Plan { changes: Change[]; notes: string[] }
 export interface SnapshotInfo { id: string; reason: string; created_at: number; pinned: boolean; auto: boolean; mods: number; configs: number }
 export interface SnapshotDiff { added: string[]; removed: string[]; changed: string[]; options: [string, string, string][] }
@@ -382,6 +382,7 @@ export const mods = {
   toggle: (id: string, file: string, enabled: boolean) => invoke<void>("mods_toggle", { id, file, enabled }),
   remove: (id: string, file: string) => invoke<SnapshotInfo>("mods_remove", { id, file }),
   pin: (id: string, file: string, pinned: boolean) => invoke<void>("mods_pin", { id, file, pinned }),
+  cfChangelog: (modId: number, fileId: number) => invoke<string>("cf_changelog", { modId, fileId }),
   addFiles: (id: string, paths: string[]) => invoke<{ file_name: string; title: string; known: boolean }[]>("mods_add_files", { id, paths }),
   search: (id: string, query: string, kind: ProjectKind, offset = 0, filters: CatalogFilters = {}, source: CatalogSource = "modrinth") =>
     invoke<{ hits: SearchHit[]; total_hits: number }>("catalog_search", { id, query, kind, offset, filters, source }),

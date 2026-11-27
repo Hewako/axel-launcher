@@ -1,6 +1,10 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Скрыть, что нового": "Hide what's new",
+  "Что нового": "What's new",
+  "Не удалось получить: {0}": "Could not load: {0}",
+  "Автор не написал, что изменилось.": "The author didn't describe the changes.",
   "Скопировано и сверено {0} из {1}": "Copied and checked {0} of {1}",
   "Здесь все ваши сборки. В этом же разделе миры, корзина и история изменений.": "All your profiles live here, along with worlds, the trash and the change history.",
   "Моды, модпаки, шейдеры и ресурспаки с Modrinth и CurseForge.": "Mods, modpacks, shaders and resource packs from Modrinth and CurseForge.",

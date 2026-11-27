@@ -927,6 +927,14 @@ fn mods_pin(state: State<AppState>, id: String, file: String, pinned: bool) -> C
     axel_core::mods::manage::set_pinned(&store, &id, &file, pinned).map_err(err)
 }
 
+/// «Что нового» в файле CurseForge (Modrinth присылает его вместе с версией).
+#[tauri::command]
+async fn cf_changelog(mod_id: u64, file_id: u64) -> CmdResult<String> {
+    axel_core::curseforge::file_changelog(mod_id, file_id)
+        .await
+        .map_err(err)
+}
+
 #[tauri::command]
 async fn mods_add_files(
     state: State<'_, AppState>,
@@ -2283,6 +2291,7 @@ pub fn run() {
             mods_remove,
             mods_pin,
             mods_add_files,
+            cf_changelog,
             catalog_search,
             catalog_installed,
             data_dir_check,

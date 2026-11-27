@@ -249,6 +249,57 @@ pub async fn file_by_id(mod_id: u64, file_id: u64) -> Result<CfFile> {
     Ok(d.data)
 }
 
+/// «Что нового» в файле мода (идея 6). CurseForge отдаёт HTML — превращаем в простой текст.
+pub async fn file_changelog(mod_id: u64, file_id: u64) -> Result<String> {
+    let d: Data<String> = serde_json::from_str(
+        &get_json(&format!("{API}/mods/{mod_id}/files/{file_id}/changelog")).await?,
+    )
+    .map_err(|e| Error::parse("ответ CurseForge", e))?;
+    Ok(html_to_text(&d.data))
+}
+
+/// Простой текст из HTML: переносы на месте абзацев и пунктов, без тегов и лишних пустых строк.
+pub fn html_to_text(html: &str) -> String {
+    let mut out = String::new();
+    let mut rest = html;
+    while let Some(i) = rest.find('<') {
+        out.push_str(&rest[..i]);
+        let Some(j) = rest[i..].find('>') else {
+            rest = &rest[i..];
+            break;
+        };
+        let tag = rest[i + 1..i + j].trim().to_ascii_lowercase();
+        let name = tag
+            .trim_start_matches('/')
+            .split([' ', '/'])
+            .next()
+            .unwrap_or("");
+        match name {
+            "br" | "p" | "div" | "h1" | "h2" | "h3" | "h4" | "ul" | "ol" | "tr" => out.push('\n'),
+            "li" if !tag.starts_with('/') => out.push_str("\n• "),
+            _ => {}
+        }
+        rest = &rest[i + j + 1..];
+    }
+    out.push_str(rest);
+    let text = out
+        .replace("&nbsp;", " ")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&");
+    let lines: Vec<&str> = text.lines().map(str::trim).collect();
+    let mut cleaned: Vec<&str> = Vec::new();
+    for l in lines {
+        if l.is_empty() && cleaned.last().is_none_or(|p| p.is_empty()) {
+            continue;
+        }
+        cleaned.push(l);
+    }
+    cleaned.join("\n").trim().to_string()
+}
+
 /// Более новый файл (стабильный, если есть), чем установленный `current_file_id`.
 /// ID файлов CurseForge растут со временем: файл не новее установленного — не обновление.
 pub fn newer_file<'a>(files: &'a [CfFile], current_file_id: &str) -> Option<&'a CfFile> {
@@ -371,6 +422,17 @@ pub async fn plan_install(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn changelog_html_becomes_plain_text() {
+        let html = "<h3>v1.2</h3><ul><li>Fixed &amp; improved <b>render</b></li><li>New option</li></ul><p></p><p>Thanks&nbsp;all</p>";
+        assert_eq!(
+            html_to_text(html),
+            "v1.2\n\n• Fixed & improved render\n• New option\n\nThanks all"
+        );
+        assert_eq!(html_to_text("plain"), "plain");
+        assert_eq!(html_to_text(""), "");
+    }
 
     fn file(id: u64, rt: u8, url: Option<&str>) -> CfFile {
         CfFile {
