@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Аккаунт для этой сборки": "Account for this profile",
   "Картинки модпака": "Modpack images",
   "Скачается": "Download",
   "свободно {0}": "{0} free",

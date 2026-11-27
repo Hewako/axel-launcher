@@ -3,7 +3,8 @@ import type { CatalogKind } from "./Catalog";
 import { api, errText, loaderName, mods as modsApi, modsLabel, sizeText, snapshots, type Bisect, type DoctorReport, type Hooks, type JournalEntry, sourceName, type AccountRef, type Instance, type LaunchOverrides, type Resolved, type Source } from "../api";
 import { isActive, type LaunchState } from "../launches";
 import { useDialog } from "../ui/Dialog";
-import { LaunchProgress, PlayButton, ProfileIcon, StatusBadge } from "../ui/common";
+import { Dropdown, LaunchProgress, PlayButton, ProfileIcon, StatusBadge } from "../ui/common";
+import { Avatar } from "../ui/Avatar";
 import { CrashCard } from "../ui/CrashCard";
 import { MOD } from "../keys";
 import { ModsTab } from "./ModsTab";
@@ -322,13 +323,41 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
   );
 }
 
-export function InstancePage({ inst, mods: modCount, instances, state, accounts, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor, onCatalog, onSwitch }: {
+/** Кто запустит сборку и смена аккаунта прямо в шапке (идея 58); видна, если аккаунтов больше одного. */
+function AccountSwitch({ inst, accounts, defaultKey, onChanged }: { inst: Instance; accounts: AccountRef[]; defaultKey?: string; onChanged: (i: Instance) => void }) {
+  const dialog = useDialog();
+  const streamer = useStreamer();
+  if (accounts.length < 2) return null;
+  const provider = inst.auth_mode === "ely_by" ? "elyby" : "microsoft";
+  const key = (a: AccountRef) => `${a.provider}:${a.uuid}`;
+  const own = accounts.filter((a) => a.provider === provider);
+  const current = own.find((a) => key(a) === inst.account) ?? own.find((a) => key(a) === defaultKey) ?? own[0];
+  const pick = async (a: AccountRef) => {
+    try { onChanged(await api.updateInstance(inst.id, { account: key(a), authMode: a.provider === "elyby" ? "ely_by" : "microsoft" })); }
+    catch (e) { await dialog.alert(t("Не удалось сменить аккаунт"), errText(e)); }
+  };
+  return (
+    <Dropdown title={t("Аккаунт для этой сборки")}
+      label={<span className="acctlbl"><Avatar account={current} size={20} /> {current ? nick(current.name, streamer) : t("нет аккаунта")}</span>}>
+      {(close) => accounts.map((a) => (
+        <button key={key(a)} role="menuitemradio" aria-checked={a === current} onClick={() => { close(); if (a !== current) pick(a); }}>
+          <span className="acctlbl"><Avatar account={a} size={20} /> {nick(a.name, streamer)}{a === current && <Icon name="check" size={14} />}</span>
+          <small>{a.provider === "elyby" ? t("Ely.by: только совместимые серверы") : t("Microsoft: официальные серверы")}</small>
+        </button>
+      ))}
+    </Dropdown>
+  );
+}
+
+export function InstancePage({ inst, mods: modCount, instances, state, accounts, defaultKey, initialTab, onChanged, onTrashed, onCloned, onLogs, onNew, onDoctor, onCatalog, onSwitch }: {
   inst: Instance;
   mods?: number;
   instances: Instance[];
   onCloned: (i: Instance) => void;
   state?: LaunchState;
   accounts: AccountRef[];
+  /** Аккаунт по умолчанию (`провайдер:uuid`). */
+  defaultKey?: string;
   initialTab?: Tab;
   onChanged: (i: Instance) => void;
   onTrashed: () => void;
@@ -458,6 +487,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
         </div>
         <div className="phead-acts">
           <button className="btn square wide-only" aria-label={t("Папка")} title={t("Папка")} onClick={() => api.openFolder(inst.id).catch((e) => dialog.alert(t("Не удалось открыть папку"), errText(e)))}><Icon name="folder" /></button>
+          <AccountSwitch inst={inst} accounts={accounts} defaultKey={defaultKey} onChanged={onChanged} />
           <div className="menuwrap">
             <button className="btn square" aria-label={t("Ещё")} aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)}><Icon name="more" /></button>
             {more && (

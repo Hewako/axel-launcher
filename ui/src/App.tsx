@@ -284,7 +284,7 @@ function Shell() {
             </div>
           )}
           {screen === "profile" && (selected ? (
-            <InstancePage key={selected.id} inst={selected} mods={modsCount[selected.id]} instances={instances} state={states.get(selected.id)} accounts={accounts} initialTab={profileTab}
+            <InstancePage key={selected.id} inst={selected} mods={modsCount[selected.id]} instances={instances} state={states.get(selected.id)} accounts={accounts} defaultKey={defaultKey} initialTab={profileTab}
               onCloned={async (i) => { await refresh(); open(i.id, "profile"); }}
               onChanged={(i) => setInstances((list) => list.map((x) => (x.id === i.id ? i : x)))}
               onTrashed={() => { refresh(); setProfileTab(undefined); }} onLogs={() => setScreen("logs")} onNew={() => setScreen("new")} onDoctor={noteDoctor}

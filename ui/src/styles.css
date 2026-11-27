@@ -661,4 +661,7 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 .packfacts { gap: 6px 16px; margin-bottom: 8px; }
 .packfacts dd.err { color: var(--err); }
 .packmods ul { columns: 2; margin: 8px 0 0; padding-left: 18px; max-height: 180px; overflow: auto; font-size: 13px; }
+/* Смена аккаунта в шапке сборки. */
+.acctlbl { display: inline-flex; align-items: center; gap: 8px; }
+.acctlbl img, .acctlbl canvas { border-radius: 4px; }
 
