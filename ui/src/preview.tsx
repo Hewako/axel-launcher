@@ -24,7 +24,7 @@ const withAccount = params.get("account") !== "none";
 mockIPC((cmd, args) => {
   const a = args as Record<string, unknown>;
   switch (cmd) {
-    case "app_info": return { curseforge: true, version: "0.1.0", dev_launch: params.has("dev"), data_dir: "/Users/player/.axel", microsoft_configured: params.has("ms"), os: "macos" };
+    case "app_info": return { curseforge: true, version: "1.0.0", dev_launch: params.has("dev"), data_dir: "/Users/player/.axel", microsoft_configured: params.has("ms"), os: "macos" };
     case "list_instances": return { instances, broken: [], running: [], mods: { tech: 87, shaders: 44 } };
     case "update_instance": return { ...instances.find((i) => i.id === a.id)!, ...((a.meta as object) ?? {}) };
     case "resources_list": if (a.kind === "datapack") return { game_format: 61, shader_loader: true, packs: [{ file_name: "Towers.zip", description: "Башни в мире", size: 340_000, is_dir: false, enabled: false, formats: [61, 61], compatible: true }] };
@@ -54,7 +54,7 @@ mockIPC((cmd, args) => {
     case "storage_overview": return [{ label: "Профили (миры, моды, настройки)", size: 6_200_000_000, cleanable: false }, { label: "Библиотеки и ресурсы игры (общие для профилей)", size: 1_900_000_000, cleanable: false }, { label: "Временные файлы и кеш", size: 240_000_000, cleanable: true }];
     case "cache_clean": return 240_000_000;
     case "crash_reports": return [{ file: "crash-2026-10-21_09.30.00-client.txt", when: "2026-10-21 09:30:00", size: 18_000, description: "Rendering overlay" }];
-    case "support_report_preview": return [{ name: "summary.txt", content: "Отчёт поддержки Axel'\n\nAxel': 0.1.0\nВерсия игры: 26.3" }, { name: "mods.txt", content: "[вкл] Sodium 0.8.14 (sodium.jar)" }];
+    case "support_report_preview": return [{ name: "summary.txt", content: "Отчёт поддержки Axel'\n\nAxel': 1.0.0\nВерсия игры: 26.3" }, { name: "mods.txt", content: "[вкл] Sodium 0.8.14 (sodium.jar)" }];
     case "first_run_info": return { data_dir: "/Users/player/.axel", free_bytes: 84_000_000_000, javas: [{ path: "/usr/bin/java", major: 21, version: "21.0.4", arch: "aarch64" }] };
     case "first_run_done": return null;
     case "account_skin": return null;

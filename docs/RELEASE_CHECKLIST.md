@@ -9,9 +9,12 @@
 - [ ] CI зелёный на macOS, Windows и Linux для коммита, который пойдёт в релиз
       (`cargo test`, clippy, fmt, `npm run build`, `npm run i18n:check`, `npm run ipc:check`).
 - [ ] Версия одна во всех местах: `Cargo.toml` (workspace), `ui/package.json`.
+- [ ] Сборка разработчика: push в ветку `dev-build` даёт черновик `vX.Y.Z-d` (повторно — `-d.2`…),
+      оформленный как обычный релиз; обычный `release.yml` на теги `-d` не реагирует.
 - [ ] `CHANGELOG.md`: раздел «Ещё не вышло» переименован в `X.Y.Z — дата`, сверху новый пустой.
-- [ ] Секреты репозитория на месте: `AXEL_MS_CLIENT_ID` (одобренный Mojang),
-      `AXEL_CURSEFORGE_KEY` (если каталог CurseForge нужен в этой версии).
+- [ ] Секреты репозитория на месте: `QUARRY_MS_CLIENT_ID` (одобренный Mojang),
+      `QUARRY_CURSEFORGE_KEY` (если каталог CurseForge нужен в этой версии). Имена прежние,
+      workflows передают их сборке как `AXEL_MS_CLIENT_ID` и `AXEL_CURSEFORGE_KEY`.
 - [ ] Известные ограничения в README актуальны.
 - [ ] Финальный аудит без находок уровня «исправить обязательно» (безопасность, утечка токенов).
 - [ ] `cargo audit` — без уязвимостей; `npm audit --omit=dev` (в `ui/`) — без уязвимостей.

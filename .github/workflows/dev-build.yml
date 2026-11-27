@@ -1,7 +1,7 @@
 # Сборка разработчика «d»: те же установщики и то же оформление релиза, что у обычного (текст,
 # имена файлов Axel-Launcher-*, SHA256SUMS.txt), но с dev-launch — вход через Ely.by без Microsoft.
 # Отличие на GitHub — только «-d» в конце тега и названия (правило владельца 26.11.2026).
-# Название по схеме владельца: следующий номер после последнего rc с пометкой -d (v0.1.0-rc.10-d).
+# Название: v<версия>-d (v1.0.0-d), повторные сборки той же версии — v1.0.0-d.2 и дальше.
 #
 # Запуск: отправка коммита в ветку `dev-build` (git push origin HEAD:refs/heads/dev-build) или вручную.
 # Результат — ТОЛЬКО черновик релиза: черновики видят лишь владельцы репозитория. Не публиковать.
@@ -51,9 +51,14 @@ jobs:
         id: tag
         run: |
           ver=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
-          last=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[].tag_name' \
-            | grep -oE "^v${ver}-rc\.[0-9]+" | sed 's/.*rc\.//' | sort -n | tail -1)
-          echo "tag=v${ver}-rc.$(( ${last:-0} + 1 ))-d" >> "$GITHUB_OUTPUT"
+          # v1.0.0-d; повторные сборки той же версии — v1.0.0-d.2, v1.0.0-d.3…
+          tags=$(gh api "repos/$REPO/releases?per_page=100" --jq '.[].tag_name')
+          if ! echo "$tags" | grep -qxE "v${ver}-d(\.[0-9]+)?"; then
+            echo "tag=v${ver}-d" >> "$GITHUB_OUTPUT"
+          else
+            last=$(echo "$tags" | grep -oxE "v${ver}-d\.[0-9]+" | sed 's/.*-d\.//' | sort -n | tail -1)
+            echo "tag=v${ver}-d.$(( ${last:-1} + 1 ))" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Черновик с описанием
         env:

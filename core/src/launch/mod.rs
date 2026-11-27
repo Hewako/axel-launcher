@@ -181,6 +181,22 @@ impl LaunchRegistry {
 }
 
 /// Найти аккаунт для профиля и получить данные входа для игры.
+/// Как сборка входит в игру. В сборке разработчика: у сборки выбран Microsoft, но аккаунта
+/// Microsoft нет, а Ely.by есть — играем через Ely.by (ник и скин оттуда), а не без аккаунта.
+/// Меняется только для этого запуска: в instance.toml выбор сборки остаётся прежним.
+fn effective_auth_mode(data: &DataDir, secrets: &dyn SecretStore, inst: &Instance) -> AuthMode {
+    if !DEV_LAUNCH || inst.auth_mode != AuthMode::Microsoft {
+        return inst.auth_mode;
+    }
+    let accounts = AccountStore::new(data, secrets).list().unwrap_or_default();
+    let has = |p: Provider| accounts.iter().any(|a| a.provider == p);
+    if !has(Provider::Microsoft) && has(Provider::ElyBy) {
+        AuthMode::ElyBy
+    } else {
+        inst.auth_mode
+    }
+}
+
 async fn resolve_auth(
     data: &DataDir,
     secrets: &dyn SecretStore,
@@ -243,7 +259,7 @@ async fn resolve_auth(
         (Provider::Microsoft, None) if DEV_LAUNCH => {
             Ok((
                 GameAuth {
-                    name: "AxelDev".into(),
+                    name: "Player".into(),
                     uuid: "00000000000000000000000000000000".into(),
                     access_token: "0".into(),
                     user_type: "legacy".into(),
@@ -552,6 +568,7 @@ async fn run(
     };
 
     stage(Stage::Metadata);
+    inst.auth_mode = effective_auth_mode(data, secrets, inst);
     let (auth, account) = resolve_auth(data, secrets, inst, &global, emit).await?;
     cancel.check()?;
 
@@ -879,7 +896,8 @@ pub async fn preview(
     instance_id: &str,
 ) -> Result<String> {
     let store = InstanceStore::new(data.clone());
-    let inst = store.get(instance_id)?;
+    let mut inst = store.get(instance_id)?;
+    inst.auth_mode = effective_auth_mode(data, secrets, &inst);
     let global = GlobalSettings::load(data)?;
     let mut version = crate::loader::resolve_profile(
         data,
@@ -1059,6 +1077,63 @@ mod tests {
         left.sort();
         assert_eq!(left, ["game-3.log", "game-4.log"], "место под новый лог");
         std::fs::remove_dir_all(&d).unwrap();
+    }
+
+    #[test]
+    fn dev_build_plays_through_ely_when_there_is_no_microsoft() {
+        let root = std::env::temp_dir().join(format!("axel-devauth-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let data = DataDir::open(&root).unwrap();
+        let secrets = account::MemoryStore::default();
+        let store = AccountStore::new(&data, &secrets);
+        let inst = InstanceStore::new(data.clone())
+            .create("Тест", "26.3", crate::loader::LoaderKind::Vanilla, None)
+            .unwrap();
+        assert_eq!(
+            inst.auth_mode,
+            AuthMode::Microsoft,
+            "по умолчанию у сборки Microsoft"
+        );
+        let acc = |provider, name: &str| AccountRef {
+            provider,
+            uuid: format!("{name}0000000000000000000000000000"),
+            name: name.into(),
+            owns_java_edition: provider == Provider::Microsoft,
+            checked_at: 0,
+            skin_url: None,
+            skin_variant: None,
+        };
+        let tokens = account::Tokens {
+            access_token: "t".into(),
+            expires_at: u64::MAX,
+            refresh_token: None,
+            xuid: None,
+            method: None,
+        };
+        store.upsert(acc(Provider::ElyBy, "ely"), &tokens).unwrap();
+        let mode = effective_auth_mode(&data, &secrets, &inst);
+        if DEV_LAUNCH {
+            assert_eq!(
+                mode,
+                AuthMode::ElyBy,
+                "только Ely.by — играем через Ely.by, не «Player»"
+            );
+        } else {
+            assert_eq!(
+                mode,
+                AuthMode::Microsoft,
+                "в обычной сборке выбор сборки не меняется"
+            );
+        }
+        // Есть Microsoft — сборка входит так, как выбрано.
+        store
+            .upsert(acc(Provider::Microsoft, "ms"), &tokens)
+            .unwrap();
+        assert_eq!(
+            effective_auth_mode(&data, &secrets, &inst),
+            AuthMode::Microsoft
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[tokio::test]

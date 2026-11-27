@@ -1,6 +1,7 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Лаунчер обращается только к нужным сервисам: Mojang и Microsoft (игра и вход), Modrinth и CurseForge (моды), Adoptium (Java), GitHub (проверка новой версии Axel'), а для комнаты через интернет — к серверам iroh (каталог адресов и посредник, через которого игра идёт в зашифрованном виде).": "The launcher only talks to the services it needs: Mojang and Microsoft (game and sign-in), Modrinth and CurseForge (mods), Adoptium (Java), GitHub (Axel' update check), and for a room over the internet, iroh servers (an address directory and a relay that carries the game encrypted).",
   "История": "History",
   "Записей": "Entries",
   "Последнее изменение": "Last change",
@@ -550,7 +551,6 @@ export const EN: Record<string, string> = {
   "Копия профиля": "Copy profile",
   "Куда перенести папку игры": "Where to move the game folder",
   "ЛКМ": "LMB",
-  "Лаунчер обращается только к нужным сервисам: Mojang и Microsoft (игра и вход), Modrinth и CurseForge (моды), Adoptium (Java), GitHub (проверка новой версии Axel').": "The launcher only talks to the services it needs: Mojang and Microsoft (game and sign-in), Modrinth and CurseForge (mods), Adoptium (Java), GitHub (checking for a new Axel' version).",
   "Лог игры": "Game log",
   "Логи": "Logs",
   "Логи и краши": "Logs & crashes",
