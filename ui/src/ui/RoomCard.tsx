@@ -13,7 +13,7 @@ export function RoomCard() {
   const err = error || (r.role === "none" ? r.error : "");
   return (
     <section className="card room" aria-label={t("Игра с друзьями")}>
-      <h3>{t("Игра с друзьями")}</h3>
+      <h2>{t("Игра с друзьями")}</h2>
       {r.role === "none" && (
         <div className="row">
           <button className="btn pri" onClick={() => run(room.create)}>{t("Создать комнату")}</button>

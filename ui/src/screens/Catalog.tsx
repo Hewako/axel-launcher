@@ -152,7 +152,7 @@ export function Catalog({ instances, target, onPack, onNew, onBack }: {
     <>
       <div className="shead">
         <div>
-          <h2>{t("Каталог")}</h2>
+          <h1>{t("Каталог")}</h1>
           <p className="sub">{kind === "modpack" ? t("Модпак станет новой сборкой.") : t("Показано то, что подходит к выбранной сборке.")}</p>
         </div>
         {onBack && <button className="btn" onClick={onBack}>{t("К сборке")}</button>}

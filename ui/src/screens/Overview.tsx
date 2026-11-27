@@ -103,7 +103,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
     return (
       <div className="ov">
         <section className="card">
-          <h3>{t("Чиним сборку, шаг {0} из {1}", Math.min(fixRun.step + 1, steps.length), steps.length)}</h3>
+          <h2>{t("Чиним сборку, шаг {0} из {1}", Math.min(fixRun.step + 1, steps.length), steps.length)}</h2>
           <p className="muted">{t("Окно можно не держать открытым. Если что-то пойдёт не так, ничего не потеряется: снимок уже сохранён.")}</p>
           <ol className="fixsteps" aria-live="polite">
             {steps.map(([title, hint], i) => {
@@ -120,12 +120,12 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         </section>
         <div className="stack">
           <section className="card">
-            <h3>{t("Если передумали")}</h3>
+            <h2>{t("Если передумали")}</h2>
             <p className="muted">{t("Во время скачивания нажмите «Отменить» вверху. Уже сделанные шаги можно откатить из снимка.")}</p>
             <div className="row"><button className="btn" onClick={() => onGo("snapshots")}>{t("Открыть снимки")}</button></div>
           </section>
           <section className="card">
-            <h3>{t("Что останется как есть")}</h3>
+            <h2>{t("Что останется как есть")}</h2>
             <p className="muted">{t("Миры, ресурспаки, шейдеры и настройки игры не меняются.")}</p>
           </section>
         </div>
@@ -140,7 +140,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
       <div className="ov">
         <div className="stack">
           <section className="verdict ok" aria-label={t("Игра запущена")}>
-            <h3>{t("Игра запущена")}</h3>
+            <h2>{t("Игра запущена")}</h2>
             {fixRun?.off.length ? <p>{t("Починка прошла, выключены: {0}.", fixRun.off.map(modName).join(", "))}{fixRun.warnings.length ? ` ${t("Осталось предупреждений: {0}, играть они не мешают.", fixRun.warnings.length)}` : ""}</p>
               : <p>{t("Окно Minecraft открыто. Если игра упадёт, здесь появится причина.")}</p>}
             <div className="acts">
@@ -149,7 +149,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
             </div>
           </section>
           <section className="card">
-            <h3>{t("Лог запуска, в реальном времени")}</h3>
+            <h2>{t("Лог запуска, в реальном времени")}</h2>
             {tail.length ? <div className="logtail mono">{tail.map((l, i) => <div key={i} className={/\b(WARN|ERROR|FATAL)\b/.test(l) ? (/WARN/.test(l) ? "w" : "e") : ""}>{l}</div>)}</div>
               : <p className="muted">{t("Игра ещё ничего не написала в лог.")}</p>}
             <div className="row foot">
@@ -160,7 +160,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         </div>
         <div className="stack">
           <section className="card">
-            <h3>{t("Сейчас")}</h3>
+            <h2>{t("Сейчас")}</h2>
             <dl className="kv">
               <dt>{t("Игра идёт")}</dt><dd className="mono"><Clock since={state.runningAt ?? state.startedAt} /></dd>
               {mem ? <><dt>{t("Память")}</dt><dd>{t("до {0} ГБ", gb(mem))}</dd></> : null}
@@ -177,7 +177,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
       <div className="stack">
         {r && blocking.length > 0 && (
           <section className="verdict err" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Мешает запуску: {0}", tc(blocking[0].title))}</h3>
+            <h2>{t("Мешает запуску: {0}", tc(blocking[0].title))}</h2>
             <p>{tc(blocking[0].detail)}</p>
             {blocking.length > 1 && <p className="muted small">{t("И ещё замечаний, мешающих запуску: {0}", blocking.length - 1)}</p>}
             <div className="acts">
@@ -191,14 +191,14 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         )}
         {r && blocking.length === 0 && warnings.length > 0 && (
           <section className="verdict warn" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Можно играть, есть замечания: {0}", warnings.length)}</h3>
+            <h2>{t("Можно играть, есть замечания: {0}", warnings.length)}</h2>
             <p>{tc(warnings[0].title)}</p>
             <div className="acts"><button className="btn" onClick={() => onGo("mods")}>{t("Открыть в «Моды»")}</button></div>
           </section>
         )}
         {crashed && !liveCrash && (
           <section className="verdict err" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{last?.outcome === "failed_to_start" ? t("Игра не запустилась в прошлый раз") : t("Игра упала при последнем запуске")}</h3>
+            <h2>{last?.outcome === "failed_to_start" ? t("Игра не запустилась в прошлый раз") : t("Игра упала при последнем запуске")}</h2>
             {last?.message && <p>{tc(last.message)}</p>}
             <div className="acts">
               {canBisect && <button className="btn" disabled={active} onClick={onBisect}>{t("Найти виновника краша…")}</button>}
@@ -211,7 +211,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         )}
         {r && empty && !crashed && (
           <section className="verdict info" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Сборка пока пустая")}</h3>
+            <h2>{t("Сборка пока пустая")}</h2>
             <p>{t("Minecraft {0} и {1} установлены, модов нет. Игра запустится без модов.", inst.game_version, loaderName[inst.loader])}</p>
             <div className="acts">
               <button className="btn pri" onClick={() => onGo("mods")}><Icon name="plus" size={16} /> {t("Найти моды")}</button>
@@ -221,7 +221,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         )}
         {r && r.findings.length === 0 && !crashed && !empty && (
           <section className="verdict ok" aria-label={t("Вердикт Mod Doctor")}>
-            <h3>{t("Всё готово к запуску")}</h3>
+            <h2>{t("Всё готово к запуску")}</h2>
             <p>
               {inst.loader === "vanilla" ? t("Сборка без модов.") : t("Замечаний нет: Mod Doctor проверил моды ({0}).", r.total)}
               {worked ? ` ${t("Последний запуск {0} прошёл без ошибок.", relTime(last.at))}` : ""}
@@ -231,7 +231,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
 
         {inst.loader !== "vanilla" && (
           <section className="card">
-            <h3>{worked || changes.length === 0 ? t("Что изменилось с последнего рабочего запуска") : t("Последние изменения модов")}</h3>
+            <h2>{worked || changes.length === 0 ? t("Что изменилось с последнего рабочего запуска") : t("Последние изменения модов")}</h2>
             {changes.length === 0 && (worked
               ? <div className="cempty"><b>{t("Ничего")}</b><span>{t("Моды такие же, как в последнем рабочем запуске.")}</span></div>
               : <div className="cempty"><b>{t("Изменений пока нет")}</b><span>{t("Снимок сохранится сам перед первым изменением модов.")}</span></div>)}
@@ -255,7 +255,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
         )}
 
         <section className="card">
-          <h3>{t("Последний запуск")}</h3>
+          <h2>{t("Последний запуск")}</h2>
           {last ? (
             <p>
               {statusOf(inst).text}{last.duration_secs > 0 ? `, ${t("играли {0} мин", Math.max(1, Math.round(last.duration_secs / 60)))}` : ""}.
@@ -269,13 +269,13 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
       <div className="stack">
         {!world && !server && (
           <section className="card">
-            <h3>{t("Быстрый старт")}</h3>
+            <h2>{t("Быстрый старт")}</h2>
             <p className="muted">{t("Миров и серверов пока нет. Они появятся после первой игры.")}</p>
           </section>
         )}
         {(world || server) && (
           <section className="card">
-            <h3>{t("Быстрый старт")}</h3>
+            <h2>{t("Быстрый старт")}</h2>
             <div className="qs">
               {world && (
                 <button disabled={active} onClick={() => play({ kind: "singleplayer", target: world.folder })} aria-label={t("Играть в мир «{0}»", world.name)}>
@@ -291,7 +291,7 @@ export function Overview({ inst, state, doctor, accounts, fix, fixRun, onGo, onL
           </section>
         )}
         <section className="card">
-          <h3>{t("Сводка")}</h3>
+          <h2>{t("Сводка")}</h2>
           <dl className="kv">
             <dt>{t("Аккаунт")}</dt><dd>{nick0}</dd>
             <dt>Java</dt><dd>{java ? t("указана вручную") : t("подбирается автоматически")}</dd>

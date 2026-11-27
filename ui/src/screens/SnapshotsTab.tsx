@@ -38,20 +38,20 @@ function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
     <div className="ov">
       <section className="card">
         <button className="btn link small back" onClick={onBack}><Icon name="chevron" size={14} /> {t("Все снимки")}</button>
-        <h3>{t("Снимок {0} и сборка сейчас", when)}</h3>
+        <h2>{t("Снимок {0} и сборка сейчас", when)}</h2>
         <p className="muted small">{tc(s.reason)}. {t("Что изменилось в сборке после этого снимка.")}</p>
-        <h4 className="subhead">{t("Моды")} <span className="muted">{t("отличий: {0}", modCount)}</span></h4>
+        <h3 className="subhead">{t("Моды")} <span className="muted">{t("отличий: {0}", modCount)}</span></h3>
         <DiffRows d={d} keep={isMod} />
-        <h4 className="subhead">{t("Конфиги")} <span className="muted">{t("отличий: {0}", cfgCount)}</span></h4>
+        <h3 className="subhead">{t("Конфиги")} <span className="muted">{t("отличий: {0}", cfgCount)}</span></h3>
         <DiffRows d={d} keep={(p) => !isMod(p)} />
-        <h4 className="subhead">options.txt</h4>
+        <h3 className="subhead">options.txt</h3>
         {d.options.length === 0 ? <p className="muted small">{t("Без изменений.")}</p> : (
           <div className="diff">{d.options.map(([k, a, b]) => <span key={k}><span className="del">− {k}: {a || "—"}</span><br /><span className="add">+ {k}: {b}</span></span>)}</div>
         )}
       </section>
       <div className="stack">
         <section className="card">
-          <h3>{t("Вернуть к {0}", when)}</h3>
+          <h2>{t("Вернуть к {0}", when)}</h2>
           <ul className="facts">
             <li>{t("Сначала сохраним новый снимок, потом вернём старый, так что откат можно отменить.")}</li>
             <li>{t("Миры не затрагиваются.")}</li>
@@ -62,7 +62,7 @@ function Compare({ s, d, when, running, busy, onBack, onRestore, onPin }: {
           </div>
         </section>
         <section className="card">
-          <h3>{s.pinned ? t("Снимок закреплён") : t("Закрепить этот снимок")}</h3>
+          <h2>{s.pinned ? t("Снимок закреплён") : t("Закрепить этот снимок")}</h2>
           <p className="muted small">{t("Закреплённый снимок не удаляется при очистке старых.")}</p>
           <button className="btn" onClick={onPin}>{s.pinned ? t("Открепить") : t("Закрепить")}</button>
         </section>
@@ -201,7 +201,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored, onOpenBuild }
       <div className="stack">
       {focus && (
         <section className="card">
-          <h3>{t("Если вернуть снимок {0}", when(focus.created_at))}</h3>
+          <h2>{t("Если вернуть снимок {0}", when(focus.created_at))}</h2>
           <ul className="facts">
             <li>{t("Вернутся моды, настройки модов и options.txt.")}</li>
             {fd && <li>{fd.added.length + fd.removed.length + fd.changed.length + fd.options.length === 0 ? t("Сборка сейчас такая же, как в снимке.")
@@ -213,11 +213,11 @@ export function SnapshotsTab({ inst, running, journal, onRestored, onOpenBuild }
         </section>
       )}
       <section className="card">
-        <h3>{t("История сборки")}</h3>
+        <h2>{t("История сборки")}</h2>
         <HistoryMap id={inst.id} alive onRestored={onOpenBuild} />
       </section>
       <section className="card">
-        <h3>{t("Миры и их бэкапы")}</h3>
+        <h2>{t("Миры и их бэкапы")}</h2>
         <p className="muted small" style={{ margin: "0 0 10px" }}>
           {t("Axel' сам делает бэкап последнего мира, если моды менялись после прошлой игры, и перед удалением мода, который добавляет блоки или измерения. Хранятся 5 последних бэкапов каждого мира.")}
         </p>
@@ -257,7 +257,7 @@ export function SnapshotsTab({ inst, running, journal, onRestored, onOpenBuild }
         )}
         {foreign.length > 0 && (
           <>
-            <h4 className="subhead">{t("Миры из других сборок")}</h4>
+            <h3 className="subhead">{t("Миры из других сборок")}</h3>
             <div className="worlds">
               {foreign.map((f) => (
                 <div className="world" key={`${f.owner_id}/${f.world.folder}`}>

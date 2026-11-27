@@ -302,7 +302,7 @@ function Shell() {
             <>
               <div className="shead">
                 <div>
-                  <h2>{t("Новая сборка")}</h2>
+                  <h1>{t("Новая сборка")}</h1>
                   <p className="sub">{t("Создать с нуля или из готового модпака.")}</p>
                 </div>
                 {/* Главная кнопка экрана — в шапке; отправляет форму «Создать с нуля». */}
@@ -313,7 +313,7 @@ function Shell() {
                 <div className="stack">
                   <ImportDialog dragging={dragging} dropped={dropped} pack={pack} onDone={(i) => refresh().then(() => open(i.id))} />
                   <section className="card">
-                    <h3>{t("Что появится")}</h3>
+                    <h2>{t("Что появится")}</h2>
                     <ul className="facts">
                       <li>{t("Папка сборки появится сразу, а файлы игры скачаются при первом запуске.")}</li>
                       <li>{t("Java подберётся по версии игры, при необходимости скачается.")}</li>

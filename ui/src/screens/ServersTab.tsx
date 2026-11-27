@@ -83,7 +83,7 @@ export function ServersTab({ inst, running }: { inst: Instance; running: boolean
       <RoomCard />
       <div className="pagehead" style={{ marginBottom: 14 }}>
         <div>
-          <h3 style={{ margin: 0 }}>{t("Серверы")}</h3>
+          <h2 style={{ margin: 0 }}>{t("Серверы")}</h2>
           {!inst.external_game_dir && <span className="muted small">{t("Общий список для всех сборок {0}.x", inst.game_version.split(".").slice(0, 2).join("."))}</span>}
         </div>
         {allTags.length > 0 && (

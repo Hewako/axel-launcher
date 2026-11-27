@@ -381,7 +381,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     const needs = m ? data.files.filter((o) => o.mods.some((x) => x.dependencies.some((d) => d.id === m.id && d.kind === "required"))).map((o) => o.mods[0]?.name ?? o.file_name) : [];
     return (
       <aside className="card modcard" aria-label={t("Карточка мода")}>
-        <h3>{m?.name ?? f.file_name} {m?.version && <span className="mono muted">{m.version}</span>}</h3>
+        <h2>{m?.name ?? f.file_name} {m?.version && <span className="mono muted">{m.version}</span>}</h2>
         <p className="muted small">{f.file_name}</p>
         {r.findings.filter((x) => x.files.includes(f.file_name)).map((x, i) => <FindingCard key={i} f={x} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
         <dl className="kv">

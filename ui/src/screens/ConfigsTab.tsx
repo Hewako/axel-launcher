@@ -91,7 +91,7 @@ export function ConfigsTab({ inst, running }: { inst: Instance; running: boolean
   return (
     <section className="card panel" aria-label={t("Конфиги")}>
       <div>
-        <h3>{t("Конфиги")}</h3>
+        <h2>{t("Конфиги")}</h2>
         {files && <p className="muted small">{t("Файлов: {0}, изменены вами: {1}", files.length, edited)}</p>}
       </div>
       <input className="field" type="search" placeholder={t("Поиск по именам и содержимому…")} aria-label={t("Поиск по конфигам")} value={query} onChange={(e) => setQuery(e.target.value)} />

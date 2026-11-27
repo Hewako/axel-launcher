@@ -145,7 +145,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
         <span className="muted small">{t("Перед сохранением делается снимок, вернуть можно на вкладке «Откат».")}</span>
       </div>
 
-      <h4>{t("Графика")}</h4>
+      <h2 className="subhead">{t("Графика")}</h2>
       <PresetBar c="graphics" />
       <div className="card">
         {GRAPHICS.filter((g) => values[g.key] !== undefined).map((g) => {
@@ -169,7 +169,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
 
       {sounds.length > 0 && (
         <>
-          <h4>{t("Звук")}</h4>
+          <h2 className="subhead">{t("Звук")}</h2>
           <PresetBar c="sound" />
           <div className="card">
             {sounds.map((k) => {
@@ -187,7 +187,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
         </>
       )}
 
-      <h4>{t("Управление")}</h4>
+      <h2 className="subhead">{t("Управление")}</h2>
       <PresetBar c="controls" />
       <div className="row small" style={{ marginBottom: 8 }}>
         <button className="btn link small" onClick={async () => {
@@ -247,7 +247,7 @@ export function OptionsTab({ inst, running }: { inst: Instance; running: boolean
       </div>
       <aside className="stack">
         <section className="card">
-          <h3>{t("Откуда берутся значения")}</h3>
+          <h2>{t("Откуда берутся значения")}</h2>
           <p className="muted">{t("Здесь только то, что игра хранит в options.txt этой сборки. Файл входит в снимки, поэтому откат вернёт и эти значения. Память, Java и размер окна настраиваются на вкладке «Запуск и память».")}</p>
         </section>
       </aside>

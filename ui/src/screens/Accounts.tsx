@@ -127,7 +127,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
     <>
       <div className="shead">
         <div>
-          <h2>{t("Аккаунты и скины")}</h2>
+          <h1>{t("Аккаунты и скины")}</h1>
           <p className="sub">{t("Можно добавить несколько аккаунтов. Токены входа хранятся в защищённом хранилище системы.")}</p>
         </div>
         <button className="btn cta" disabled={!info.microsoft_configured} onClick={() => setMsLogin(true)}><Icon name="plus" size={16} /> {t("Добавить аккаунт")}</button>
@@ -135,7 +135,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       <div className="ov">
       <div className="stack">
       <section className="card">
-      <h3>{t("Аккаунты")}</h3>
+      <h2>{t("Аккаунты")}</h2>
       {accounts.length === 0 && (
         <div className="alert info">
           <div className="h">{t("Аккаунтов пока нет")}</div>
@@ -172,7 +172,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       ))}
       </section>
       <section className="card" aria-labelledby="acc-add">
-        <h3 id="acc-add">{t("Добавить аккаунт")}</h3>
+        <h2 id="acc-add">{t("Добавить аккаунт")}</h2>
         <div className="acc">
           <span className="foundico" aria-hidden><Icon name="user" size={16} /></span>
           <div className="grow"><b>Microsoft</b><p className="muted small" style={{ margin: 0 }}>{t("Вход по коду: откроется страница Microsoft в системном браузере, там вводится код. Пароль в лаунчер не вводится. Проверим, что игра куплена.")}</p></div>
@@ -196,7 +196,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       </section>
       {accounts.length > 0 && instances.some((i) => !i.archived) && (
         <section className="card" aria-labelledby="acc-map">
-          <h3 id="acc-map">{t("Какой профиль под каким аккаунтом")}</h3>
+          <h2 id="acc-map">{t("Какой профиль под каким аккаунтом")}</h2>
           {instances.filter((i) => !i.archived).map((i) => {
             const own = accounts.filter((a) => (i.auth_mode === "ely_by" ? a.provider === "elyby" : a.provider === "microsoft"));
             return (
@@ -218,7 +218,7 @@ export function Accounts({ info, accounts, defaultKey, onChanged, instances, onI
       </div>
       {selAcc && (
         <section className="card skincard" aria-label={t("Скин")}>
-          <h3>{t("Скин")} {nick(selAcc.name, streamer)}</h3>
+          <h2>{t("Скин")} {nick(selAcc.name, streamer)}</h2>
           {skin[selKey!] === undefined ? <p className="muted"><span className="spinner" /> {t("Загружаем…")}</p>
             : skin[selKey!] ? <img className="skinfig" src={skin[selKey!]!} alt={t("Скин спереди и сзади")} /> : <p className="muted small">{t("Скина нет, в игре будет стандартный Steve или Alex.")}</p>}
           <p className="muted small">{selAcc.provider === "elyby" ? t("Скин Ely.by виден только на серверах, которые используют Ely.by. Сменить его можно на ely.by.") : t("Сменить скин можно на minecraft.net.")}</p>

@@ -81,7 +81,7 @@ export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; run
     <section className="card panel" aria-label={t("Ресурспаки и шейдеры")}>
       <div className="sechead">
         <div>
-          <h3>{t("Ресурспаки")}</h3>
+          <h2>{t("Ресурспаки")}</h2>
           <p className="muted small">{t("Верхний перекрывает нижние.")}{packs && packs.game_format === undefined && t(" Совместимость проверится после первого запуска этой версии игры.")}</p>
         </div>
         <button className="btn" onClick={() => onCatalog("resourcepack", "")}>{t("Найти ресурспак…")}</button>
@@ -108,7 +108,7 @@ export function ResourcesTab({ inst, running, onCatalog }: { inst: Instance; run
       )}
 
       <div className="sechead">
-        <h3>{t("Шейдеры")}</h3>
+        <h2>{t("Шейдеры")}</h2>
         <button className="btn" onClick={() => onCatalog("shader", "")}>{t("Найти шейдер…")}</button>
       </div>
       {shaders && !shaders.shader_loader && (

@@ -52,14 +52,14 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
   const title = SECTIONS.find(([k]) => k === sec)![1];
   return (
     <>
-      <h2>{t("Настройки Axel'")}</h2>
+      <h1>{t("Настройки Axel'")}</h1>
       <p className="sub">{t("Настройки лаунчера и значения по умолчанию для сборок.")}</p>
       <div className="settings">
         <nav className="secnav" aria-label={t("Разделы настроек")}>
           {SECTIONS.map(([k, l]) => <button key={k} className={sec === k ? "on" : ""} aria-current={sec === k ? "page" : undefined} onClick={() => setSec(k)}>{l}</button>)}
         </nav>
         <section className="card" aria-label={title}>
-          <h3>{title}</h3>
+          <h2>{title}</h2>
           {sec === "general" && <>
         <div className="setting">
           <div className="lbl">{t("Язык")}<span className="hint">Language</span></div>
@@ -149,7 +149,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           <input className="field mono" value={args} onChange={(e) => setArgs(e.target.value)} placeholder={t("например -XX:+UseG1GC")} />
           <span />
         </div>
-            <h4 className="subhead">{t("Бэкапы миров")}</h4>
+            <h3 className="subhead">{t("Бэкапы миров")}</h3>
         <div className="setting">
           <div className="lbl">{t("Бэкап мира перед рискованным запуском")}<span className="hint">{t("если моды менялись после прошлой игры")}</span></div>
           <label className="row"><input type="checkbox" checked={s.backup_before_risky_launch} onChange={(e) => setS({ ...s, backup_before_risky_launch: e.target.checked })} /></label>
@@ -191,7 +191,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
           </select>
           <span />
         </div>
-            <h4 className="subhead">{t("Место на диске")}</h4>
+            <h3 className="subhead">{t("Место на диске")}</h3>
         {storage === null ? (
           <button className="btn" onClick={loadStorage}>{t("Посчитать, сколько занимают данные Axel'")}</button>
         ) : (

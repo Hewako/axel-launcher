@@ -79,7 +79,7 @@ export function AllProfiles({ instances, mods, states, status, onOpen, onNew, on
     <>
       <div className="shead">
         <div>
-          <h2>{t("Сборки")}</h2>
+          <h1>{t("Сборки")}</h1>
           <p className="sub">{t("Сборок: {0}", counts.all)}{total ? `, ${t("{0} на диске", sizeText(total))}` : ""}</p>
         </div>
         <button className="btn cta" onClick={onNew}><Icon name="plus" size={16} /> {t("Новая сборка")}</button>
@@ -222,7 +222,7 @@ function HistoryView({ onRestored }: { onRestored: (i: Instance) => void }) {
       </div>
       {current && (
         <section className="card">
-          <h3>{current.alive ? t("История «{0}»", current.name) : t("История удалённой сборки «{0}»", current.name)}</h3>
+          <h2>{current.alive ? t("История «{0}»", current.name) : t("История удалённой сборки «{0}»", current.name)}</h2>
           <HistoryMap id={current.id} alive={current.alive} onRestored={onRestored} />
         </section>
       )}

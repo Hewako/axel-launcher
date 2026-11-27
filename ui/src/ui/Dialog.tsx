@@ -26,7 +26,7 @@ export function useDialog(): DialogApi {
 
 /** То же содержимое, что у Modal, но карточкой на странице (экран «Новый профиль»). */
 export function Panel({ title, children }: { title: string; children: ReactNode; onClose?: () => void; wide?: boolean }) {
-  return <section className="card panel" aria-label={title}><h3>{title}</h3>{children}</section>;
+  return <section className="card panel" aria-label={title}><h2>{title}</h2>{children}</section>;
 }
 
 export function Modal({ title, children, onClose, wide }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean }) {
@@ -52,7 +52,7 @@ export function Modal({ title, children, onClose, wide }: { title: string; child
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="dialog" role="dialog" aria-modal="true" aria-label={title} ref={ref} style={wide ? { width: "min(720px, calc(100vw - 40px))" } : undefined}>
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         {children}
         {/* В конце, чтобы автофокус и Tab сначала шли по содержимому окна. */}
         <button className="iconbtn dialog-x" aria-label={t("Закрыть окно")} title={t("Закрыть окно")} onClick={onClose}><Icon name="plus" size={18} /></button>

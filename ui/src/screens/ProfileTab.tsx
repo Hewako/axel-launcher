@@ -55,13 +55,13 @@ function CompareDialog({ inst, instances, onClose }: { inst: Instance; instances
   const b = others.find((i) => i.id === other);
   const table = (title: string, rows: DiffRow[]) => rows.length > 0 && (
     <>
-      <h4 className="subhead">{title}</h4>
+      <h3 className="subhead">{title}</h3>
       <table className="cmp"><thead><tr><th /><th>{inst.name}</th><th>{b?.name}</th></tr></thead>
         <tbody>{rows.map(([k, x, y]) => <tr key={k}><td>{tc(k)}</td><td className="mono">{x || "—"}</td><td className="mono">{y || "—"}</td></tr>)}</tbody>
       </table>
     </>
   );
-  const list = (title: string, items: string[]) => items.length > 0 && <><h4 className="subhead">{title}</h4><p className="small">{items.join(", ")}</p></>;
+  const list = (title: string, items: string[]) => items.length > 0 && <><h3 className="subhead">{title}</h3><p className="small">{items.join(", ")}</p></>;
   const same = d && !d.basics.length && !d.only_a.length && !d.only_b.length && !d.versions.length && !d.settings.length && !d.options.length;
   return (
     <Modal title={t("Сравнить «{0}» с другой сборкой", inst.name)} onClose={onClose} wide>
@@ -233,7 +233,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     <div className="ov">
     <div className="stack">
       <section className="card psec" aria-labelledby="ps-about">
-        <h3 id="ps-about">{t("О сборке «{0}»", inst.name)}</h3>
+        <h2 id="ps-about">{t("О сборке «{0}»", inst.name)}</h2>
         <dl className="kv">
           <dt>{t("Создан")}</dt><dd>{inst.created_at ? new Date(inst.created_at * 1000).toLocaleDateString() : "—"}{inst.pack ? `, ${t("модпак {0}", inst.pack.name)}` : ""}</dd>
           <dt>{t("Игра и загрузчик")}</dt><dd>Minecraft {inst.game_version}, {loaderName[inst.loader]}{inst.loader_version ? ` ${inst.loader_version}` : ""}</dd>
@@ -242,7 +242,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
         </dl>
       </section>
       <section className="card psec" aria-labelledby="ps-profile">
-        <h3 id="ps-profile">{t("Сборка")}</h3>
+        <h2 id="ps-profile">{t("Сборка")}</h2>
         <div className="setting">
           <div className="lbl">{t("Название")}</div>
           <input className="field" value={name} maxLength={64} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() && name !== inst.name && save()} />
@@ -279,7 +279,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       </section>
 
       <section className="card psec" aria-labelledby="ps-disk">
-        <h3 id="ps-disk">{t("Место на диске")}{usage ? ` · ${sizeText(usage.total)}` : ""}</h3>
+        <h2 id="ps-disk">{t("Место на диске")}{usage ? ` · ${sizeText(usage.total)}` : ""}</h2>
         {!usage ? <p className="muted" style={{ margin: 0 }}><span className="spinner" /> {t("Считаем…")}</p> : usage.parts.length === 0 ? <p className="muted" style={{ margin: 0 }}>{t("Сборка пока пустая.")}</p> : (
           <div className="usage">
             {usage.parts.map((p) => (
@@ -295,7 +295,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
 
       {inst.pack && (
         <section className="card psec" aria-labelledby="ps-pack">
-          <h3 id="ps-pack">{t("Модпак")}</h3>
+          <h2 id="ps-pack">{t("Модпак")}</h2>
           <div className="row">
             <span><b>{inst.pack.name}</b> {inst.pack.version}</span>
             <span style={{ flex: 1 }} />
@@ -316,7 +316,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       )}
 
       <section className="card psec" aria-labelledby="ps-copy">
-        <h3 id="ps-copy">{t("Копия и перенос")}</h3>
+        <h2 id="ps-copy">{t("Копия и перенос")}</h2>
         <div className="row" style={{ margin: "8px 0 14px" }}>
           <button className="btn" onClick={() => setModal("clone")}>{t("Сделать копию сборки…")}</button>
           <button className="btn" onClick={exportPack}>{t("Экспорт в .mrpack…")}</button>
@@ -334,7 +334,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
       </section>
 
       <section className="card psec danger" aria-labelledby="ps-danger">
-        <h3 id="ps-danger">{t("Архив и удаление")}</h3>
+        <h2 id="ps-danger">{t("Архив и удаление")}</h2>
         <div className="setting">
           <div className="lbl">{t("Архив")}<span className="hint">{t("Сборка уйдёт в конец списка, файлы останутся")}</span></div>
           <label className="row"><input type="checkbox" checked={meta.archived} onChange={(e) => save({ archived: e.target.checked })} /></label>
@@ -379,7 +379,7 @@ export function ProfileTab({ inst, instances, running, onChanged, onCloned, onTr
     </div>
     <aside className="stack">
       <section className="card">
-        <h3>{t("Что входит в экспорт")}</h3>
+        <h2>{t("Что входит в экспорт")}</h2>
         <p className="muted">{t("Моды и их настройки из папки config: моды с Modrinth записываются ссылками, остальные кладутся файлами. Настройки игры, миры и данные входа не входят. Рядом с файлом сохраняется отчёт с лицензиями модов.")}</p>
       </section>
     </aside>

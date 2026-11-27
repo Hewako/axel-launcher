@@ -28,7 +28,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
 
         {step === 0 && (
           <>
-            <h3 id="wiz-title">{t("Добро пожаловать в Axel'")}</h3>
+            <h2 id="wiz-title">{t("Добро пожаловать в Axel'")}</h2>
             <p>{t("Пара коротких шагов, и можно играть. Всё это потом можно поменять в настройках.")}</p>
             <label className="small muted" htmlFor="wiz-lang">{t("Язык интерфейса")}</label>
             <select id="wiz-lang" className="field" value={lang} onChange={(e) => setLang(e.target.value)} data-autofocus>
@@ -39,7 +39,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 1 && (
           <>
-            <h3 id="wiz-title">{t("Где Axel' хранит игру")}</h3>
+            <h2 id="wiz-title">{t("Где Axel' хранит игру")}</h2>
             <p>{t("Версии игры, моды, миры и настройки лежат в одной папке:")}</p>
             <p className="mono small" style={{ userSelect: "text" }}>{info?.data_dir || "…"}</p>
             <div className="row"><DataDirButton /></div>
@@ -49,7 +49,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 2 && (
           <>
-            <h3 id="wiz-title">Java</h3>
+            <h2 id="wiz-title">Java</h2>
             {info === null ? <p className="muted"><span className="spinner" /> {t("Ищем Java на компьютере…")}</p> : info.javas.length > 0 ? (
               <>
                 <p>{t("Нашли на компьютере:")}</p>
@@ -61,7 +61,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 3 && (
           <>
-            <h3 id="wiz-title">{t("Вход")}</h3>
+            <h2 id="wiz-title">{t("Вход")}</h2>
             <p>{t("Чтобы играть, нужен аккаунт Microsoft, на котором куплена Minecraft: Java Edition. Пароль вводится на сайте Microsoft, Axel' его не видит.")}</p>
             <div className="row">
               <button className={`btn ${next === "accounts" ? "pri" : ""}`} onClick={() => { setNext("accounts"); setStep(4); }}>{t("Войти после мастера")}</button>
@@ -71,7 +71,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 4 && (
           <>
-            <h3 id="wiz-title">{t("Первая сборка")}</h3>
+            <h2 id="wiz-title">{t("Первая сборка")}</h2>
             <p>{t("Каждая сборка как отдельная игра: своя версия, моды и миры. Сборок может быть сколько угодно, и они не мешают друг другу.")}</p>
             <div className="row">
               <button className={`btn ${next === "create" ? "pri" : ""}`} onClick={() => { setNext("create"); setStep(5); }}>{t("Создать сборку")}</button>
@@ -82,7 +82,7 @@ export function FirstRun({ onDone }: { onDone: (next: "accounts" | "create" | "i
         )}
         {step === 5 && (
           <>
-            <h3 id="wiz-title">{t("Ваши данные")}</h3>
+            <h2 id="wiz-title">{t("Ваши данные")}</h2>
             <ul className="small privacy">
               <li>{t("Axel' не собирает статистику и ничего не отправляет разработчикам.")}</li>
               <li>{t("В интернет он ходит только за игрой, входом, Java, модами и новой версией Axel'.")}</li>

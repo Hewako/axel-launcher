@@ -62,12 +62,12 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
 
   return (
     <>
-      <h2>{t("Логи и краши")}</h2>
+      <h1>{t("Логи и краши")}</h1>
       {/* Уведомления: колокольчик на рельсе ведёт сюда. */}
       {notes.length > 0 && (
         <section className="card notes" aria-label={t("Уведомления")}>
           <div className="sechead">
-            <h3>{t("Уведомления")}</h3>
+            <h2>{t("Уведомления")}</h2>
             <button className="btn link small" onClick={clearNotes}>{t("Очистить")}</button>
           </div>
           <ul>
@@ -120,7 +120,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
             <div className="alert err"><div className="h">{t("Запуск не начался")}</div><span style={{ userSelect: "text" }}>{tc(run.message)}</span></div>
           )}
           <section className="card">
-            <h3>{t("Лог запуска")}{run ? `, ${when(run.at)}` : ""}{inst && !filter ? ` · ${inst.name}` : ""}</h3>
+            <h2>{t("Лог запуска")}{run ? `, ${when(run.at)}` : ""}{inst && !filter ? ` · ${inst.name}` : ""}</h2>
             {live && state ? <LogView lines={state.logs} /> : file ? <LogView lines={file} follow={false} /> : <p className="muted">{err || <><span className="spinner" /> {t("Загружаем лог…")}</>}</p>}
             {run && (run.prepare_secs !== undefined || run.cpu_percent) ? (
               <p className="muted small">{run.prepare_secs !== undefined ? t("Подготовка {0}", duration(run.prepare_secs)) : ""}{run.cpu_percent ? t(" · процессор в среднем {0} %", run.cpu_percent) : ""}</p>
@@ -136,7 +136,7 @@ export function Logs({ instances, states, id, onPick }: { instances: Instance[];
           </section>
         {inst && crashes.length > 0 && (
           <>
-            <h4 className="subhead">{t("Отчёты о крашах ·")} {crashes.length}</h4>
+            <h3 className="subhead">{t("Отчёты о крашах ·")} {crashes.length}</h3>
             <div className="card" style={{ padding: 0 }}>
               <table className="servers">
                 <tbody>

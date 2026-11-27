@@ -74,7 +74,10 @@ input, select, textarea { font: inherit; color: inherit; }
 /* Фильтр каталога «Minecraft 26.3 · Fabric»: не кнопка, а подпись-пилюля. */
 .pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--panel2); color: var(--text); font-size: 13px; white-space: nowrap; }
 
-h2 { font-size: 18px; margin: 0 0 4px; }
+h1 { font-size: 18px; margin: 0 0 4px; }
+/* Уровни заголовков сдвинуты (заголовок экрана — h1), размеры прежние. */
+h2 { font-size: 1.17em; margin-block: 1em; }
+h3 { font-size: 1em; margin-block: 1.33em; }
 .sub { color: var(--muted); margin: 0 0 16px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -160,7 +163,7 @@ select.field.mini { padding: 3px 24px 3px 6px; background-position: right 4px ce
 /* Диалоги */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-start; justify-content: center; padding-top: 90px; z-index: 50; }
 .dialog { width: min(560px, calc(100vw - 40px)); max-height: calc(100vh - 140px); overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 18px; display: grid; gap: 14px; }
-.dialog h3 { margin: 0; font-size: 17px; padding-right: 40px; }
+.dialog h2 { margin: 0; font-size: 17px; padding-right: 40px; }
 .dialog { position: relative; }
 .dialog-x { position: absolute; top: 14px; right: 14px; line-height: 1; }
 .dialog .acts { display: flex; gap: 8px; justify-content: flex-end; }
@@ -328,7 +331,7 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 .phead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .phead-ico { flex: none; border-radius: 7px; }
 .phead-text { flex: 1; min-width: 220px; }
-.phead-text h2, .pname-h { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2; }
+.phead-text h1, .pname-h { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2; }
 /* Название сборки — кнопка быстрого перехода: выглядит как заголовок, стрелка проявляется при наведении. */
 .pname { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 2px 6px; margin: -2px -6px; border-radius: 8px; font: inherit; color: inherit; text-align: left; }
 .pname:hover { background: var(--panel); }
@@ -367,10 +370,10 @@ kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px;
 
 /* «Обзор»: слева вердикт, изменения, последний запуск; справа быстрый старт и сводка */
 .ov { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
-.ov h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.ov h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
 .ov p { margin: 0; }
 .verdict { border: 1px solid var(--line); border-left-width: 3px; border-radius: var(--radius); padding: 16px; display: grid; gap: 8px; }
-.verdict h3 { margin: 0; }
+.verdict h2 { margin: 0; }
 .verdict.err { background: var(--err-bg); border-color: var(--err-line); border-left-color: var(--err); }
 .verdict.warn { background: var(--warn-bg); border-left-color: var(--warn); }
 .verdict.info { background: var(--panel); border-left-color: var(--muted); }
@@ -442,7 +445,7 @@ details.adv[open] summary::before { transform: rotate(90deg); }
 details.adv summary::-webkit-details-marker { display: none; }
 .subhead { margin: 16px 0 4px; font-size: 13.5px; font-weight: 600; }
 .ov .cmd { max-height: 220px; }
-.psec h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.psec h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
 .psec.danger { border-color: var(--err-line); }
 /* «Опасная зона» — обычный блок с красной рамкой, без отдельного цвета заголовка. */
 
@@ -516,24 +519,24 @@ input[type=radio]:checked::before { border: 5px solid var(--accent); background:
 .secnav button { text-align: left; border: 0; background: none; color: var(--muted); padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 500; transition: transform .22s cubic-bezier(.2,.8,.2,1), background .22s, color .22s; }
 .secnav button:hover { color: var(--text); background: var(--panel); }
 .secnav button.on { color: var(--text); background: var(--panel2); transform: translateX(8px); }
-.settings > .card h3 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+.settings > .card h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
 
 .logsgrid { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; align-items: start; }
 .runs { display: grid; gap: 0; padding: 12px 16px; }
-.runs h3 { margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
+.runs h2 { margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
 .run { display: grid; gap: 1px; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); padding: 10px 10px 10px 14px; position: relative; border-radius: 0; }
 .run:last-child { border-bottom: 0; }
 .run::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 2px; background: var(--ctl); }
 .run.ok::before { background: var(--accent); } .run.err::before { background: var(--err); } .run.warn::before { background: var(--warn); }
 .run:hover, .run.on { background: var(--panel2); }
-.logsgrid h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.logsgrid h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
 
 .skincard { display: grid; gap: 10px; justify-items: center; text-align: center; }
-.skincard h3 { justify-self: start; font-size: 15px; font-weight: 600; margin: 0; }
-.ov > .card > h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.skincard h2 { justify-self: start; font-size: 15px; font-weight: 600; margin: 0; }
+.ov > .card > h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
 
 .panel { display: grid; gap: 12px; align-content: start; }
-.panel h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.panel h2 { font-size: 16px; font-weight: 600; margin: 0; }
 .panel .acts { display: flex; gap: 8px; justify-content: flex-end; }
 
 .cmp td:first-child { color: var(--muted); }
@@ -554,7 +557,7 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 .state { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .state.err { color: var(--err); } .state.warn { color: var(--warn); } .state.ok { color: var(--muted); font-weight: 400; }
 .modcard { display: grid; gap: 10px; position: sticky; top: 0; }
-.modcard h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.modcard h2 { font-size: 16px; font-weight: 600; margin: 0; }
 .modcard p { margin: 0; overflow-wrap: anywhere; }
 .modcard .alert { margin: 0; }
 .modtable td:last-child .btn.link { white-space: nowrap; }
@@ -617,7 +620,7 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 }
 /* «Игра с друзьями» (ui/RoomCard.tsx). */
 .room { margin-bottom: 16px; }
-.room h3 { margin: 0 0 10px; }
+.room h2 { margin: 0 0 10px; }
 .room .row { align-items: center; flex-wrap: wrap; }
 /* Поле кода: 5 символов крупно и с запасом, серая подсказка «Код» обычным шрифтом. */
 .roomcode { width: 160px; flex: none; text-align: center; letter-spacing: .15em; font-size: 16px; }

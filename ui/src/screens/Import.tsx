@@ -79,7 +79,7 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
       {error && <div className="alert err"><span style={{ userSelect: "text" }}>{error}</span></div>}
 
       <section className="card panel" aria-label={t("Модпак из каталога Modrinth")}>
-        <h3>{t("Модпак из каталога Modrinth")}</h3>
+        <h2>{t("Модпак из каталога Modrinth")}</h2>
         <input className="field" type="search" aria-label={t("Найти модпак")} placeholder={t("Найти модпак…")} value={packQuery} onChange={(e) => setPackQuery(e.target.value)} />
         {packs.map((h) => (
           <div className="hit" key={h.project_id}>
@@ -93,7 +93,7 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
       {/* Блок показываем, только если что-то нашлось: пустой занимал полэкрана. */}
       {sources && (sources.prism.length > 0 || sources.official) && (
       <section className="card panel" aria-label={t("Нашли на этом компьютере")}>
-        <h3>{t("Нашли на этом компьютере")}</h3>
+        <h2>{t("Нашли на этом компьютере")}</h2>
           <div className="rlist">
             {sources.prism.map(([path, name]) => (
               <div className="rrow" key={path}>

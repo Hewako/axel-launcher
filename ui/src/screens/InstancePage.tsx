@@ -283,7 +283,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
             <textarea className="field mono" rows={2} placeholder="MESA_GL_VERSION_OVERRIDE=4.5" value={envText} onChange={(e) => setEnvText(e.target.value)} />
             <SourceTag source={envText.trim() ? "profile" : inst.pack_settings.env ? "pack" : data.global.env ? "global" : "default"} onReset={() => setEnvText("")} />
           </div>
-          <h4 className="subhead">{t("Команды до и после запуска (для опытных)")}</h4>
+          <h2 className="subhead">{t("Команды до и после запуска (для опытных)")}</h2>
           {inst.hooks && Object.keys(inst.hooks).some((k) => k !== "approved") && !inst.hooks.approved && (
             <div className="alert warn"><span>{t("Команды изменены вне лаунчера и не выполняются, пока вы их не подтвердите.")}</span></div>
           )}
@@ -306,7 +306,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
 
       <div className="stack">
         <section className="card">
-          <h3>{t("Итоговая команда")}</h3>
+          <h2>{t("Итоговая команда")}</h2>
           <div className="cmd">{preview || "…"}</div>
           <div className="row foot">
             <span className="muted small grow">{t("Команда по сохранённым настройкам. Токен и UUID скрыты.")}</span>
@@ -314,7 +314,7 @@ function LaunchTab({ inst, accounts, onChanged }: { inst: Instance; accounts: Ac
           </div>
         </section>
         <section className="card">
-          <h3>{t("Откуда берутся значения")}</h3>
+          <h2>{t("Откуда берутся значения")}</h2>
           <p className="muted">{t("Значение сборки важнее значения модпака, а оно важнее общих настроек. Метка рядом показывает, откуда значение, «сбросить» возвращает общее.")}</p>
         </section>
       </div>

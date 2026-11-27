@@ -210,7 +210,7 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
         <aside className="card modcard" aria-label={t("Сведения о связях")} aria-live="polite">
           {!node ? (
             <>
-              <h3>{t("Сводка")}</h3>
+              <h2>{t("Сводка")}</h2>
               <dl className="kv">
                 <dt>{t("Обязательные зависимости")}</dt><dd>{missingCount ? <span style={{ color: "var(--err)" }}>{t("не хватает: {0}", missingCount)}</span> : t("все на месте")}</dd>
                 <dt>{t("Конфликтов")}</dt><dd>{conflicts}</dd>
@@ -221,7 +221,7 @@ export function DepsTab({ inst, running, onChanged, onCatalog }: { inst: Instanc
             </>
           ) : (
             <>
-              <h3>{node.name}</h3>
+              <h2>{node.name}</h2>
               <p className="muted small">{node.id}</p>
               {findingsOf(node.id).map((f, i) => <FindingCard key={i} f={f} files={data.files} onToggle={toggle} onSearch={(q) => setCatalog(q)} />)}
               <dl className="kv">
