@@ -1,5 +1,6 @@
 // Центр уведомлений: события лаунчера копятся здесь вместо всплывающих окон.
 import { useSyncExternalStore } from "react";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 
 export interface Note { id: number; at: number; kind: "info" | "warn" | "err"; title: string; body?: string; profile?: string }
 
@@ -30,4 +31,31 @@ export function useNotes(): { notes: Note[]; unread: number } {
     (l) => { listeners.add(l); return () => listeners.delete(l); },
     () => (snapshot.notes === notes && snapshot.unread === unread ? snapshot : (snapshot = { notes, unread })),
   );
+}
+
+// Уведомления системы (идеи 44 и 64): только когда окно Axel' не на виду. Нажатие на
+// уведомление выводит окно вперёд, а окно открывает то, о чём было уведомление.
+export type JumpTarget = { screen: "logs" } | { screen: "profile"; id: string };
+type Prefs = { system_notifications: boolean; notification_sound: boolean; on_game_start: string };
+export const notifyPrefs: Prefs = { system_notifications: true, notification_sound: true, on_game_start: "ask" };
+export function setNotifyPrefs(p: Partial<Prefs>) { Object.assign(notifyPrefs, p); }
+
+let jump: { target: JumpTarget; at: number } | null = null;
+
+export async function systemNotify(title: string, body?: string, target?: JumpTarget) {
+  if (!notifyPrefs.system_notifications || document.hasFocus()) return;
+  try {
+    let ok = await isPermissionGranted();
+    if (!ok) ok = (await requestPermission()) === "granted";
+    if (!ok) return;
+    sendNotification({ title, body, sound: notifyPrefs.notification_sound ? "default" : undefined });
+    if (target) jump = { target, at: Date.now() };
+  } catch { /* без уведомлений системы остаётся лента в «Логах» */ }
+}
+
+/** Куда перейти, когда окно снова на виду (уведомление не старше 10 минут). */
+export function takeJump(): JumpTarget | null {
+  const j = jump;
+  jump = null;
+  return j && Date.now() - j.at < 10 * 60_000 ? j.target : null;
 }

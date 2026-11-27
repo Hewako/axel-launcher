@@ -2,6 +2,10 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Открыть Axel'": "Open Axel'",
+  "Выйти": "Quit",
+  "Нет главного окна": "No main window",
+  "Неизвестное действие с окном: {0}": "Unknown window action: {0}",
   "Нет интернета: играем без обновления входа. Одиночная игра и комнаты работают, серверы с проверкой лицензии пустят, когда интернет появится.": "No internet: playing without refreshing the login. Singleplayer and rooms work; servers that check licenses will let you in once you're back online.",
   "соединение оборвалось": "the connection dropped",
   "Проверка куска файла прервана: {0}": "Checking the partial file was interrupted: {0}",

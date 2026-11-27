@@ -6,6 +6,7 @@ import { path, setStreamer } from "../streamer";
 import { switchLang, t, tc } from "../i18n";
 import { UpdateNotice } from "../ui/UpdateNotice";
 import { isMod } from "../keys";
+import { setNotifyPrefs } from "../notify";
 
 export type Section = "general" | "look" | "game" | "data" | "privacy" | "about";
 const ACCENTS: [string, string][] = [["#3fb950", t("Зелёный")], ["#2563eb", t("Синий")], ["#7c3aed", t("Фиолетовый")], ["#d0703a", t("Оранжевый")], ["#c2415d", t("Малиновый")], ["#2a9d8f", t("Бирюзовый")]];
@@ -70,6 +71,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release, initialS
     try {
       await api.saveGlobalSettings(next);
       setStreamer(next.streamer_mode);
+      setNotifyPrefs(next);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
@@ -131,6 +133,20 @@ export function Settings({ info, theme, onTheme, onAppearance, release, initialS
         </Row>
         <Row label={t("Сообщать о новой версии Axel'")} hint={t("проверка на GitHub при запуске, скачивание только по вашему нажатию")} reset={reset("check_launcher_updates")}>
           <label className="row"><input type="checkbox" checked={s.check_launcher_updates} onChange={(e) => setS({ ...s, check_launcher_updates: e.target.checked })} /></label>
+        </Row>
+        <Row label={t("Уведомления системы")} hint={t("«Игра скачана», «Игра упала», когда окно Axel' не на виду")} reset={reset("system_notifications")}>
+          <label className="row"><input type="checkbox" checked={s.system_notifications} onChange={(e) => setS({ ...s, system_notifications: e.target.checked })} /></label>
+        </Row>
+        <Row label={t("Звук уведомлений")} reset={reset("notification_sound")}>
+          <label className="row"><input type="checkbox" checked={s.notification_sound} disabled={!s.system_notifications} onChange={(e) => setS({ ...s, notification_sound: e.target.checked })} /></label>
+        </Row>
+        <Row label={t("Окно Axel' во время игры")} hint={t("после выхода из игры окно вернётся само")} reset={reset("on_game_start")}>
+          <select className="field" value={s.on_game_start} onChange={(e) => setS({ ...s, on_game_start: e.target.value })}>
+            <option value="ask">{t("Спрашивать")}</option>
+            <option value="minimize">{t("Свернуть")}</option>
+            <option value="tray">{t("Спрятать в трей")}</option>
+            <option value="keep">{t("Оставить")}</option>
+          </select>
         </Row>
         <Row label={t("Режим стримера")} hint={t("скрывать ник, пути и адреса серверов на экране, в логах и в отчётах")} reset={reset("streamer_mode")}>
           <label className="row"><input type="checkbox" checked={s.streamer_mode} onChange={(e) => setS({ ...s, streamer_mode: e.target.checked })} /></label>

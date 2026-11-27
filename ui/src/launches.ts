@@ -21,7 +21,16 @@ export interface LaunchState {
   startedAt: number;
   /** Когда игра реально запустилась (событие started) — для «Игра идёт 00:42». */
   runningAt?: number;
+  /** Перед запуском что-то скачивалось (для уведомления «Игра скачана»). */
+  downloaded?: boolean;
 }
+
+/** Что сделать окну при событиях запуска: уведомления, свернуть и вернуть окно (App). */
+export const launchHooks: {
+  started?: (id: string, downloaded: boolean) => void;
+  exited?: (id: string, crashed: boolean, title?: string) => void;
+  failed?: (id: string, error: string) => void;
+} = {};
 
 const MAX_LOG_LINES = 5000;
 type Listener = () => void;
@@ -64,11 +73,11 @@ class LaunchStore {
       this.update(id, (s) => {
         switch (e.type) {
           case "stage": return { ...s, stageLabel: tc(e.label), progress: undefined };
-          case "progress": return { ...s, progress: e.progress };
+          case "progress": return { ...s, progress: e.progress, downloaded: s.downloaded || e.progress.files_total > 0 };
           case "account": return { ...s, account: `${e.name} (${e.provider})` };
           case "java": return { ...s, javaLabel: tc(e.label), javaReason: tc(e.reason) };
           case "warning": pushNote({ kind: "warn", title: e.message, profile: id }); return { ...s, warnings: [...s.warnings, tc(e.message)] };
-          case "started": return { ...s, phase: "running", stageLabel: t("Игра запущена"), command: e.command, progress: undefined, runningAt: Date.now() };
+          case "started": launchHooks.started?.(id, !!s.downloaded); return { ...s, phase: "running", stageLabel: t("Игра запущена"), command: e.command, progress: undefined, runningAt: Date.now() };
           case "log": {
             const logs = s.logs.length >= MAX_LOG_LINES ? s.logs.slice(-MAX_LOG_LINES + 1) : s.logs.slice();
             logs.push(e.line);
@@ -76,13 +85,17 @@ class LaunchStore {
           }
           case "exited":
             if (e.info.crashed) pushNote({ kind: "err", title: src("Игра упала"), body: e.info.analysis?.title, profile: id });
+            launchHooks.exited?.(id, e.info.crashed, e.info.analysis?.title);
             return { ...s, exit: e.info, phase: "done", stageLabel: e.info.crashed ? t("Игра упала") : t("Игра закрыта") };
         }
       });
       schedule();
     });
     await listen<{ id: string; error?: string }>("launch-finished", ({ payload }) => {
-      if (payload.error) pushNote({ kind: "err", title: src("Запуск не удался"), body: payload.error, profile: payload.id });
+      if (payload.error) {
+        pushNote({ kind: "err", title: src("Запуск не удался"), body: payload.error, profile: payload.id });
+        launchHooks.failed?.(payload.id, payload.error);
+      }
       this.update(payload.id, (s) =>
         payload.error ? { ...s, phase: "failed", error: tc(payload.error) } : { ...s, phase: "done" },
       );

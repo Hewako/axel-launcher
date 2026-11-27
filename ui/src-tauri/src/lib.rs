@@ -2200,10 +2200,79 @@ async fn data_dir_change(
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+const TRAY_ID: &str = "main";
+
+/// Меню значка в трее (идея 57): три последние сборки, «Открыть», «Выйти». Подписи присылает
+/// окно на текущем языке.
+fn tray_menu(
+    app: &tauri::AppHandle,
+    recent: &[(String, String)],
+    open: &str,
+    quit: &str,
+) -> tauri::Result<tauri::menu::Menu<tauri::Wry>> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+    let menu = Menu::new(app)?;
+    for (id, name) in recent.iter().take(3) {
+        menu.append(&MenuItem::with_id(
+            app,
+            format!("launch:{id}"),
+            format!("▶ {name}"),
+            true,
+            None::<&str>,
+        )?)?;
+    }
+    if !recent.is_empty() {
+        menu.append(&PredefinedMenuItem::separator(app)?)?;
+    }
+    menu.append(&MenuItem::with_id(app, "open", open, true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "quit", quit, true, None::<&str>)?)?;
+    Ok(menu)
+}
+
+/// Показать главное окно: развернуть, если свёрнуто, и вывести вперёд.
+fn show_main(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
+/// Обновить меню трея: последние сборки и подписи на языке окна.
+#[tauri::command]
+fn tray_update(
+    app: tauri::AppHandle,
+    recent: Vec<(String, String)>,
+    open: String,
+    quit: String,
+) -> CmdResult<()> {
+    let menu = tray_menu(&app, &recent, &open, &quit).map_err(|e| e.to_string())?;
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Окно на время игры (идея 30): `minimize` — свернуть, `hide` — спрятать в трей, `show` — вернуть.
+#[tauri::command]
+fn main_window(app: tauri::AppHandle, action: String) -> CmdResult<()> {
+    let w = app.get_webview_window("main").ok_or("Нет главного окна")?;
+    match action.as_str() {
+        "minimize" => w.minimize().map_err(|e| e.to_string()),
+        "hide" => w.hide().map_err(|e| e.to_string()),
+        "show" => {
+            show_main(&app);
+            Ok(())
+        }
+        _ => Err(format!("Неизвестное действие с окном: {action}")),
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let root = axel_core::relocate::resolve_root()
                 .ok_or("Не удалось определить домашнюю папку")?;
@@ -2244,6 +2313,37 @@ pub fn run() {
             {
                 let _ = w.set_title("Axel' Dev");
             }
+            // Значок в трее: левый клик открывает окно, меню — последние сборки.
+            {
+                use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+                let mut tray = TrayIconBuilder::with_id(TRAY_ID)
+                    .tooltip("Axel'")
+                    .menu(&tray_menu(app.handle(), &[], "Открыть Axel'", "Выйти")?)
+                    .show_menu_on_left_click(false)
+                    .on_menu_event(|app, e| match e.id().as_ref() {
+                        "open" => show_main(app),
+                        "quit" => app.exit(0),
+                        id => {
+                            if let Some(inst) = id.strip_prefix("launch:") {
+                                let _ = app.emit("tray-launch", inst);
+                            }
+                        }
+                    })
+                    .on_tray_icon_event(|tray, e| {
+                        if let TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = e
+                        {
+                            show_main(tray.app_handle());
+                        }
+                    });
+                if let Some(icon) = app.default_window_icon() {
+                    tray = tray.icon(icon.clone());
+                }
+                tray.build(app)?;
+            }
             app.manage(AppState {
                 data,
                 registry: LaunchRegistry::default(),
@@ -2254,6 +2354,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            tray_update,
+            main_window,
             app_info,
             room_create,
             room_join,

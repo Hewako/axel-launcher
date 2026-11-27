@@ -388,6 +388,19 @@ pub struct GlobalSettings {
     /// папка удаляется, а рецепт остаётся в истории.
     #[serde(default = "default_trash_days")]
     pub trash_days: u32,
+    /// Уведомления системы, когда окно Axel' не на виду: «игра скачана», «игра упала» (идея 44).
+    #[serde(default = "yes")]
+    pub system_notifications: bool,
+    /// Звук у этих уведомлений (идея 64).
+    #[serde(default = "yes")]
+    pub notification_sound: bool,
+    /// Что делать с окном, когда игра запустилась: `ask` (спросить), `minimize`, `tray`, `keep`.
+    #[serde(default = "default_on_game_start")]
+    pub on_game_start: String,
+}
+
+fn default_on_game_start() -> String {
+    "ask".into()
 }
 
 fn default_trash_days() -> u32 {
@@ -429,6 +442,9 @@ impl Default for GlobalSettings {
             download_limit_kbps: 0,
             check_launcher_updates: true,
             trash_days: default_trash_days(),
+            system_notifications: true,
+            notification_sound: true,
+            on_game_start: default_on_game_start(),
         }
     }
 }

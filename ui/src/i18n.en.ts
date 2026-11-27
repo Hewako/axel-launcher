@@ -1,6 +1,22 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Уведомления системы": "System notifications",
+  "«Игра скачана», «Игра упала», когда окно Axel' не на виду": "“Game downloaded”, “Game crashed” when the Axel' window isn't in view",
+  "Звук уведомлений": "Notification sound",
+  "Окно Axel' во время игры": "Axel' window while playing",
+  "после выхода из игры окно вернётся само": "the window comes back when you quit the game",
+  "Свернуть": "Minimize",
+  "Спрятать в трей": "Hide to tray",
+  "Игра скачана": "Game downloaded",
+  "{0} запускается": "{0} is starting",
+  "Игра упала: {0}": "Game crashed: {0}",
+  "Откройте «Логи», там разбор краша.": "Open Logs for the crash analysis.",
+  "Запуск не удался: {0}": "Launch failed: {0}",
+  "Открыть Axel'": "Open Axel'",
+  "Игра запущена. Что сделать с окном Axel'?": "The game is running. What should the Axel' window do?",
+  "Когда игра закроется, окно вернётся само. Изменить можно в «Настройках».": "When the game closes, the window comes back. You can change this in Settings.",
+  "Запомнить выбор": "Remember my choice",
   "Аккаунт для этой сборки": "Account for this profile",
   "Картинки модпака": "Modpack images",
   "Скачается": "Download",

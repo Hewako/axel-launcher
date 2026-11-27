@@ -21,7 +21,8 @@ import { Icon } from "./ui/icons";
 import { UpdateNotice } from "./ui/UpdateNotice";
 import { DialogProvider } from "./ui/Dialog";
 import { nick, path, setStreamer, useStreamer } from "./streamer";
-import { markRead, pushNote, useNotes } from "./notify";
+import { markRead, pushNote, setNotifyPrefs, useNotes, type JumpTarget } from "./notify";
+import { useGameWindow } from "./ui/GameWindow";
 import { src, syncLang, t, takeResume } from "./i18n";
 import { ALT, MOD, isMod } from "./keys";
 
@@ -155,7 +156,7 @@ function Shell() {
   useEffect(() => {
     launches.start();
     api.appInfo().then(setInfo);
-    api.globalSettings().then((g) => { setTheme(g.theme); applyTheme(g.theme); applyAppearance(g); setFirstRun(!g.first_run_done); syncLang(g.language); setSettingsRead(true); }).catch(() => applyTheme("dark"));
+    api.globalSettings().then((g) => { setTheme(g.theme); applyTheme(g.theme); applyAppearance(g); setFirstRun(!g.first_run_done); syncLang(g.language); setSettingsRead(true); setNotifyPrefs(g); }).catch(() => applyTheme("dark"));
     refresh();
     refreshAccounts();
     api.launcherUpdate().then((r) => {
@@ -171,6 +172,13 @@ function Shell() {
     window.addEventListener("keydown", onKey);
     return () => { off.then((f) => f()); window.removeEventListener("keydown", onKey); };
   }, [refresh, refreshAccounts]);
+
+  // Окно во время игры, уведомления системы и трей.
+  const jumpTo = useCallback((j: JumpTarget) => {
+    if (j.screen === "logs") setScreen("logs");
+    else { setSelectedId(j.id); setScreen("profile"); }
+  }, []);
+  const gameWindowDialog = useGameWindow(instances, jumpTo);
 
   const changeTheme = (t: string) => {
     setTheme(t);
@@ -360,6 +368,7 @@ function Shell() {
         </footer>
       </div>
 
+      {gameWindowDialog}
       {picker && <BuildPicker instances={instances} current={screen === "profile" ? selectedId : undefined} onPick={(id) => open(id)} onClose={() => setPicker(false)} />}
 
       {tour && settingsRead && !firstRun && !picker && <Tour onClose={() => setTour(false)} />}
