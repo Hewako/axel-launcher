@@ -7,7 +7,7 @@ import { switchLang, t, tc } from "../i18n";
 import { UpdateNotice } from "../ui/UpdateNotice";
 import { isMod } from "../keys";
 
-type Section = "general" | "look" | "game" | "data" | "privacy" | "about";
+export type Section = "general" | "look" | "game" | "data" | "privacy" | "about";
 const ACCENTS: [string, string][] = [["#3fb950", t("Зелёный")], ["#2563eb", t("Синий")], ["#7c3aed", t("Фиолетовый")], ["#d0703a", t("Оранжевый")], ["#c2415d", t("Малиновый")], ["#2a9d8f", t("Бирюзовый")]];
 
 // Строка поиска по настройкам (в нижнем регистре); пусто — поиска нет.
@@ -35,12 +35,12 @@ function Group({ name, children }: { name: string; children: React.ReactNode }) 
   return q ? <div className="sgroup"><h3 className="subhead">{name}</h3>{children}</div> : <>{children}</>;
 }
 
-export function Settings({ info, theme, onTheme, onAppearance, release }: { info: AppInfo; theme: string; onTheme: (t: string) => void; onAppearance: (g: GlobalSettings) => void; release: LauncherRelease | null }) {
+export function Settings({ info, theme, onTheme, onAppearance, release, initialSection }: { info: AppInfo; theme: string; onTheme: (t: string) => void; onAppearance: (g: GlobalSettings) => void; release: LauncherRelease | null; initialSection?: Section }) {
   const dialog = useDialog();
   const [s, setS] = useState<GlobalSettings | null>(null);
   const [args, setArgs] = useState("");
   const [saved, setSaved] = useState(false);
-  const [sec, setSec] = useState<Section>("general");
+  const [sec, setSec] = useState<Section>(initialSection ?? "general");
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const show = (k: Section) => !!q || sec === k;
@@ -108,7 +108,7 @@ export function Settings({ info, theme, onTheme, onAppearance, release }: { info
         <Row label={t("Язык")} hint="Language">
           <select className="field" value={s.language} onChange={async (e) => {
             const next = { ...s, language: e.target.value };
-            try { await api.saveGlobalSettings(next); switchLang(next.language); } catch (er) { await dialog.alert(t("Настройки не сохранены"), errText(er)); }
+            try { await api.saveGlobalSettings(next); switchLang(next.language, { screen: "settings", section: sec }); } catch (er) { await dialog.alert(t("Настройки не сохранены"), errText(er)); }
           }}>
             <option value="ru">Русский</option>
             <option value="en">English</option>

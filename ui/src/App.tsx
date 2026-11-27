@@ -7,6 +7,7 @@ import { Accounts } from "./screens/Accounts";
 import { Catalog, type CatalogKind, type CatalogTarget } from "./screens/Catalog";
 import { BuildPicker, buildOrder } from "./ui/BuildPicker";
 import { Tour, tourDone } from "./ui/Tour";
+import type { Section as SettingsSection } from "./screens/Settings";
 import { AllProfiles } from "./screens/AllProfiles";
 import { CreateInstance } from "./screens/CreateInstance";
 import { ImportDialog } from "./screens/Import";
@@ -21,7 +22,7 @@ import { UpdateNotice } from "./ui/UpdateNotice";
 import { DialogProvider } from "./ui/Dialog";
 import { nick, path, setStreamer, useStreamer } from "./streamer";
 import { markRead, pushNote, useNotes } from "./notify";
-import { src, syncLang, t } from "./i18n";
+import { src, syncLang, t, takeResume } from "./i18n";
 import { ALT, MOD, isMod } from "./keys";
 
 /** Профиль с вкладками или один из общих экранов, открытых с рельсы. */
@@ -87,8 +88,10 @@ function Shell() {
   const [broken, setBroken] = useState<{ dir: string; reason: string }[]>([]);
   const [modsCount, setModsCount] = useState<Record<string, number>>({});
   const [accounts, setAccounts] = useState<AccountRef[]>([]);
-  const [selectedId, setSelectedId] = useState<string | undefined>();
-  const [screen, setScreen] = useState<Screen>("profile");
+  // После смены языка окно открывается там же, где был игрок.
+  const [resume] = useState(takeResume);
+  const [selectedId, setSelectedId] = useState<string | undefined>(resume?.selected);
+  const [screen, setScreen] = useState<Screen>((resume?.screen as Screen | undefined) ?? "profile");
   const [profileTab, setProfileTab] = useState<Tab | undefined>();
   const [theme, setTheme] = useState("dark");
   const [loadError, setLoadError] = useState("");
@@ -329,7 +332,7 @@ function Shell() {
               </div>
             </>
           )}
-          {screen === "settings" && <Settings info={info} theme={theme} onTheme={changeTheme} onAppearance={applyAppearance} release={release} />}
+          {screen === "settings" && <Settings info={info} theme={theme} onTheme={changeTheme} onAppearance={applyAppearance} release={release} initialSection={resume?.section as SettingsSection | undefined} />}
         </main>
 
         {/* Лента внизу, а не над содержимым: шапка профиля и «Играть» не сдвигаются, когда она появляется. */}

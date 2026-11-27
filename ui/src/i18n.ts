@@ -1,6 +1,7 @@
 // Перевод интерфейса. Исходные строки — русские; t() ищет их перевод в словаре языка.
 // Язык читается при запуске (кеш в localStorage, источник — настройки лаунчера); при смене
-// языка окно перезагружается, поэтому строки в константах модулей тоже переводятся.
+// языка окно перерисовывается и возвращается на тот же экран: так строки в константах
+// модулей тоже переводятся.
 import { EN } from "./i18n.en";
 import { CORE_EN } from "./i18n.core.en";
 import { coreTranslator } from "./i18n.core";
@@ -17,11 +18,26 @@ let lang = initial();
 
 export const currentLang = () => lang;
 
-/** Сменить язык: запомнить и перезагрузить окно. */
-export function switchLang(next: string) {
+const RESUME = "axel.resume";
+
+/** Сменить язык: запомнить и перерисовать окно (идея 65). `resume` — где был игрок: после
+ *  перерисовки окно откроется там же, а не на главном экране. */
+export function switchLang(next: string, resume?: Record<string, string | undefined>) {
   if (next === lang) return;
-  try { localStorage.setItem(KEY, next); } catch { /* не страшно */ }
+  try {
+    localStorage.setItem(KEY, next);
+    if (resume) sessionStorage.setItem(RESUME, JSON.stringify(resume));
+  } catch { /* не страшно: откроется главный экран */ }
   location.reload();
+}
+
+/** Куда вернуться после смены языка (читается один раз). */
+export function takeResume(): Record<string, string | undefined> | null {
+  try {
+    const v = sessionStorage.getItem(RESUME);
+    sessionStorage.removeItem(RESUME);
+    return v ? JSON.parse(v) : null;
+  } catch { return null; }
 }
 
 /** Синхронизация с настройками лаунчера (если кеш пуст или устарел). */
