@@ -2,6 +2,7 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "На диске не хватает места: для загрузки нужно {0} МБ, свободно {1} МБ. Освободите место или перенесите папку данных в «Настройках».": "Not enough disk space: the download needs {0} MB, {1} MB is free. Free up space or move the data folder in Settings.",
   "На компьютере есть следы вируса {0}: {1}. Он крадёт входы и пароли. Проверьте компьютер антивирусом и смените пароли.": "This computer has traces of the {0} virus: {1}. It steals logins and passwords. Scan the computer with an antivirus and change your passwords.",
   "В сборке заражённые моды:\n{0}\nЗапуск остановлен. Удалите эти файлы на вкладке «Моды» и проверьте компьютер антивирусом.": "Infected mods in this profile:\n{0}\nThe launch was stopped. Delete these files on the Mods tab and scan the computer with an antivirus.",
   "{0} заражён вредоносной программой {1}. Файл не добавлен. Скачивайте моды с Modrinth и CurseForge, а этот файл удалите и проверьте компьютер антивирусом.": "{0} is infected with {1}. The file was not added. Get mods from Modrinth and CurseForge, delete this file and scan the computer with an antivirus.",

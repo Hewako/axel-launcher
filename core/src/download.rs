@@ -381,6 +381,21 @@ async fn fetch_with_retries(task: &Task, shared: &Shared, cancel: &Cancel) -> Re
 
 /// Скачать недостающие файлы. Одинаковые пути скачиваются один раз. Первая ошибка
 /// останавливает остальные загрузки.
+/// Запас сверх размера загрузки: распаковка, временные файлы.
+const SPACE_SPARE: u64 = 100 * 1024 * 1024;
+
+/// Хватит ли места: `None` — хватит, иначе текст для игрока.
+fn space_problem(need: u64, free: u64) -> Option<String> {
+    (free < need + SPACE_SPARE).then(|| {
+        let mb = |b: u64| b.div_ceil(1024 * 1024);
+        format!(
+            "На диске не хватает места: для загрузки нужно {} МБ, свободно {} МБ. Освободите место или перенесите папку данных в «Настройках».",
+            mb(need + SPACE_SPARE),
+            mb(free)
+        )
+    })
+}
+
 pub async fn download_all(
     tasks: Vec<Task>,
     concurrency: usize,
@@ -414,6 +429,21 @@ pub async fn download_all(
             summary.already_present += 1;
         } else {
             todo.push(task);
+        }
+    }
+
+    // Место на диске (идея 38): считаем до начала загрузки, а не когда диск уже кончился.
+    let need: u64 = todo.iter().filter_map(|t| t.size).sum();
+    if need > 0
+        && let Some(first) = todo.first()
+    {
+        let dest = first.dest.clone();
+        let free = tokio::task::spawn_blocking(move || crate::paths::free_space(&dest))
+            .await
+            .ok()
+            .flatten();
+        if let Some(msg) = free.and_then(|f| space_problem(need, f)) {
+            return Err(Error::invalid(msg));
         }
     }
 
@@ -486,6 +516,15 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    #[test]
+    fn warns_before_download_when_disk_is_too_full() {
+        let mb = 1024 * 1024;
+        assert_eq!(space_problem(500 * mb, 2000 * mb), None);
+        let msg = space_problem(500 * mb, 550 * mb).unwrap();
+        assert!(msg.contains("нужно 600 МБ"), "{msg}");
+        assert!(msg.contains("свободно 550 МБ"), "{msg}");
     }
 
     #[test]
