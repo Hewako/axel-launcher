@@ -543,7 +543,15 @@ fn ensure_linked(dir: &Path, store: &Path, external: bool, label: &str) -> Resul
         if same {
             return Ok(());
         }
-        // Ссылка ведёт не туда: папку данных перенесли или переименовали.
+        // Своя старая ссылка (папку данных перенесли или переименовали) или ссылка в никуда —
+        // перенаправляем. Чужую (игрок сам связал saves со своей папкой) не трогаем.
+        let target = std::fs::read_link(dir).unwrap_or_default();
+        let ours = target.file_name() == store.file_name()
+            && target.parent().and_then(|p| p.file_name())
+                == store.parent().and_then(|p| p.file_name());
+        if !ours && dir.exists() {
+            return Ok(());
+        }
         remove_link(dir).at(dir)?;
     } else if dir.is_dir() {
         if external {
@@ -785,7 +793,8 @@ mod tests {
     fn wrong_link_is_fixed_and_external_folders_are_left_alone() {
         let data = tmp_data("relink");
         let game = data.instances().join("tech/game");
-        let elsewhere = data.root().join("old-store");
+        // Ссылка ведёт в хранилище прежней папки данных (её перенесли или переименовали).
+        let elsewhere = data.root().join("old-root/worlds/tech");
         std::fs::create_dir_all(&elsewhere).unwrap();
         std::fs::create_dir_all(&game).unwrap();
         make_link(&elsewhere, &game.join("saves")).unwrap();
@@ -898,6 +907,31 @@ mod tests {
         assert!(all[0].owner_name.is_none(), "сборка удалена");
         assert_eq!(all[1].owner_name.as_deref(), Some("Живая"));
         assert_eq!(all[0].line.as_deref(), Some("1.21"));
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn players_own_link_is_left_alone() {
+        let data = tmp_data("ownlink");
+        let game = data.instances().join("tech/game");
+        let mine = data.root().join("my-shared-saves");
+        make_world(&data.root().join("x"), "W", "Мир", 4000, 1);
+        std::fs::create_dir_all(&mine).unwrap();
+        std::fs::rename(data.root().join("x/saves/W"), mine.join("W")).unwrap();
+        std::fs::create_dir_all(&game).unwrap();
+        make_link(&mine, &game.join("saves")).unwrap();
+        ensure_store(&data, "tech", &game, false, "T");
+        assert!(
+            game.join("saves/W/level.dat").is_file(),
+            "своя ссылка игрока осталась"
+        );
+        // Ссылка в никуда — перенаправляется в хранилище.
+        std::fs::remove_dir_all(&mine).unwrap();
+        ensure_store(&data, "tech", &game, false, "T");
+        assert_eq!(
+            std::fs::canonicalize(game.join("saves")).unwrap(),
+            std::fs::canonicalize(store_dir(&data, "tech")).unwrap()
+        );
         let _ = std::fs::remove_dir_all(data.root());
     }
 }

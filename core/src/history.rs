@@ -69,6 +69,12 @@ impl Recipe {
     }
 }
 
+/// Имя копии в blobs — только настоящий SHA-1 (40 шестнадцатеричных символов): файл истории
+/// может быть испорчен, путь из него не должен выводить за пределы blobs.
+fn is_sha1(s: &str) -> bool {
+    s.len() == 40 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
 fn root(data: &DataDir) -> PathBuf {
     data.root().join("history")
 }
@@ -589,6 +595,10 @@ pub async fn restore(
     for f in &recipe.files {
         let dest = crate::paths::safe_join(&game, &f.path)
             .ok_or_else(|| Error::invalid(format!("Недопустимый путь в истории: {}", f.path)))?;
+        if !is_sha1(&f.sha1) {
+            missing.push(title(f));
+            continue;
+        }
         let blob = blobs(data).join(&f.sha1);
         if blob.is_file() {
             if let Some(p) = dest.parent() {
@@ -629,6 +639,9 @@ pub async fn restore(
     download::download_all(tasks, 8, Verify::Quick, None, cancel).await?;
     lock.save(&store.dir(&inst.id)?)?;
     for (rel, sha1) in &recipe.configs {
+        if !is_sha1(sha1) {
+            continue;
+        }
         let blob = blobs(data).join(sha1);
         let Some(dest) = crate::paths::safe_join(&game, rel) else {
             continue;

@@ -114,6 +114,12 @@ pub fn shared_dir(data: &crate::paths::DataDir, game_version: &str) -> std::path
 }
 
 const SHARED_MARKER: &str = "servers-shared";
+/// Список, который сборка взяла из общего при запуске: по нему видно, что игрок поменял сам.
+const BASE: &str = "servers-base.json";
+
+fn ip_key(s: &Server) -> String {
+    s.ip.trim().to_ascii_lowercase()
+}
 
 /// Взять общий список в сборку (перед запуском и при открытии вкладки «Серверы»).
 pub fn sync_in(
@@ -144,6 +150,12 @@ pub fn sync_in(
     if merged != mine {
         write(game_dir, &merged)?;
     }
+    write_atomic(
+        &instance_dir.join(BASE),
+        serde_json::to_string(&merged)
+            .unwrap_or_default()
+            .as_bytes(),
+    )?;
     write_atomic(&marker, b"")
 }
 
@@ -159,9 +171,39 @@ pub fn sync_out(
     }
     let shared = shared_dir(data, game_version);
     let mine = read(game_dir)?;
-    if mine != read(&shared)? {
-        write(&shared, &mine)?;
+    let common = read(&shared)?;
+    // Только то, что поменяли в этой сборке после запуска: правки другой сборки той же линейки,
+    // сделанные за это время, не затираются.
+    let base: Vec<Server> = std::fs::read_to_string(instance_dir.join(BASE))
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_else(|| common.clone());
+    let base_keys: std::collections::HashSet<String> = base.iter().map(ip_key).collect();
+    let mine_keys: std::collections::HashSet<String> = mine.iter().map(ip_key).collect();
+    let mut result: Vec<Server> = common
+        .iter()
+        .filter(|s| !(base_keys.contains(&ip_key(s)) && !mine_keys.contains(&ip_key(s))))
+        .map(|s| {
+            mine.iter()
+                .find(|m| ip_key(m) == ip_key(s) && !base.contains(m))
+                .cloned()
+                .unwrap_or_else(|| s.clone())
+        })
+        .collect();
+    for m in &mine {
+        if !base_keys.contains(&ip_key(m)) && !result.iter().any(|r| ip_key(r) == ip_key(m)) {
+            result.push(m.clone());
+        }
     }
+    if result != common {
+        write(&shared, &result)?;
+    }
+    write_atomic(
+        &instance_dir.join(BASE),
+        serde_json::to_string(&result)
+            .unwrap_or_default()
+            .as_bytes(),
+    )?;
     Ok(())
 }
 
@@ -583,6 +625,60 @@ mod tests {
         assert_eq!(read(&ga).unwrap(), vec![srv("B", "b.example.org")]);
         // Другая линейка — свой список.
         assert!(read(&shared_dir(&data, "1.20.1")).unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn two_builds_playing_at_once_do_not_erase_each_others_servers() {
+        let root = std::env::temp_dir().join(format!("axel-srv2-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let data = crate::paths::DataDir::open(&root).unwrap();
+        let (ia, ga, ib, gb) = (
+            root.join("a"),
+            root.join("a/game"),
+            root.join("b"),
+            root.join("b/game"),
+        );
+        let srv = |n: &str, ip: &str| Server {
+            name: n.into(),
+            ip: ip.into(),
+            icon: None,
+            accept_textures: None,
+        };
+        write(&ga, &[srv("Общий", "common.example.org")]).unwrap();
+        sync_in(&data, &ia, &ga, "1.16.5").unwrap();
+        sync_in(&data, &ib, &gb, "1.16.5").unwrap();
+        // Обе сборки запущены. В A добавили сервер, в B — свой и переименовали общий.
+        write(
+            &ga,
+            &[
+                srv("Общий", "common.example.org"),
+                srv("A", "a.example.org"),
+            ],
+        )
+        .unwrap();
+        write(
+            &gb,
+            &[
+                srv("Общий 2", "common.example.org"),
+                srv("B", "b.example.org"),
+            ],
+        )
+        .unwrap();
+        sync_out(&data, &ia, &ga, "1.16.5").unwrap();
+        sync_out(&data, &ib, &gb, "1.16.5").unwrap();
+        let all = read(&shared_dir(&data, "1.16.5")).unwrap();
+        let names: Vec<&str> = all.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["Общий 2", "A", "B"], "ни один сервер не потерялся");
+        // Удаление в одной сборке расходится, не воскрешая сервер.
+        sync_in(&data, &ia, &ga, "1.16.5").unwrap();
+        write(&ga, &[srv("A", "a.example.org"), srv("B", "b.example.org")]).unwrap();
+        sync_out(&data, &ia, &ga, "1.16.5").unwrap();
+        assert_eq!(
+            read(&shared_dir(&data, "1.16.5")).unwrap().len(),
+            2,
+            "удалили только «Общий 2»"
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 }
