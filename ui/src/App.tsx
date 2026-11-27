@@ -6,6 +6,7 @@ import { isActive, launches, useLaunches } from "./launches";
 import { Accounts } from "./screens/Accounts";
 import { Catalog, type CatalogKind, type CatalogTarget } from "./screens/Catalog";
 import { BuildPicker, buildOrder } from "./ui/BuildPicker";
+import { Tour, tourDone } from "./ui/Tour";
 import { AllProfiles } from "./screens/AllProfiles";
 import { CreateInstance } from "./screens/CreateInstance";
 import { ImportDialog } from "./screens/Import";
@@ -104,6 +105,9 @@ function Shell() {
   const [catalogFromProfile, setCatalogFromProfile] = useState(false);
   const [pack, setPack] = useState<{ hit: SearchHit; n: number } | null>(null);
   const [picker, setPicker] = useState(false);
+  // Тур по экранам: после окна первого запуска, один раз.
+  const [settingsRead, setSettingsRead] = useState(false);
+  const [tour, setTour] = useState(() => !tourDone());
   useEffect(() => {
     let off: (() => void) | undefined;
     let alive = true;
@@ -148,7 +152,7 @@ function Shell() {
   useEffect(() => {
     launches.start();
     api.appInfo().then(setInfo);
-    api.globalSettings().then((g) => { setTheme(g.theme); applyTheme(g.theme); applyAppearance(g); setFirstRun(!g.first_run_done); syncLang(g.language); }).catch(() => applyTheme("dark"));
+    api.globalSettings().then((g) => { setTheme(g.theme); applyTheme(g.theme); applyAppearance(g); setFirstRun(!g.first_run_done); syncLang(g.language); setSettingsRead(true); }).catch(() => applyTheme("dark"));
     refresh();
     refreshAccounts();
     api.launcherUpdate().then((r) => {
@@ -249,9 +253,9 @@ function Shell() {
         <div className="rail-logo" title={`Axel' ${info.version}`}><img src="/logo.png" alt="" width={34} height={34} /></div>
         <div className="rail-div" aria-hidden />
         {/* Сборки (профили) — отдельным экраном, на рельсе их больше нет. */}
-        <button className={`rail-btn ${screen === "all" || screen === "profile" || screen === "new" ? "on" : ""}`} aria-label={t("Сборки")} title={t("Сборки")}
+        <button className={`rail-btn ${screen === "all" || screen === "profile" || screen === "new" ? "on" : ""}`} data-tour="builds" aria-label={t("Сборки")} title={t("Сборки")}
           aria-current={screen === "all" ? "page" : undefined} onClick={() => setScreen("all")}><Icon name="grid" size={20} /><span className="rail-lbl" aria-hidden>{t("Сборки")}</span></button>
-        <button className={`rail-btn ${screen === "catalog" ? "on" : ""}`} aria-label={t("Каталог")} title={t("Каталог")} aria-current={screen === "catalog" ? "page" : undefined}
+        <button className={`rail-btn ${screen === "catalog" ? "on" : ""}`} data-tour="catalog" aria-label={t("Каталог")} title={t("Каталог")} aria-current={screen === "catalog" ? "page" : undefined}
           onClick={() => { setCatalogFromProfile(false); setScreen("catalog"); }}><Icon name="search" size={20} /><span className="rail-lbl" aria-hidden>{t("Каталог")}</span></button>
         <div className="rail-space" />
         <div className="rail-div" aria-hidden />
@@ -261,7 +265,7 @@ function Shell() {
             <Icon name="bell" size={20} />{notes.unread > 0 && <span className="adot" aria-hidden />}<span className="rail-lbl" aria-hidden>{t("Логи")}</span>
           </button>
           <button aria-current={screen === "settings" ? "page" : undefined} className={`rail-btn ${screen === "settings" ? "on" : ""}`} aria-label={t("Настройки")} title={t("Настройки")} onClick={() => setScreen("settings")}><Icon name="gear" size={20} /><span className="rail-lbl" aria-hidden>{t("Настройки")}</span></button>
-          <button aria-current={screen === "accounts" ? "page" : undefined} className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
+          <button aria-current={screen === "accounts" ? "page" : undefined} data-tour="account" className={`rail-btn avatar ${screen === "accounts" ? "on" : ""}`} aria-label={t("Аккаунты и скины: {0}", ms ? nick(ms.name, streamer) : t("нет аккаунта"))} title={t("Аккаунты и скины")} onClick={() => setScreen("accounts")}>
             <Avatar account={ms} />
             <span className="rail-lbl" aria-hidden>{t("Аккаунт")}</span>
           </button>
@@ -354,6 +358,8 @@ function Shell() {
       </div>
 
       {picker && <BuildPicker instances={instances} current={screen === "profile" ? selectedId : undefined} onPick={(id) => open(id)} onClose={() => setPicker(false)} />}
+
+      {tour && settingsRead && !firstRun && !picker && <Tour onClose={() => setTour(false)} />}
 
       {firstRun && (
         <FirstRun onDone={(next) => {

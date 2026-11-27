@@ -1,6 +1,13 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Здесь все ваши сборки. В этом же разделе миры, корзина и история изменений.": "All your profiles live here, along with worlds, the trash and the change history.",
+  "Моды, модпаки, шейдеры и ресурспаки с Modrinth и CurseForge.": "Mods, modpacks, shaders and resource packs from Modrinth and CurseForge.",
+  "Быстрый переход": "Quick switch",
+  "Нажмите на название, чтобы открыть другую сборку. Из любого места: {0} K.": "Click the name to open another profile. From anywhere: {0} K.",
+  "Запуск игры. {0} Enter делает то же самое.": "Starts the game. {0} Enter does the same.",
+  "Вход через Microsoft или Ely.by и скины.": "Sign in with Microsoft or Ely.by, and skins.",
+  "{0} из {1}": "{0} of {1}",
   "Вернуть значение по умолчанию": "Restore the default value",
   "Сбросить: {0}": "Reset: {0}",
   "Сбросить": "Reset",

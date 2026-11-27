@@ -644,3 +644,12 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 .secnav .field[type=search] { margin-bottom: 8px; width: 100%; }
 .sgroup:not(:has(.setting)) { display: none; }
 .scard:has(.setting) .snone { display: none; }
+/* Тур при первом запуске: затемнение вокруг элемента и карточка рядом. */
+.tour { position: fixed; inset: 0; z-index: 90; }
+.tour-ring { position: fixed; border-radius: 10px; box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px rgba(0, 0, 0, .55); pointer-events: none; transition: all .18s ease; }
+.tour-card { position: fixed; background: var(--panel); border: 1px solid var(--ctl); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 6px; }
+.tour-card h2 { margin: 0; font-size: 16px; }
+.tour-card p { margin: 0 0 6px; }
+.tour-acts { display: flex; align-items: center; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .tour-ring { transition: none; } }
+

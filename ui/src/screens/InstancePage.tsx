@@ -450,7 +450,7 @@ export function InstancePage({ inst, mods: modCount, instances, state, accounts,
         <ProfileIcon id={inst.id} name={inst.name} color={inst.color} size={44} className="pi phead-ico" />
         <div className="phead-text">
           <h1 className="pname-h">
-            <button className="pname" aria-haspopup="dialog" title={t("Перейти к другой сборке ({0} K)", MOD)} onClick={onSwitch}>
+            <button className="pname" data-tour="switch" aria-haspopup="dialog" title={t("Перейти к другой сборке ({0} K)", MOD)} onClick={onSwitch}>
               {inst.name}<span className="pname-chev" aria-hidden><Icon name="chevron" size={16} /></span>
             </button>
           </h1>
