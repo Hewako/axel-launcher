@@ -260,6 +260,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
 
   const [groups, setGroups] = useState<{ names: string[]; groups: Record<string, string> }>({ names: [], groups: {} });
   const [grouping, setGrouping] = useState(false);
+  const [fpsBusy, setFpsBusy] = useState(false);
   const [chip, setChip] = useState<"all" | "issues" | "updates" | "off">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [openErr, setOpenErr] = useState<string | null>(null);
@@ -370,6 +371,12 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
     }
     catch (e) { await dialog.alert(t("Не удалось проверить обновления"), errText(e)); }
     finally { setChecking(false); }
+  };
+  const moreFps = async () => {
+    setFpsBusy(true);
+    try { setPlan({ title: t("Больше FPS"), plan: await mods.planFps(inst.id), reason: t("Перед «Больше FPS»") }); }
+    catch (e) { await dialog.alert(t("Не удалось подобрать моды"), errText(e)); }
+    finally { setFpsBusy(false); }
   };
   const pin = async (f: ModFile) => {
     try { await mods.pin(inst.id, f.file_name, !f.source?.pinned); load(); refreshUpdates(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
@@ -503,6 +510,11 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
               {checking ? t("Проверяем…") : picked.size ? t("Обновить выбранные ({0})…", picked.size) : t("Обновить всё…")}
               <small>{available === null ? t("обновления проверяются…") : updateCount ? t("обновления есть у {0}, сначала покажем список", updateCount) : t("обновлений нет")}</small>
             </button>
+            {(inst.loader === "fabric" || inst.loader === "quilt") && (
+              <button role="menuitem" disabled={running || fpsBusy} onClick={() => { close(); moreFps(); }}>
+                {fpsBusy ? t("Подбираем моды…") : t("Больше FPS…")}<small>{t("Sodium, Lithium, FerriteCore, ImmediatelyFast: что подходит к версии")}</small>
+              </button>
+            )}
             {!bisecting && data.files.filter((f) => f.enabled).length > 1 && (
               <button role="menuitem" disabled={running} onClick={() => { close(); onBisect(); }}>
                 {t("Найти виновника краша…")}<small>{t("по очереди выключает половину модов")}</small>

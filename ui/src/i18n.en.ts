@@ -1,6 +1,12 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Больше FPS": "More FPS",
+  "Перед «Больше FPS»": "Before “More FPS”",
+  "Не удалось подобрать моды": "Could not pick mods",
+  "Подбираем моды…": "Picking mods…",
+  "Больше FPS…": "More FPS…",
+  "Sodium, Lithium, FerriteCore, ImmediatelyFast: что подходит к версии": "Sodium, Lithium, FerriteCore, ImmediatelyFast: whatever fits this version",
   "Скрыть, что нового": "Hide what's new",
   "Что нового": "What's new",
   "Не удалось получить: {0}": "Could not load: {0}",

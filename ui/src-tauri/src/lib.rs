@@ -1050,6 +1050,18 @@ async fn catalog_installed(
         .collect())
 }
 
+/// План «Больше FPS»: Sodium, Lithium, FerriteCore, ImmediatelyFast (что подходит к версии).
+#[tauri::command]
+async fn mods_plan_fps(
+    state: State<'_, AppState>,
+    id: String,
+) -> CmdResult<axel_core::mods::manage::Plan> {
+    let store = InstanceStore::new(state.data.clone());
+    axel_core::mods::manage::plan_fps(&store, &id)
+        .await
+        .map_err(err)
+}
+
 #[tauri::command]
 async fn mods_plan_install(
     state: State<'_, AppState>,
@@ -2297,6 +2309,7 @@ pub fn run() {
             data_dir_check,
             data_dir_change,
             mods_plan_install,
+            mods_plan_fps,
             mods_check_updates,
             mods_apply,
             snapshots_list,

@@ -395,6 +395,7 @@ export const mods = {
   setGroup: (id: string, file: string, group: string | null) => invoke<void>("mods_set_group", { id, file, group }),
   toggleGroup: (id: string, group: string, enabled: boolean) => invoke<string[]>("mods_toggle_group", { id, group, enabled }),
   autoGroups: (id: string) => invoke<number>("mods_auto_groups", { id }),
+  planFps: (id: string) => invoke<Plan>("mods_plan_fps", { id }),
   planInstall: (id: string, project: string, channel: Channel = "auto", source: CatalogSource = "modrinth") =>
     invoke<Plan>("mods_plan_install", { id, project, channel, source }),
   checkUpdates: (id: string) => invoke<Plan>("mods_check_updates", { id }),

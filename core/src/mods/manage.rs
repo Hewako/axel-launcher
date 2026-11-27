@@ -130,6 +130,42 @@ pub async fn plan_install(
     project: &str,
     channel: catalog::Channel,
 ) -> Result<Plan> {
+    plan_set(store, id, &[project], channel, "выбран вами", true).await
+}
+
+/// Моды «Больше FPS» (идея 9): рендер, логика мира, память, интерфейс. Только Fabric и Quilt.
+pub const FPS_MODS: [&str; 4] = ["sodium", "lithium", "ferrite-core", "immediatelyfast"];
+
+/// План «Больше FPS»: то, что уже стоит или не подходит к версии, попадает в пояснения.
+pub async fn plan_fps(store: &InstanceStore, id: &str) -> Result<Plan> {
+    let c = ctx(store, id)?;
+    use crate::loader::LoaderKind;
+    if !matches!(c.instance.loader, LoaderKind::Fabric | LoaderKind::Quilt) {
+        return Err(Error::invalid(
+            "«Больше FPS» есть для сборок на Fabric и Quilt",
+        ));
+    }
+    plan_set(
+        store,
+        id,
+        &FPS_MODS,
+        catalog::Channel::default(),
+        "больше FPS",
+        false,
+    )
+    .await
+}
+
+/// План установки нескольких проектов Modrinth с зависимостями. `strict`: если выбранный
+/// проект уже стоит или для него нет версии — ошибка (один мод); иначе — пояснение (набор).
+async fn plan_set(
+    store: &InstanceStore,
+    id: &str,
+    roots: &[&str],
+    channel: catalog::Channel,
+    root_reason: &str,
+    strict: bool,
+) -> Result<Plan> {
     let c = ctx(store, id)?;
     let files = inventory(&c.game_dir, &c.instance_dir)?;
     let present = present_projects(&files).await;
@@ -139,24 +175,39 @@ pub async fn plan_install(
     };
     let mut seen: BTreeSet<String> = BTreeSet::new();
     let mut optional: Vec<(String, String)> = Vec::new();
-    let mut queue: Vec<(String, String)> = vec![(project.to_string(), "выбран вами".into())];
+    let mut queue: Vec<(String, String)> = roots
+        .iter()
+        .rev()
+        .map(|p| (p.to_string(), root_reason.to_string()))
+        .collect();
     while let Some((proj, reason)) = queue.pop() {
         if !seen.insert(proj.clone()) || seen.len() > 40 {
             continue;
         }
         let info = catalog::project(&proj).await?;
+        let root = roots.contains(&proj.as_str());
         if let Some(file) = present.get(&info.id) {
-            if proj == project {
+            if root && strict {
                 return Err(Error::invalid(format!(
                     "{} уже установлен ({file}). Обновить его можно кнопкой «Обновления»",
                     info.title
                 )));
             }
+            if root {
+                plan.notes.push(format!("{} уже стоит", info.title));
+            }
             continue;
         }
         let list = catalog::versions(&info.id, &c.loaders, &c.instance.game_version).await?;
         let Some(v) = catalog::pick(&list, channel).cloned() else {
-            if proj == project {
+            if root && !strict {
+                plan.notes.push(format!(
+                    "У {} нет версии для Minecraft {}",
+                    info.title, c.instance.game_version
+                ));
+                continue;
+            }
+            if root {
                 let hint = if list.is_empty() {
                     ""
                 } else {
@@ -739,6 +790,19 @@ mod tests {
     use super::*;
     use crate::loader::LoaderKind;
     use crate::paths::DataDir;
+
+    #[tokio::test]
+    async fn more_fps_is_only_for_fabric_and_quilt() {
+        let root = std::env::temp_dir().join(format!("axel-fps-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let store = InstanceStore::new(DataDir::open(&root).unwrap());
+        let forge = store
+            .create("F", "1.20.1", LoaderKind::Forge, Some("47.2.0".into()))
+            .unwrap();
+        let err = plan_fps(&store, &forge.id).await.unwrap_err().to_string();
+        assert!(err.contains("Fabric и Quilt"), "{err}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
 
     #[test]
     fn remove_takes_snapshot_and_writes_journal() {
