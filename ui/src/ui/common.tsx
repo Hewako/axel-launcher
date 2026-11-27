@@ -185,3 +185,33 @@ export function PlayButton({ inst, state, compact, fix }: { inst: Instance; stat
     </div>
   );
 }
+
+/** Кнопка с выпадающим списком: закрывается кликом мимо и Esc (фокус возвращается на кнопку). */
+export function Dropdown({ label, title, disabled, role = "menu", children }: {
+  label: React.ReactNode;
+  title?: string;
+  disabled?: boolean;
+  /** "menu" — список команд; "group" — флажки и прочее, что не закрывает список. */
+  role?: "menu" | "group";
+  children: (close: () => void) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const close = () => { setOpen(false); btn.current?.focus(); };
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", away);
+    wrap.current?.querySelector<HTMLElement>("[role=menuitem]:not(:disabled), input")?.focus();
+    return () => document.removeEventListener("mousedown", away);
+  }, [open]);
+  return (
+    <div className="menuwrap" ref={wrap} onKeyDown={(e) => { if (e.key === "Escape" && open) { e.stopPropagation(); close(); } }}>
+      <button ref={btn} className="btn" title={title} disabled={disabled} aria-haspopup={role === "menu" ? "menu" : "true"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        {label} <Icon name="chevron" size={14} />
+      </button>
+      {open && <div className={`menu ${role === "group" ? "menu-group" : ""}`} role={role}>{children(close)}</div>}
+    </div>
+  );
+}

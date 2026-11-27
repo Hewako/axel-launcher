@@ -1,7 +1,8 @@
 // Вкладка «Моды · Mod Doctor»: проверка сборки, список модов, каталог Modrinth, обновления.
 // Любое изменение модов — через предпросмотр и автоматический снимок.
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { pressable } from "../ui/common";
+import { open } from "@tauri-apps/plugin-dialog";
+import { Dropdown, pressable } from "../ui/common";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, errText, isPackPath, loaderName, mods, sizeText, type CatalogSource, type Change, type DoctorReport, type Finding, type Instance, type JournalEntry, type ModFile, type ModState, type Plan, type ProjectKind, type SearchHit } from "../api";
 import { Modal, useDialog } from "../ui/Dialog";
@@ -241,6 +242,24 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
   }, [inst.id, inst.loader]);
   useEffect(refreshUpdates, [refreshUpdates]);
 
+  // Добавить JAR-файлы (перетаскиванием или через «Инструменты»): снимок, проверка по Modrinth.
+  const addJars = async (jars: string[]) => {
+    try {
+      const added = await mods.addFiles(inst.id, jars);
+      load();
+      refreshUpdates();
+      const unknown = added.filter((a) => !a.known);
+      await dialog.alert(
+        t("Добавлено модов: {0}", added.length),
+        unknown.length === 0
+          ? t("Все файлы опознаны в каталоге Modrinth. Перед добавлением создан снимок.")
+          : t("Не найдены в каталоге Modrinth: {0}. Происхождение этих файлов неизвестно. Ставьте моды только из надёжных источников: через заражённые моды распространялся вирус Fractureiser. Перед добавлением создан снимок.", unknown.map((u) => u.title).join(", ")),
+      );
+    } catch (err) {
+      await dialog.alert(t("Файлы не добавлены"), errText(err));
+    }
+  };
+
   // Перетаскивание JAR-файлов в окно.
   useEffect(() => {
     if (inst.loader === "vanilla" || running) return;
@@ -260,20 +279,7 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
             if (!e.payload.paths.some(isPackPath)) await dialog.alert(t("Не JAR-файлы"), t("Перетащите файлы модов с расширением .jar."));
             return;
           }
-          try {
-            const added = await mods.addFiles(inst.id, jars);
-            load();
-            refreshUpdates();
-            const unknown = added.filter((a) => !a.known);
-            await dialog.alert(
-              t("Добавлено модов: {0}", added.length),
-              unknown.length === 0
-                ? t("Все файлы опознаны в каталоге Modrinth. Перед добавлением создан снимок.")
-                : t("Не найдены в каталоге Modrinth: {0}. Происхождение этих файлов неизвестно. Ставьте моды только из надёжных источников: через заражённые моды распространялся вирус Fractureiser. Перед добавлением создан снимок.", unknown.map((u) => u.title).join(", ")),
-            );
-          } catch (err) {
-            await dialog.alert(t("Файлы не добавлены"), errText(err));
-          }
+          await addJars(jars);
         }
       })
       .then((u) => { if (alive) off = u; else u(); })
@@ -290,6 +296,9 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
   if (error) return <>{tabs}<div className="alert err"><span>{error}</span></div></>;
   if (!data) return <>{tabs}<p className="muted"><span className="spinner" /> {t("Проверяем моды…")}</p></>;
 
+  const setsWithMods = groups.names
+    .map((g) => { const files = data.files.filter((f) => groups.groups[f.file_name] === g); return { g, files, on: files.filter((f) => f.enabled).length }; })
+    .filter((x) => x.files.length > 0);
   const toggleGroup = async (g: string, enabled: boolean) => {
     try { await mods.toggleGroup(inst.id, g, enabled); load(); } catch (e) { await dialog.alert(t("Не получилось"), errText(e)); }
   };
@@ -438,28 +447,40 @@ export function ModsTab({ inst, running, tabs, bisecting, onBisect, onCatalog }:
           {CHIPS.map(([k, l, n]) => <button key={k} className={`fchip ${chip === k ? "on" : ""}`} aria-pressed={chip === k} onClick={() => setChip(k)}>{l} <span className="muted">{n}</span></button>)}
         </div>
         <span style={{ flex: 1 }} />
-        <button className="btn" disabled={running || checking || updateCount === 0} onClick={updates} title={available === null ? t("обновления проверяются…") : updateCount ? t("обновления есть у {0}", updateCount) : t("обновлений нет")}>
-          {checking ? t("Проверяем…") : picked.size ? t("Обновить выбранные ({0})… (предпросмотр)", picked.size) : t("Обновить всё… (предпросмотр)")}
-        </button>
-      </div>
-      {data.files.length > 0 && (
-        <div className="groupbar" role="group" aria-label={t("Наборы модов")}>
-          <span className="muted small">{t("Наборы:")}</span>
-          {groups.names.map((g) => {
-            const files = data.files.filter((f) => groups.groups[f.file_name] === g);
-            if (files.length === 0) return null;
-            const on = files.filter((f) => f.enabled).length;
-            return (
-              <label key={g} className="chip" title={t("Включено {0} из {1}", on, files.length)}>
+        {setsWithMods.length > 0 && (
+          <Dropdown role="group" label={t("Наборы ({0})", setsWithMods.length)} title={t("Включить или выключить моды набором")}>
+            {() => setsWithMods.map(({ g, files, on }) => (
+              <label key={g} className="row menurow" title={t("Включено {0} из {1}", on, files.length)}>
                 <input type="checkbox" checked={on === files.length} ref={(el) => { if (el) el.indeterminate = on > 0 && on < files.length; }}
-                  disabled={running} onChange={(e) => toggleGroup(g, e.target.checked)} /> {tc(g)} <span className="muted">{on}/{files.length}</span>
+                  disabled={running} onChange={(e) => toggleGroup(g, e.target.checked)} />
+                <span className="grow">{tc(g)}</span> <span className="muted small">{on}/{files.length}</span>
               </label>
-            );
-          })}
-          {!bisecting && data.files.filter((f) => f.enabled).length > 1 && <button className="btn link small" disabled={running} onClick={onBisect}>{t("Найти виновника краша…")}</button>}
-          <button className="btn link small" disabled={grouping} onClick={autoGroups}>{grouping ? t("Раскладываем…") : t("Разложить автоматически")}</button>
-        </div>
-      )}
+            ))}
+          </Dropdown>
+        )}
+        <Dropdown label={<>{t("Инструменты")}{updateCount > 0 && <span className="mdot ok" role="img" aria-label={t("обновления есть у {0}", updateCount)} />}</>}>
+          {(close) => <>
+            <button role="menuitem" disabled={running || checking || updateCount === 0} onClick={() => { close(); updates(); }}>
+              {checking ? t("Проверяем…") : picked.size ? t("Обновить выбранные ({0})…", picked.size) : t("Обновить всё…")}
+              <small>{available === null ? t("обновления проверяются…") : updateCount ? t("обновления есть у {0}, сначала покажем список", updateCount) : t("обновлений нет")}</small>
+            </button>
+            {!bisecting && data.files.filter((f) => f.enabled).length > 1 && (
+              <button role="menuitem" disabled={running} onClick={() => { close(); onBisect(); }}>
+                {t("Найти виновника краша…")}<small>{t("по очереди выключает половину модов")}</small>
+              </button>
+            )}
+            <button role="menuitem" disabled={grouping} onClick={() => { close(); autoGroups(); }}>
+              {grouping ? t("Раскладываем…") : t("Разложить по наборам")}<small>{t("графика, интерфейс, оптимизация и другие")}</small>
+            </button>
+            <button role="menuitem" disabled={running} onClick={async () => {
+              close();
+              const chosen = await open({ multiple: true, directory: false, filters: [{ name: t("Моды"), extensions: ["jar"] }] }).catch(() => null);
+              const jars = Array.isArray(chosen) ? chosen : chosen ? [chosen] : [];
+              if (jars.length) await addJars(jars);
+            }}>{t("Добавить файлы с диска…")}<small>{t("JAR-файлы модов, можно несколько")}</small></button>
+          </>}
+        </Dropdown>
+      </div>
       {data.files.length === 0 ? (
         <div className="card empty"><p>{t("Модов пока нет. Добавьте их из каталога Modrinth или перетащите JAR-файлы в окно.")}</p></div>
       ) : (

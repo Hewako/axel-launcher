@@ -30,7 +30,7 @@ type Sub = "mods" | "resources" | "deps" | "launch" | "options" | "servers" | "p
 /** Вариант F: 4 вкладки вместо 10, остальное — подвкладки (docs/INTERFACE_F.md). */
 const MAIN: [Main, string][] = [["overview", t("Обзор")], ["mods", t("Моды")], ["rollback", t("Откат")], ["game", t("Игра")]];
 const SUBS: Record<"mods" | "game", [Sub, string][]> = {
-  mods: [["mods", t("Моды")], ["resources", t("Ресурсы и конфиги")], ["deps", t("Зависимости")]],
+  mods: [["mods", t("Список")], ["resources", t("Ресурсы и конфиги")], ["deps", t("Зависимости")]],
   game: [["launch", t("Запуск и память")], ["options", t("Настройки игры")], ["servers", t("Серверы")], ["profile", t("О сборке")]],
 };
 function place(tab: Tab): [Main, Sub | undefined] {

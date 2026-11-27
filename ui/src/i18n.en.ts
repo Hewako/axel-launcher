@@ -1,6 +1,17 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Наборы ({0})": "Sets ({0})",
+  "Включить или выключить моды набором": "Turn mods on or off as a set",
+  "Инструменты": "Tools",
+  "Обновить выбранные ({0})…": "Update selected ({0})…",
+  "Обновить всё…": "Update all…",
+  "обновления есть у {0}, сначала покажем список": "{0} have updates, you'll see the list first",
+  "по очереди выключает половину модов": "turns off half of the mods at a time",
+  "Разложить по наборам": "Sort into sets",
+  "графика, интерфейс, оптимизация и другие": "graphics, interface, performance and more",
+  "Добавить файлы с диска…": "Add files from disk…",
+  "JAR-файлы модов, можно несколько": "mod JAR files, several at once",
   "Перейти к сборке": "Go to profile",
   "Название или версия": "Name or version",
   "открыта сейчас": "open now",
