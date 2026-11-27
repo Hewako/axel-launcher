@@ -1,6 +1,10 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Канал обновлений": "Update channel",
+  "в тестовом новые версии приходят раньше, но в них бывают ошибки": "the test channel gets new versions earlier, but they may have bugs",
+  "Стабильный": "Stable",
+  "Тестовый": "Test",
   "Уведомления системы": "System notifications",
   "«Игра скачана», «Игра упала», когда окно Axel' не на виду": "“Game downloaded”, “Game crashed” when the Axel' window isn't in view",
   "Звук уведомлений": "Notification sound",

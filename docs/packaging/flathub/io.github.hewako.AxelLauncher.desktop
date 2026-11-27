@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Axel Launcher
+Comment=Minecraft: Java Edition launcher for profiles and modpacks
+Comment[ru]=Лаунчер Minecraft: Java Edition для сборок и модпаков
+Exec=axel-ui
+Icon=io.github.hewako.AxelLauncher
+Terminal=false
+Categories=Game;
+Keywords=minecraft;mods;modpack;launcher;

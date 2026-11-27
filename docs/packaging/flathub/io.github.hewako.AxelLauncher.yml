@@ -1,0 +1,41 @@
+# Заготовка манифеста Flatpak для Flathub: перепаковка .deb из релиза GitHub.
+# Перед отправкой: VERSION и SHA256 (из SHA256SUMS.txt), имя файла в usr/bin
+# (`dpkg -c Axel-Launcher-Linux.deb | grep usr/bin`) и `flatpak-builder --user --install build-dir io.github.hewako.AxelLauncher.yml`.
+# Flathub может попросить сборку из исходников (flatpak-builder-tools: cargo-sources.json и
+# node-sources.json) — тогда этот файл станет основой, а модуль axel-launcher поменяется.
+app-id: io.github.hewako.AxelLauncher
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+command: axel-ui
+finish-args:
+  - --share=network            # Mojang, Modrinth, CurseForge, вход Microsoft и Ely.by, комнаты
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri               # OpenGL для самой игры
+  - --socket=pulseaudio        # звук игры
+  - --persist=.axel            # папка данных Axel' (~/.axel)
+  - --filesystem=~/.minecraft:ro  # импорт из официального лаунчера, только чтение
+  - --talk-name=org.freedesktop.Notifications   # «Игра скачана», «Игра упала»
+  - --talk-name=org.kde.StatusNotifierWatcher   # значок в трее
+  - --talk-name=org.freedesktop.secrets         # входы хранятся в связке ключей системы
+modules:
+  - name: axel-launcher
+    buildsystem: simple
+    sources:
+      - type: file
+        url: https://github.com/Hewako/axel-launcher/releases/download/vVERSION/Axel-Launcher-Linux.deb
+        sha256: SHA256
+        dest-filename: axel.deb
+      - type: file
+        path: io.github.hewako.AxelLauncher.metainfo.xml
+      - type: file
+        path: io.github.hewako.AxelLauncher.desktop
+    build-commands:
+      - ar -x axel.deb
+      - tar -xf data.tar.*
+      - install -Dm755 usr/bin/axel-ui /app/bin/axel-ui
+      - install -Dm644 usr/share/icons/hicolor/128x128/apps/*.png /app/share/icons/hicolor/128x128/apps/io.github.hewako.AxelLauncher.png
+      - install -Dm644 io.github.hewako.AxelLauncher.desktop /app/share/applications/io.github.hewako.AxelLauncher.desktop
+      - install -Dm644 io.github.hewako.AxelLauncher.metainfo.xml /app/share/metainfo/io.github.hewako.AxelLauncher.metainfo.xml

@@ -1810,13 +1810,13 @@ fn bisect_step(
 async fn launcher_update(
     state: State<'_, AppState>,
 ) -> CmdResult<Option<axel_core::updates::Release>> {
-    if !GlobalSettings::load(&state.data)
-        .map(|g| g.check_launcher_updates)
-        .unwrap_or(true)
-    {
+    let g = GlobalSettings::load(&state.data).unwrap_or_default();
+    if !g.check_launcher_updates {
         return Ok(None);
     }
-    Ok(axel_core::updates::latest().await.unwrap_or(None))
+    Ok(axel_core::updates::latest(&g.update_channel)
+        .await
+        .unwrap_or(None))
 }
 
 #[tauri::command]

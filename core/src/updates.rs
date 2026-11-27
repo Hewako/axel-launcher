@@ -52,38 +52,88 @@ pub fn is_newer(candidate: &str, current: &str) -> bool {
     }
 }
 
-/// Последний релиз на GitHub, если он новее этой версии Axel'.
-pub async fn latest() -> Result<Option<Release>> {
-    #[derive(serde::Deserialize)]
-    struct Gh {
-        tag_name: String,
-        html_url: String,
-        #[serde(default)]
-        body: Option<String>,
-    }
-    let text =
-        crate::net::get_text("https://api.github.com/repos/Hewako/axel-launcher/releases/latest")
-            .await?;
-    let r: Gh =
-        serde_json::from_str(&text).map_err(|e| crate::error::Error::parse("ответ GitHub", e))?;
+#[derive(Debug, Clone, serde::Deserialize)]
+struct Gh {
+    tag_name: String,
+    html_url: String,
+    #[serde(default)]
+    body: Option<String>,
+    #[serde(default)]
+    draft: bool,
+}
+
+/// Самый новый релиз из списка, новее `current`: черновики не в счёт.
+fn pick_newest<'a>(list: &'a [Gh], current: &str) -> Option<&'a Gh> {
+    list.iter()
+        .filter(|r| !r.draft && is_newer(&r.tag_name, current))
+        .fold(None, |best: Option<&Gh>, r| match best {
+            Some(b) if !is_newer(&r.tag_name, &b.tag_name) => Some(b),
+            _ => Some(r),
+        })
+}
+
+/// Последний релиз на GitHub, если он новее этой версии Axel'. Канал `beta` (идея 27)
+/// учитывает и предрелизы, `stable` — только опубликованные версии.
+pub async fn latest(channel: &str) -> Result<Option<Release>> {
+    let api = "https://api.github.com/repos/Hewako/axel-launcher/releases";
+    let list: Vec<Gh> = if channel == "beta" {
+        let text = crate::net::get_text(&format!("{api}?per_page=20")).await?;
+        serde_json::from_str(&text).map_err(|e| crate::error::Error::parse("ответ GitHub", e))?
+    } else {
+        let text = crate::net::get_text(&format!("{api}/latest")).await?;
+        vec![
+            serde_json::from_str(&text)
+                .map_err(|e| crate::error::Error::parse("ответ GitHub", e))?,
+        ]
+    };
+    let Some(r) = pick_newest(&list, crate::launch::LAUNCHER_VERSION) else {
+        return Ok(None);
+    };
     // Ссылку открываем только на страницу релизов этого проекта.
-    if !is_newer(&r.tag_name, crate::launch::LAUNCHER_VERSION)
-        || !r.html_url.starts_with(RELEASES_URL)
-    {
+    if !r.html_url.starts_with(RELEASES_URL) {
         return Ok(None);
     }
     Ok(Some(Release {
         version: r.tag_name.trim_start_matches('v').to_string(),
-        url: r.html_url,
-        notes: r.body.unwrap_or_default().chars().take(2000).collect(),
+        url: r.html_url.clone(),
+        notes: r
+            .body
+            .clone()
+            .unwrap_or_default()
+            .chars()
+            .take(2000)
+            .collect(),
         // AppImage сам задаёт переменную APPIMAGE запущенной программе.
-        download_url: download_url(std::env::consts::OS, std::env::var_os("APPIMAGE").is_some()),
+        download_url: download_asset(std::env::consts::OS, std::env::var_os("APPIMAGE").is_some())
+            .map(|f| format!("{RELEASES_URL}/download/{}/{f}", r.tag_name)),
     }))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn newest_release_skips_drafts_and_older() {
+        let gh = |tag: &str, draft: bool| Gh {
+            tag_name: tag.into(),
+            html_url: format!("{RELEASES_URL}/tag/{tag}"),
+            body: None,
+            draft,
+        };
+        let list = [
+            gh("v1.1.0-rc.1", false),
+            gh("v1.2.0", true),
+            gh("v1.0.1", false),
+            gh("v0.9.0", false),
+        ];
+        assert_eq!(pick_newest(&list, "1.0.0").unwrap().tag_name, "v1.1.0-rc.1");
+        assert!(
+            pick_newest(&list, "1.1.0").is_none(),
+            "черновик 1.2.0 не в счёт"
+        );
+        assert!(pick_newest(&list[2..], "1.0.1").is_none());
+    }
 
     #[test]
     fn version_comparison() {

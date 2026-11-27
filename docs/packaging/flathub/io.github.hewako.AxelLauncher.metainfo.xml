@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Заготовка для Flathub. Перед отправкой: снимки экрана (ссылки на картинки в репозитории),
+     запись в <releases> для каждой версии, проверка `flatpak run org.freedesktop.appstream-glib validate`. -->
+<component type="desktop-application">
+  <id>io.github.hewako.AxelLauncher</id>
+  <name>Axel Launcher</name>
+  <summary>Minecraft: Java Edition launcher for profiles and modpacks</summary>
+  <summary xml:lang="ru">Лаунчер Minecraft: Java Edition для сборок и модпаков</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <developer id="io.github.hewako">
+    <name>Hewako</name>
+  </developer>
+  <description>
+    <p>Open-source launcher for Minecraft: Java Edition. Create your own profiles or install modpacks from Modrinth and CurseForge, keep worlds safe outside profiles, roll back changes and play with friends in rooms.</p>
+    <p xml:lang="ru">Открытый лаунчер Minecraft: Java Edition. Свои сборки и модпаки с Modrinth и CurseForge, миры хранятся отдельно от сборок, откат изменений и игра с друзьями в комнатах.</p>
+    <p>Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+  </description>
+  <launchable type="desktop-id">io.github.hewako.AxelLauncher.desktop</launchable>
+  <url type="homepage">https://github.com/Hewako/axel-launcher</url>
+  <url type="bugtracker">https://github.com/Hewako/axel-launcher/issues</url>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="VERSION" date="ДАТА-ВЫХОДА"/>
+  </releases>
+</component>

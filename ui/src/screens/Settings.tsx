@@ -134,6 +134,14 @@ export function Settings({ info, theme, onTheme, onAppearance, release, initialS
         <Row label={t("Сообщать о новой версии Axel'")} hint={t("проверка на GitHub при запуске, скачивание только по вашему нажатию")} reset={reset("check_launcher_updates")}>
           <label className="row"><input type="checkbox" checked={s.check_launcher_updates} onChange={(e) => setS({ ...s, check_launcher_updates: e.target.checked })} /></label>
         </Row>
+        <Row label={t("Канал обновлений")} hint={t("в тестовом новые версии приходят раньше, но в них бывают ошибки")} reset={reset("update_channel")}>
+          <div className="seg" role="radiogroup" aria-label={t("Канал обновлений")}>
+            {([["stable", t("Стабильный")], ["beta", t("Тестовый")]] as const).map(([v, l]) => (
+              <button key={v} role="radio" aria-checked={s.update_channel === v} className={s.update_channel === v ? "on" : ""} disabled={!s.check_launcher_updates}
+                onClick={() => setS({ ...s, update_channel: v })}>{l}</button>
+            ))}
+          </div>
+        </Row>
         <Row label={t("Уведомления системы")} hint={t("«Игра скачана», «Игра упала», когда окно Axel' не на виду")} reset={reset("system_notifications")}>
           <label className="row"><input type="checkbox" checked={s.system_notifications} onChange={(e) => setS({ ...s, system_notifications: e.target.checked })} /></label>
         </Row>

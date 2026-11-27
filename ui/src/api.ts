@@ -166,7 +166,7 @@ export interface AccountRef { provider: Provider; uuid: string; name: string; ow
 export interface GlobalSettings {
   launch: LaunchOverrides; theme: string; streamer_mode: boolean; default_account?: string;
   language: string; accent?: string; ui_scale: number; compact: boolean; font: string; first_run_done: boolean;
-  backup_before_risky_launch: boolean; backup_after_exit: boolean; backup_every_days: number; download_limit_kbps: number; check_launcher_updates: boolean; trash_days: number; system_notifications: boolean; notification_sound: boolean; on_game_start: string;
+  backup_before_risky_launch: boolean; backup_after_exit: boolean; backup_every_days: number; download_limit_kbps: number; check_launcher_updates: boolean; trash_days: number; system_notifications: boolean; notification_sound: boolean; on_game_start: string; update_channel: string;
 }
 export interface WorldBackup { world: string; file: string; size: number; created_at: number }
 /** Строка различия: что, в первом профиле, во втором. */

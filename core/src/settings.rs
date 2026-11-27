@@ -397,6 +397,13 @@ pub struct GlobalSettings {
     /// Что делать с окном, когда игра запустилась: `ask` (спросить), `minimize`, `tray`, `keep`.
     #[serde(default = "default_on_game_start")]
     pub on_game_start: String,
+    /// Канал обновлений: `stable` или `beta` (с предрелизами).
+    #[serde(default = "default_channel")]
+    pub update_channel: String,
+}
+
+fn default_channel() -> String {
+    "stable".into()
 }
 
 fn default_on_game_start() -> String {
@@ -445,6 +452,7 @@ impl Default for GlobalSettings {
             system_notifications: true,
             notification_sound: true,
             on_game_start: default_on_game_start(),
+            update_channel: default_channel(),
         }
     }
 }
