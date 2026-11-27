@@ -196,6 +196,8 @@ export type HistoryChange =
   | { kind: "renamed"; from: string; to: string }
   | { kind: "settings" };
 export interface HistoryPoint { at: number; changes: HistoryChange[]; mods: number }
+/** Мир в общем хранилище; `owner_name` пусто — сборку удалили. */
+export interface StoredWorld { owner_id: string; owner_name?: string | null; line?: string | null; world: WorldInfo }
 export interface DeviceCode { device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number; message: string }
 
 export type QuickPlay = { kind: "singleplayer" | "multiplayer" | "realms"; target: string };
@@ -407,6 +409,8 @@ export const snapshots = {
   /** Миры других сборок (и удалённых), которые подходят этой. */
   foreignWorlds: (id: string) => invoke<ForeignWorld[]>("worlds_foreign", { id }),
   adoptWorld: (id: string, from: string, world: string) => invoke<string>("world_adopt", { id, from, world }),
+  /** Все миры всех сборок, в том числе удалённых (раздел «Миры»). */
+  allWorlds: () => invoke<StoredWorld[]>("worlds_all"),
   backupWorld: (id: string, world: string) => invoke<WorldBackup>("world_backup", { id, world }),
   restoreWorld: (id: string, file: string) => invoke<string>("world_restore", { id, file }),
 };

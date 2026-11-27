@@ -154,6 +154,10 @@ mockIPC((cmd, args) => {
       { folder: "Creative", name: "Творческий", version_name: "26.4-snapshot-2", data_version: 5101, game_mode: "творчество", hardcore: true, last_played: now - 86400 * 9, size: 4_200_000, backups: [] },
     ];
     case "world_restore": return "New World";
+    case "worlds_all": return [
+      { owner_id: "tech", owner_name: "Технология+", line: "26.3", world: { folder: "New World", name: "База у реки", version_name: "26.3", data_version: 5023, game_mode: "выживание", hardcore: false, last_played: now - 3600, size: 21_000_000, backups: [] } },
+      { owner_id: "old112", owner_name: null, line: "1.12", world: { folder: "Castle", name: "Замок 2019", version_name: "1.12.2", data_version: 1343, game_mode: "выживание", hardcore: false, last_played: now - 86400 * 400, size: 310_000_000, backups: [] } },
+    ];
     case "history_items": return [
       { id: "tech", name: "Технология+", game_version: "26.3", loader: "fabric", entries: 4, last_at: now - 3600, alive: true },
       { id: "survival", name: "Выживание с друзьями", game_version: "1.20.1", loader: "forge", entries: 9, last_at: now - 86400 * 40, alive: false },

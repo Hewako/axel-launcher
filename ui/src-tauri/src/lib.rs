@@ -1205,6 +1205,12 @@ fn world_adopt(
     axel_core::worlds::adopt_world(&store, &from, &world, &id).map_err(err)
 }
 
+/// Все миры всех сборок (раздел «Миры»), в том числе удалённых сборок.
+#[tauri::command]
+fn worlds_all(state: State<AppState>) -> Vec<axel_core::worlds::StoredWorld> {
+    axel_core::worlds::all_worlds(&InstanceStore::new(state.data.clone()))
+}
+
 #[tauri::command]
 fn world_backup(
     state: State<AppState>,
@@ -2283,6 +2289,7 @@ pub fn run() {
             snapshot_restore,
             snapshot_pin,
             worlds_list,
+            worlds_all,
             history_touch,
             history_items,
             history_timeline,

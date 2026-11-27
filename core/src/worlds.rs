@@ -434,6 +434,56 @@ pub fn foreign_worlds(
     out
 }
 
+/// Мир в общем хранилище — для раздела «Миры».
+#[derive(Debug, Clone, Serialize)]
+pub struct StoredWorld {
+    /// Сборка, чей это мир (папка хранилища).
+    pub owner_id: String,
+    /// Название сборки; `None` — сборку удалили, мир остался.
+    pub owner_name: Option<String>,
+    /// Линейка версии мира (`1.16`), если известна.
+    pub line: Option<String>,
+    pub world: WorldInfo,
+}
+
+/// Все миры всех сборок, в том числе удалённых, недавние первыми.
+pub fn all_worlds(store: &crate::instance::InstanceStore) -> Vec<StoredWorld> {
+    let data = store.data();
+    let Ok(owners) = std::fs::read_dir(data.worlds()) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for owner in owners.flatten() {
+        let owner_id = owner.file_name().to_string_lossy().into_owned();
+        if owner_id.starts_with('.') || !owner.path().is_dir() {
+            continue;
+        }
+        let name = store.get(&owner_id).ok().map(|i| i.name);
+        let backups = backups_dir(data, &owner_id);
+        for w in std::fs::read_dir(owner.path())
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            let folder = w.file_name().to_string_lossy().into_owned();
+            if !w.path().join("level.dat").is_file() {
+                continue;
+            }
+            let Ok(info) = read_world_at(&owner.path(), &backups, &folder) else {
+                continue;
+            };
+            out.push(StoredWorld {
+                owner_id: owner_id.clone(),
+                owner_name: name.clone(),
+                line: info.version_name.as_deref().map(version_line),
+                world: info,
+            });
+        }
+    }
+    out.sort_by_key(|w| std::cmp::Reverse(w.world.last_played));
+    out
+}
+
 /// Перенести мир из хранилища другой сборки в эту и сразу сделать бэкап (на случай, если моды
 /// этой сборки или новая версия игры его испортят). Возвращает имя папки мира здесь.
 pub fn adopt_world(
@@ -821,6 +871,33 @@ mod tests {
             "сразу бэкап"
         );
         assert!(foreign_worlds(&store, &new.id, "1.21.11").is_empty());
+        let _ = std::fs::remove_dir_all(data.root());
+    }
+
+    #[test]
+    fn all_worlds_include_deleted_builds() {
+        let data = tmp_data("all");
+        let store = crate::instance::InstanceStore::new(data.clone());
+        let a = store
+            .create("Живая", "1.21.11", crate::loader::LoaderKind::Vanilla, None)
+            .unwrap();
+        let b = store
+            .create(
+                "Удалённая",
+                "1.21.11",
+                crate::loader::LoaderKind::Vanilla,
+                None,
+            )
+            .unwrap();
+        make_world(&store.game_dir(&a.id).unwrap(), "A", "Мир А", 4000, 1_000);
+        make_world(&store.game_dir(&b.id).unwrap(), "B", "Мир Б", 4000, 9_000);
+        store.trash(&b.id).unwrap();
+        let all = all_worlds(&store);
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].world.name, "Мир Б", "недавние первыми");
+        assert!(all[0].owner_name.is_none(), "сборка удалена");
+        assert_eq!(all[1].owner_name.as_deref(), Some("Живая"));
+        assert_eq!(all[0].line.as_deref(), Some("1.21"));
         let _ = std::fs::remove_dir_all(data.root());
     }
 }
