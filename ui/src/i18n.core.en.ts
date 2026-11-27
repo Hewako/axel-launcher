@@ -2,6 +2,7 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Проверка куска файла прервана: {0}": "Checking the partial file was interrupted: {0}",
   "«Больше FPS» есть для сборок на Fabric и Quilt": "“More FPS” is available for Fabric and Quilt profiles",
   "больше FPS": "more FPS",
   "{0} уже стоит": "{0} is already installed",

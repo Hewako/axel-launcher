@@ -3,7 +3,6 @@
 
 use crate::error::{Error, IoContext, Result};
 use crate::net;
-use crate::paths::unique_sibling;
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
@@ -280,22 +279,75 @@ impl Hasher {
     }
 }
 
-/// Одна попытка: потоком во временный файл рядом с целью, проверка, переименование.
+/// Недокачанный файл: `<цель>.part`. Имя постоянное, чтобы после обрыва, отмены или
+/// перезапуска лаунчера загрузка продолжилась с того же места (идея 60).
+fn part_path(dest: &Path) -> PathBuf {
+    let mut s = dest.as_os_str().to_owned();
+    s.push(".part");
+    PathBuf::from(s)
+}
+
+/// С какого байта продолжать: кусок есть и он короче ожидаемого файла.
+fn resume_offset(part: &Path, size: Option<u64>) -> u64 {
+    match std::fs::metadata(part) {
+        Ok(m) if m.is_file() && m.len() > 0 && size.is_none_or(|s| m.len() < s) => m.len(),
+        _ => 0,
+    }
+}
+
+/// Хэш уже скачанной части: проверка в конце идёт по всему файлу.
+fn prefill(mut hasher: Hasher, part: &Path) -> Result<Hasher> {
+    let mut f = std::fs::File::open(part).at(part)?;
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        let n = f.read(&mut buf).at(part)?;
+        if n == 0 {
+            return Ok(hasher);
+        }
+        hasher.update(&buf[..n]);
+    }
+}
+
+/// Одна попытка: потоком в `<цель>.part` (с места обрыва, если сервер умеет Range),
+/// проверка, переименование.
 async fn fetch_once(task: &Task, shared: &Shared, cancel: &Cancel) -> Result<u64> {
-    let resp = net::client()
-        .get(&task.url)
+    let tmp = part_path(&task.dest);
+    let mut offset = resume_offset(&tmp, task.size);
+    let mut req = net::client().get(&task.url);
+    if offset > 0 {
+        req = req.header(reqwest::header::RANGE, format!("bytes={offset}-"));
+    }
+    let resp = req
         .send()
         .await
         .map_err(|e| net::network_error(&task.url, e))?;
     let mut resp = net::check_status(&task.url, resp).await?;
+    // Сервер прислал файл целиком (Range не поддерживает) — начинаем заново.
+    if offset > 0 && resp.status() != reqwest::StatusCode::PARTIAL_CONTENT {
+        offset = 0;
+    }
     if let (Some(len), None) = (resp.content_length(), task.size) {
-        shared.bytes_total.fetch_add(len, Ordering::Relaxed);
+        shared
+            .bytes_total
+            .fetch_add(len + offset, Ordering::Relaxed);
     }
 
-    let tmp = unique_sibling(&task.dest, "part");
-    let mut file = tokio::fs::File::create(&tmp).await.at(&tmp)?;
     let mut hasher = Hasher::for_expected(&task.expected);
-    let mut written: u64 = 0;
+    let mut file = if offset > 0 {
+        let part = tmp.clone();
+        hasher = tokio::task::spawn_blocking(move || prefill(hasher, &part))
+            .await
+            .map_err(|e| Error::invalid(format!("Проверка куска файла прервана: {e}")))??;
+        tokio::fs::OpenOptions::new()
+            .append(true)
+            .open(&tmp)
+            .await
+            .at(&tmp)?
+    } else {
+        tokio::fs::File::create(&tmp).await.at(&tmp)?
+    };
+    let mut written: u64 = offset;
+    shared.bytes_done.fetch_add(offset, Ordering::Relaxed);
 
     let result: Result<()> = async {
         loop {
@@ -346,7 +398,10 @@ async fn fetch_once(task: &Task, shared: &Shared, cancel: &Cancel) -> Result<u64
     match finish() {
         Ok(()) => Ok(written),
         Err(e) => {
-            let _ = std::fs::remove_file(&tmp);
+            // Обрыв и отмена: кусок остаётся для докачки. Испорченный файл — удаляем.
+            if matches!(e, Error::HashMismatch { .. }) {
+                let _ = std::fs::remove_file(&tmp);
+            }
             // Байты неудачной попытки не считаем скачанными.
             shared.bytes_done.fetch_sub(
                 written.min(shared.bytes_done.load(Ordering::Relaxed)),
@@ -379,8 +434,6 @@ async fn fetch_with_retries(task: &Task, shared: &Shared, cancel: &Cancel) -> Re
     }
 }
 
-/// Скачать недостающие файлы. Одинаковые пути скачиваются один раз. Первая ошибка
-/// останавливает остальные загрузки.
 /// Запас сверх размера загрузки: распаковка, временные файлы.
 const SPACE_SPARE: u64 = 100 * 1024 * 1024;
 
@@ -396,6 +449,8 @@ fn space_problem(need: u64, free: u64) -> Option<String> {
     })
 }
 
+/// Скачать недостающие файлы. Одинаковые пути скачиваются один раз. Первая ошибка
+/// останавливает остальные загрузки.
 pub async fn download_all(
     tasks: Vec<Task>,
     concurrency: usize,
@@ -549,6 +604,31 @@ mod tests {
         std::fs::remove_dir_all(&d).unwrap();
     }
 
+    #[test]
+    fn resume_continues_from_a_shorter_piece_only() {
+        let d = tmpdir("resume");
+        let dest = d.join("client.jar");
+        let part = part_path(&dest);
+        assert_eq!(part, d.join("client.jar.part"));
+        assert_eq!(resume_offset(&part, Some(10)), 0, "куска нет");
+        std::fs::write(&part, b"hel").unwrap();
+        assert_eq!(resume_offset(&part, Some(5)), 3);
+        assert_eq!(resume_offset(&part, None), 3);
+        assert_eq!(
+            resume_offset(&part, Some(3)),
+            0,
+            "кусок не короче файла: начинаем заново"
+        );
+        // Хэш куска + остаток = хэш целого файла.
+        let mut h = prefill(Hasher::for_expected(&Expected::Sha1("x".into())), &part).unwrap();
+        h.update(b"lo");
+        assert_eq!(
+            h.finish().unwrap(),
+            "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+        );
+        std::fs::remove_dir_all(&d).unwrap();
+    }
+
     #[tokio::test]
     async fn nothing_to_download_when_all_present() {
         let d = tmpdir("noop");
@@ -610,6 +690,21 @@ mod tests {
             .unwrap();
         assert_eq!(s.downloaded, 1);
         assert_eq!(std::fs::metadata(&dest).unwrap().len(), 888);
+        // Докачка: первые 300 байт уже лежат в .part — файл собирается и проходит проверку.
+        let full = std::fs::read(&dest).unwrap();
+        let again = d.join("again.xml");
+        std::fs::write(part_path(&again), &full[..300]).unwrap();
+        let t = Task::sha1(
+            "https://piston-data.mojang.com/v1/objects/bd65e7d2e3c237be76cfbef4c2405033d7f91521/client-1.12.xml",
+            &again,
+            "bd65e7d2e3c237be76cfbef4c2405033d7f91521",
+            Some(888),
+        );
+        download_all(vec![t], 1, Verify::Full, None, &Cancel::new())
+            .await
+            .unwrap();
+        assert_eq!(std::fs::read(&again).unwrap(), full);
+        assert!(!part_path(&again).exists());
         // Неверный хэш — файла под целевым именем нет, временных тоже.
         let bad = d.join("bad.xml");
         let t = Task::sha1(
@@ -624,7 +719,8 @@ mod tests {
                 .is_err()
         );
         assert!(!bad.exists());
-        assert_eq!(std::fs::read_dir(&d).unwrap().count(), 1);
+        assert!(!part_path(&bad).exists(), "испорченный кусок не остаётся");
+        assert_eq!(std::fs::read_dir(&d).unwrap().count(), 2);
         std::fs::remove_dir_all(&d).unwrap();
     }
 
