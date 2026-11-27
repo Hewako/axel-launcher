@@ -68,7 +68,7 @@ export function DataDirButton() {
       )}
       {moving && (
         <Modal title={t("Переносим данные")} onClose={() => {}}>
-          <p>{moving.total ? t("Скопировано {0} из {1}", sizeText(moving.done), sizeText(moving.total)) : t("Готовим папку…")}</p>
+          <p>{moving.total ? t("Скопировано и сверено {0} из {1}", sizeText(moving.done), sizeText(moving.total)) : t("Готовим папку…")}</p>
           <span className="dlbar wide" role="progressbar" aria-label={t("Перенос данных")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><i style={{ width: `${pct}%` }} /></span>
           <p className="muted small">{t("Не закрывайте лаунчер. Когда всё будет готово, он перезапустится сам.")}</p>
         </Modal>

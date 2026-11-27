@@ -5,6 +5,8 @@
 
 use crate::error::{Error, IoContext, Result};
 use crate::paths::{DataDir, dir_size, free_space, write_atomic};
+use sha1::{Digest, Sha1};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 /// Запас места сверх размера данных при копировании на другой диск.
@@ -230,11 +232,64 @@ fn copy_tree(
         if ft.is_dir() {
             copy_tree(&src, &dst, done, total, progress)?;
         } else if ft.is_file() {
-            *done += std::fs::copy(&src, &dst).at(&dst)?;
+            *done += copy_verified(&src, &dst)?;
             progress(*done, total);
         }
     }
     Ok(())
+}
+
+/// Скопировать файл и сверить копию с оригиналом по SHA-1 (идея 23): при копировании считаем
+/// хэш того, что прочитали, потом читаем копию с диска заново. Не совпало — ещё одна попытка,
+/// потом ошибка: старая папка в этом случае не удаляется.
+fn copy_verified(src: &Path, dst: &Path) -> Result<u64> {
+    for _ in 0..2 {
+        let (n, want) = copy_hashing(src, dst)?;
+        if sha1_of(dst)? == want {
+            return Ok(n);
+        }
+    }
+    Err(Error::invalid(format!(
+        "Копия файла не совпала с оригиналом: {}. Проверьте диск, данные остались на старом месте.",
+        src.display()
+    )))
+}
+
+fn copy_hashing(src: &Path, dst: &Path) -> Result<(u64, [u8; 20])> {
+    let mut from = std::fs::File::open(src).at(src)?;
+    let mut to = std::fs::File::create(dst).at(dst)?;
+    let mut h = Sha1::new();
+    let mut buf = vec![0u8; 256 * 1024];
+    let mut n = 0u64;
+    loop {
+        let k = from.read(&mut buf).at(src)?;
+        if k == 0 {
+            break;
+        }
+        h.update(&buf[..k]);
+        to.write_all(&buf[..k]).at(dst)?;
+        n += k as u64;
+    }
+    // Сверять нужно то, что дошло до диска, а не кеш записи.
+    to.sync_all().at(dst)?;
+    if let Ok(meta) = std::fs::metadata(src) {
+        let _ = to.set_permissions(meta.permissions());
+    }
+    Ok((n, h.finalize().into()))
+}
+
+fn sha1_of(path: &Path) -> Result<[u8; 20]> {
+    let mut f = std::fs::File::open(path).at(path)?;
+    let mut h = Sha1::new();
+    let mut buf = vec![0u8; 256 * 1024];
+    loop {
+        let k = f.read(&mut buf).at(path)?;
+        if k == 0 {
+            break;
+        }
+        h.update(&buf[..k]);
+    }
+    Ok(h.finalize().into())
 }
 
 /// В настройках могут быть полные пути внутрь папки данных (Java из `runtimes/`, папка игры
@@ -347,6 +402,21 @@ mod tests {
             new.join("runtimes/java-21/bin/java").display().to_string(),
             "путь к Java указывает в новую папку"
         );
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn verified_copy_matches_the_original_byte_for_byte() {
+        let base = tmp("verify");
+        std::fs::create_dir_all(&base).unwrap();
+        let (src, dst) = (base.join("a.bin"), base.join("b.bin"));
+        let data: Vec<u8> = (0..700_000u32).map(|i| (i * 31 % 251) as u8).collect();
+        std::fs::write(&src, &data).unwrap();
+        assert_eq!(copy_verified(&src, &dst).unwrap(), data.len() as u64);
+        assert_eq!(std::fs::read(&dst).unwrap(), data);
+        assert_eq!(sha1_of(&src).unwrap(), sha1_of(&dst).unwrap());
+        std::fs::write(&dst, b"other").unwrap();
+        assert_ne!(sha1_of(&src).unwrap(), sha1_of(&dst).unwrap());
         let _ = std::fs::remove_dir_all(&base);
     }
 

@@ -2,6 +2,7 @@
 // Ключ — русская строка из кода Rust, где {x} заменены на {0}, {1}… по порядку. Чего не хватает,
 // покажет `npm run i18n:check`.
 export const CORE_EN: Record<string, string> = {
+  "Копия файла не совпала с оригиналом: {0}. Проверьте диск, данные остались на старом месте.": "The copy of a file does not match the original: {0}. Check the disk; your data stayed in the old place.",
   "запись истории": "history entry",
   "Недопустимый путь в истории: {0}": "Invalid path in history: {0}",
   "Недопустимое имя в корзине": "Invalid name in the trash",
