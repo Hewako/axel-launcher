@@ -197,6 +197,33 @@ fn effective_auth_mode(data: &DataDir, secrets: &dyn SecretStore, inst: &Instanc
     }
 }
 
+/// Сессия для игры; без интернета (идея 24) — последний сохранённый токен. Одиночная игра и
+/// комнаты с ним работают, серверы с проверкой лицензии пустят, когда появится интернет.
+async fn session_or_offline(
+    store: &AccountStore<'_>,
+    acc: &AccountRef,
+    emit: &LaunchEventFn,
+) -> Result<(AccountRef, account::Tokens)> {
+    match account::session(store, acc).await {
+        Ok(s) => Ok(s),
+        Err(e) => {
+            let tokens = offline_tokens(e, store.tokens(&acc.key()).ok().flatten())?;
+            emit(LaunchEvent::Warning {
+                message: "Нет интернета: играем без обновления входа. Одиночная игра и комнаты работают, серверы с проверкой лицензии пустят, когда интернет появится.".into(),
+            });
+            Ok((acc.clone(), tokens))
+        }
+    }
+}
+
+/// Только обрыв сети разрешает играть со старым токеном; отозванный вход и прочее — нет.
+fn offline_tokens(e: Error, saved: Option<account::Tokens>) -> Result<account::Tokens> {
+    match (e, saved) {
+        (Error::Network { .. }, Some(t)) => Ok(t),
+        (e, _) => Err(e),
+    }
+}
+
 async fn resolve_auth(
     data: &DataDir,
     secrets: &dyn SecretStore,
@@ -220,7 +247,7 @@ async fn resolve_auth(
 
     match (provider, account) {
         (Provider::Microsoft, Some(acc)) => {
-            let (acc, tokens) = account::session(&store, &acc).await?;
+            let (acc, tokens) = session_or_offline(&store, &acc, emit).await?;
             if !acc.owns_java_edition {
                 return Err(Error::Auth(format!(
                     "На аккаунте {} не куплена Minecraft: Java Edition, запуск невозможен.",
@@ -241,7 +268,7 @@ async fn resolve_auth(
             ))
         }
         (Provider::ElyBy, Some(acc)) => {
-            let (acc, tokens) = account::session(&store, &acc).await?;
+            let (acc, tokens) = session_or_offline(&store, &acc, emit).await?;
             emit(LaunchEvent::Account { provider: "Ely.by".into(), name: acc.name.clone() });
             Ok((
                 GameAuth {
@@ -1037,6 +1064,33 @@ fn rotate_logs(dir: &std::path::Path, keep: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn offline_play_only_when_the_network_is_down() {
+        let tok = || account::Tokens {
+            access_token: "old".into(),
+            expires_at: 1,
+            refresh_token: None,
+            xuid: None,
+            method: None,
+        };
+        let net = || Error::Network {
+            host: "login.live.com".into(),
+            reason: "нет сети".into(),
+        };
+        assert_eq!(
+            offline_tokens(net(), Some(tok())).unwrap().access_token,
+            "old"
+        );
+        assert!(matches!(
+            offline_tokens(net(), None),
+            Err(Error::Network { .. })
+        ));
+        assert!(matches!(
+            offline_tokens(Error::Auth("вход отозван".into()), Some(tok())),
+            Err(Error::Auth(_))
+        ));
+    }
 
     #[test]
     fn single_flight() {

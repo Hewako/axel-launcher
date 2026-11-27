@@ -41,14 +41,45 @@ pub fn network_error(url: &str, e: reqwest::Error) -> Error {
         "истекло время ожидания".to_string()
     } else if e.is_connect() {
         "не удалось подключиться".to_string()
+    } else if e.is_body() || e.is_decode() {
+        "соединение оборвалось".to_string()
     } else {
         // Текст reqwest содержит URL; токенов в наших URL нет.
         e.to_string()
     };
     Error::Network {
-        host: host_of(url),
+        host: service_name(&host_of(url)),
         reason,
     }
+}
+
+/// Сервис словами вместо адреса сервера: игроку «Mojang» понятнее, чем piston-meta.mojang.com.
+pub fn service_name(host: &str) -> String {
+    let ends = |d: &str| host == d || host.ends_with(&format!(".{d}"));
+    let name = if ends("mojang.com") || ends("minecraft.net") || ends("minecraftservices.com") {
+        "Mojang"
+    } else if ends("live.com") || ends("microsoft.com") || ends("xboxlive.com") {
+        "Microsoft"
+    } else if ends("modrinth.com") {
+        "Modrinth"
+    } else if ends("curseforge.com") || ends("forgecdn.net") {
+        "CurseForge"
+    } else if ends("ely.by") {
+        "Ely.by"
+    } else if ends("adoptium.net") {
+        "Adoptium (Java)"
+    } else if ends("github.com") || ends("githubusercontent.com") {
+        "GitHub"
+    } else if ends("fabricmc.net") {
+        "Fabric"
+    } else if ends("quiltmc.org") {
+        "Quilt"
+    } else if ends("neoforged.net") || ends("minecraftforge.net") {
+        "Forge"
+    } else {
+        return host.to_string();
+    };
+    name.to_string()
 }
 
 /// Проверить статус ответа; тело ошибки (обрезанное) попадает в сообщение.
@@ -120,6 +151,20 @@ pub async fn get_json<T: DeserializeOwned>(url: &str) -> Result<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn servers_are_named_as_services() {
+        assert_eq!(service_name("piston-meta.mojang.com"), "Mojang");
+        assert_eq!(service_name("login.live.com"), "Microsoft");
+        assert_eq!(service_name("cdn.modrinth.com"), "Modrinth");
+        assert_eq!(service_name("edge.forgecdn.net"), "CurseForge");
+        assert_eq!(
+            service_name("evilmojang.com"),
+            "evilmojang.com",
+            "только сам домен и поддомены"
+        );
+        assert_eq!(service_name("example.org"), "example.org");
+    }
 
     #[test]
     fn host_is_extracted() {
