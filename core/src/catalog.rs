@@ -110,6 +110,18 @@ pub struct Project {
     pub icon_url: Option<String>,
     #[serde(default)]
     pub downloads: u64,
+    /// Картинки со страницы проекта.
+    #[serde(default)]
+    pub gallery: Vec<GalleryImage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GalleryImage {
+    pub url: String,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub featured: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

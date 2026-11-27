@@ -442,37 +442,14 @@ fn launch_settings(state: State<AppState>, id: String) -> CmdResult<LaunchSettin
     })
 }
 
-/// Объём ОЗУ для подсказки по памяти. Не подтверждено для всех ОС: macOS — sysctl,
-/// Linux — /proc/meminfo, Windows — пока нет (подсказка без числа).
+/// Советы по памяти с учётом ОЗУ компьютера.
 #[tauri::command]
 fn memory_advice(max_mb: u32, pack_mb: Option<u32>) -> Vec<String> {
     axel_core::settings::memory_advice(max_mb, total_memory_mb(), pack_mb)
 }
 
 fn total_memory_mb() -> Option<u64> {
-    if cfg!(target_os = "macos") {
-        let out = std::process::Command::new("sysctl")
-            .args(["-n", "hw.memsize"])
-            .output()
-            .ok()?;
-        String::from_utf8_lossy(&out.stdout)
-            .trim()
-            .parse::<u64>()
-            .ok()
-            .map(|b| b / 1_048_576)
-    } else if cfg!(target_os = "linux") {
-        let text = std::fs::read_to_string("/proc/meminfo").ok()?;
-        let kb: u64 = text
-            .lines()
-            .find(|l| l.starts_with("MemTotal:"))?
-            .split_whitespace()
-            .nth(1)?
-            .parse()
-            .ok()?;
-        Some(kb / 1024)
-    } else {
-        None
-    }
+    axel_core::settings::total_memory_mb()
 }
 
 #[tauri::command]
@@ -2063,6 +2040,17 @@ fn pack_settings(
     Ok(inst)
 }
 
+/// Картинки со страницы проекта Modrinth (предпросмотр модпака), главная первой.
+#[tauri::command]
+async fn catalog_gallery(project_id: String) -> CmdResult<Vec<String>> {
+    let mut g = axel_core::catalog::project(&project_id)
+        .await
+        .map_err(err)?
+        .gallery;
+    g.sort_by_key(|i| !i.featured);
+    Ok(g.into_iter().take(8).map(|i| i.url).collect())
+}
+
 #[tauri::command]
 fn mrpack_preview(path: String) -> CmdResult<axel_core::import::MrpackPreview> {
     axel_core::import::preview_mrpack(std::path::Path::new(&path)).map_err(err)
@@ -2341,6 +2329,7 @@ pub fn run() {
             bisect_status,
             bisect_step,
             mrpack_preview,
+            catalog_gallery,
             modpack_search,
             pack_download,
             pack_check,

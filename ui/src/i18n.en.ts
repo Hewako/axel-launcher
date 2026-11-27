@@ -1,6 +1,14 @@
 // Английский словарь: ключ — русская строка интерфейса (как в коде), значение — перевод.
 // Новые строки проверяет `npm run i18n:check`.
 export const EN: Record<string, string> = {
+  "Картинки модпака": "Modpack images",
+  "Скачается": "Download",
+  "свободно {0}": "{0} free",
+  "места не хватит": "not enough space",
+  "{0} ГБ, выставится сама": "{0} GB, set automatically",
+  "советуем {0} ГБ": "{0} GB recommended",
+  "Список модов ({0})": "Mod list ({0})",
+  "Необязательные компоненты": "Optional components",
   "Больше FPS": "More FPS",
   "Перед «Больше FPS»": "Before “More FPS”",
   "Не удалось подобрать моды": "Could not pick mods",

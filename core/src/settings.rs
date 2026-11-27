@@ -179,6 +179,65 @@ pub fn jvm_arg_forbidden(a: &str) -> Option<&'static str> {
     }
 }
 
+/// Объём ОЗУ компьютера, МБ: macOS — sysctl, Linux — /proc/meminfo, Windows — PowerShell
+/// (без окна консоли). Считается один раз за запуск: ОЗУ не меняется.
+pub fn total_memory_mb() -> Option<u64> {
+    static CACHE: std::sync::OnceLock<Option<u64>> = std::sync::OnceLock::new();
+    *CACHE.get_or_init(detect_memory_mb)
+}
+
+fn detect_memory_mb() -> Option<u64> {
+    if cfg!(target_os = "macos") {
+        let out = std::process::Command::new("sysctl")
+            .args(["-n", "hw.memsize"])
+            .output()
+            .ok()?;
+        String::from_utf8_lossy(&out.stdout)
+            .trim()
+            .parse::<u64>()
+            .ok()
+            .map(|b| b / 1_048_576)
+    } else if cfg!(target_os = "linux") {
+        let text = std::fs::read_to_string("/proc/meminfo").ok()?;
+        let kb: u64 = text
+            .lines()
+            .find(|l| l.starts_with("MemTotal:"))?
+            .split_whitespace()
+            .nth(1)?
+            .parse()
+            .ok()?;
+        Some(kb / 1024)
+    } else if cfg!(windows) {
+        let mut c = std::process::Command::new("powershell");
+        c.args([
+            "-NoProfile",
+            "-Command",
+            "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory",
+        ]);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
+        let out = c.output().ok()?;
+        String::from_utf8_lossy(&out.stdout)
+            .trim()
+            .parse::<u64>()
+            .ok()
+            .map(|b| b / 1_048_576)
+    } else {
+        None
+    }
+}
+
+/// Память для модпака на этом компьютере: рекомендация, но не больше трёх четвертей ОЗУ
+/// (кратно 512 МБ). `None` — ОЗУ неизвестно или его меньше, чем нужно для 2 ГБ игре.
+pub fn fit_memory_mb(suggested: u32, total_mb: Option<u64>) -> Option<u32> {
+    let cap = (total_mb? * 3 / 4 / 512 * 512).min(u64::from(u32::MAX)) as u32;
+    let mb = suggested.min(cap);
+    (mb >= 2048).then_some(mb)
+}
+
 /// Диапазон памяти, при котором `memory_advice` молчит: не меньше 2 ГБ и рекомендации сборки,
 /// не больше 16 ГБ и трёх четвертей ОЗУ. `None` — если такого диапазона нет (мало ОЗУ).
 pub fn memory_range(total_mb: Option<u64>, pack_mb: Option<u32>) -> Option<(u32, u32)> {
@@ -404,6 +463,18 @@ impl GlobalSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pack_memory_fits_the_computer() {
+        assert_eq!(fit_memory_mb(6144, Some(16_384)), Some(6144));
+        assert_eq!(
+            fit_memory_mb(8192, Some(8192)),
+            Some(6144),
+            "не больше 3/4 ОЗУ"
+        );
+        assert_eq!(fit_memory_mb(4096, Some(2048)), None, "слишком мало ОЗУ");
+        assert_eq!(fit_memory_mb(4096, None), None);
+    }
 
     #[test]
     fn nearest_level_wins_and_source_is_known() {

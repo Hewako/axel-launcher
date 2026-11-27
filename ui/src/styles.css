@@ -655,4 +655,10 @@ tr.pick:focus-visible, .snaps li:focus-visible { outline: 2px solid var(--accent
 .tour-card p { margin: 0 0 6px; }
 .tour-acts { display: flex; align-items: center; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .tour-ring { transition: none; } }
+/* Предпросмотр модпака. */
+.packgallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; scroll-snap-type: x mandatory; }
+.packgallery img { height: 150px; width: auto; border-radius: 8px; border: 1px solid var(--line); flex: none; scroll-snap-align: start; background: var(--panel2); }
+.packfacts { gap: 6px 16px; margin-bottom: 8px; }
+.packfacts dd.err { color: var(--err); }
+.packmods ul { columns: 2; margin: 8px 0 0; padding-left: 18px; max-height: 180px; overflow: auto; font-size: 13px; }
 

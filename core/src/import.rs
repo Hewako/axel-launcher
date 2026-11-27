@@ -462,12 +462,60 @@ pub struct MrpackPreview {
     pub loader: String,
     /// Опциональные компоненты (пути) — игрок выбирает, ставить ли их.
     pub optional: Vec<String>,
+    /// Моды для клиента: имена файлов из `mods/` (идея 37).
+    pub mods: Vec<String>,
+    /// Сколько скачается и распакуется, байт: файлы для клиента и overrides.
+    pub size: u64,
+    /// Свободно на диске с папкой данных, байт (`None` — не удалось узнать).
+    pub free: Option<u64>,
+    /// Сколько памяти дать игре: по числу модов.
+    pub memory_mb: u32,
+    /// Сколько поставится при импорте с учётом ОЗУ (`None` — не поставится, ОЗУ мало или неизвестно).
+    pub memory_set: Option<u32>,
+}
+
+/// Память для модпака по числу модов: так советуют авторы больших сборок.
+pub fn suggested_memory_mb(mods: usize) -> u32 {
+    match mods {
+        0..=60 => 4096,
+        61..=150 => 6144,
+        _ => 8192,
+    }
 }
 
 pub fn preview_mrpack(path: &Path) -> Result<MrpackPreview> {
     let index = read_index(path)?;
     let (game, loader, loader_version) = loader_from_deps(&index.dependencies)?;
+    let files = client_files(&index, &[]);
+    let mut mods: Vec<String> = files
+        .iter()
+        .filter_map(|f| f.path.strip_prefix("mods/"))
+        .map(|n| n.trim_end_matches(".jar").to_string())
+        .collect();
+    mods.sort_by_key(|m| m.to_lowercase());
+    let overrides: u64 = std::fs::File::open(path)
+        .ok()
+        .and_then(|f| zip::ZipArchive::new(f).ok())
+        .map(|mut z| {
+            (0..z.len())
+                .filter_map(|i| {
+                    z.by_index(i)
+                        .ok()
+                        .map(|e| (String::from_utf8_lossy(e.name_raw()).into_owned(), e.size()))
+                })
+                .filter(|(n, _)| n.starts_with("overrides/") || n.starts_with("client-overrides/"))
+                .map(|(_, size)| size)
+                .sum()
+        })
+        .unwrap_or(0);
+    let size = files.iter().map(|f| f.file_size).sum::<u64>() + overrides;
+    let memory_mb = suggested_memory_mb(mods.len());
     Ok(MrpackPreview {
+        memory_set: crate::settings::fit_memory_mb(memory_mb, crate::settings::total_memory_mb()),
+        memory_mb,
+        mods,
+        size,
+        free: crate::paths::free_space(path),
         name: index.name.clone(),
         version: index.version_id.clone(),
         game,
@@ -510,6 +558,15 @@ pub async fn import_mrpack(
         version: index.version_id.clone(),
         ..Default::default()
     });
+    // Память по числу модов (идея 37) — слоем «модпак»: своя настройка игрока главнее.
+    let mods = client_files(&index, skip_optional)
+        .iter()
+        .filter(|f| f.path.starts_with("mods/"))
+        .count();
+    inst.pack_settings.max_memory_mb = crate::settings::fit_memory_mb(
+        suggested_memory_mb(mods),
+        crate::settings::total_memory_mb(),
+    );
     store.save(&inst)?;
     let id = inst.id.clone();
     let r = async {
@@ -1405,11 +1462,21 @@ mod tests {
                 &[
                     mr_file("mods/a.jar", "a1", "required"),
                     mr_file("mods/extra.jar", "e1", "optional"),
+                    mr_file("mods/server-only.jar", "s1", "unsupported"),
+                    mr_file("resourcepacks/r.zip", "r1", "required"),
                 ],
             ),
-            &[],
+            &[("config/a.toml", "12345")],
         );
         let pv = preview_mrpack(&p).unwrap();
+        // Моды для клиента (серверный не в счёт); размер: 3 файла по 1 байту + 5 байт overrides.
+        assert_eq!(pv.mods, ["a", "extra"]);
+        assert_eq!(pv.size, 3 + 5);
+        assert_eq!(pv.memory_mb, 4096);
+        assert_eq!(
+            (suggested_memory_mb(100), suggested_memory_mb(300)),
+            (6144, 8192)
+        );
         assert_eq!(
             (pv.name.as_str(), pv.version.as_str(), pv.game.as_str()),
             ("Пак", "1.0", "26.3")

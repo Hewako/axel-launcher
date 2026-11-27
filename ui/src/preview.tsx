@@ -182,6 +182,9 @@ mockIPC((cmd, args) => {
     ], notes: ["Sodium уже стоит"] };
     case "mods_check_updates": return { changes: [{ kind: "update", title: "Sodium", old_version: "0.8.12", new_version: "0.8.14", reason: "новая версия", size: 1914874, version: { changelog: "## 0.8.14\n- **Исправлен** вылет вместе с Iris\n- Чанки грузятся быстрее\n\nПодробнее: [заметки](https://modrinth.com)" } }], notes: ["Моды, которых нет на Modrinth, проверить на обновления нельзя"] };
     case "catalog_installed": return [{ project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "", client_side: "required", categories: [] }];
+    case "pack_download": return { path: "/tmp/fo.mrpack", version_id: "v1", version_number: "6.4.0" };
+    case "mrpack_preview": return { name: "Fabulously Optimized", version: "6.4.0", game: "1.21.4", loader: "Fabric 0.16.10", optional: ["mods/zoomify.jar"], mods: ["Sodium", "Iris", "Lithium", "FerriteCore", "ImmediatelyFast", "Zoomify", "Mod Menu", "Entity Culling"], size: 41_000_000, free: 28_000_000_000, memory_mb: 4096, memory_set: 4096 };
+    case "catalog_gallery": return ["/logo.png"];
     case "modpack_search": return { hits: [{ project_id: "1KVo5zza", slug: "fabulously-optimized", title: "Fabulously Optimized", description: "Простая сборка для быстрой и красивой игры", downloads: 12000000, author: "robotkoer", client_side: "required", categories: [] }], total_hits: 1 };
     case "catalog_search": return { hits: [
       { project_id: "AANobbMI", slug: "sodium", title: "Sodium", description: "Современный движок отрисовки, заметно поднимает FPS", downloads: 250585660, author: "jellysquid3", client_side: "required", categories: [] },

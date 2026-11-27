@@ -2,7 +2,7 @@
 // Исходные файлы только читаются.
 import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
-import { api, errText, importer, type ImportResult, type Instance, type LoaderKind, type SearchHit } from "../api";
+import { api, errText, importer, sizeText, type ImportResult, type Instance, type LoaderKind, type PackPreview, type SearchHit } from "../api";
 import { Modal } from "../ui/Dialog";
 import { Icon } from "../ui/icons";
 import { t, tc } from "../i18n";
@@ -21,7 +21,8 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
   const [error, setError] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
   const [link, setLink] = useState<{ path: string; name: string; version: string; loader: LoaderKind } | null>(null);
-  const [optional, setOptional] = useState<{ path: string; files: string[]; off: string[]; projectId?: string; versionId?: string } | null>(null);
+  // Предпросмотр модпака до установки (идея 37): картинки, моды, размер, память, необязательное.
+  const [optional, setOptional] = useState<{ path: string; preview: PackPreview; off: string[]; projectId?: string; versionId?: string; title?: string; gallery?: string[] } | null>(null);
   const [packQuery, setPackQuery] = useState("");
   const [packs, setPacks] = useState<SearchHit[]>([]);
   useEffect(() => {
@@ -35,9 +36,9 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
     setError("");
     try {
       const v = await importer.download(h.project_id);
-      const files = (await importer.preview(v.path!)).optional;
-      if (files.length) setOptional({ path: v.path!, files, off: [], projectId: h.project_id, versionId: v.version_id });
-      else setResult(await importer.path(v.path!, [], h.project_id, v.version_id));
+      const preview = await importer.preview(v.path!);
+      setOptional({ path: v.path!, preview, off: [], projectId: h.project_id, versionId: v.version_id, title: h.title });
+      importer.gallery(h.project_id).then((gallery) => setOptional((o) => (o && o.projectId === h.project_id ? { ...o, gallery } : o))).catch(() => {});
     } catch (e) { setError(errText(e)); } finally { setBusy(""); }
   };
 
@@ -50,10 +51,10 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
     setError("");
     try { setResult(await f()); } catch (e) { setError(errText(e)); } finally { setBusy(""); }
   };
-  /** Опциональные компоненты сборки — выбор игрока перед импортом. */
+  /** .mrpack — сначала предпросмотр; zip CurseForge — сразу импорт. */
   const importFile = async (path: string) => {
-    const files = path.endsWith(".mrpack") ? await importer.preview(path).then((p) => p.optional).catch(() => []) : [];
-    if (files.length) setOptional({ path, files, off: [] });
+    const preview = path.endsWith(".mrpack") ? await importer.preview(path).catch(() => null) : null;
+    if (preview) setOptional({ path, preview, off: [] });
     else await run("file", () => importer.path(path));
   };
   const pickFile = async () => {
@@ -126,21 +127,46 @@ export function ImportDialog({ onDone, dragging, dropped, pack }: {
       </section>
       )}
 
-      {o && (
-        <Modal title={t("Дополнительные компоненты модпака")} onClose={() => setOptional(null)}>
-          <p className="small muted" style={{ marginTop: 0 }}>{t("Автор модпака сделал эти файлы необязательными. Снимите галочки с тех, что не нужны.")}</p>
-          {o.files.map((f) => (
-            <label key={f} className="row small">
-              <input type="checkbox" checked={!o.off.includes(f)} onChange={(e) => setOptional({ ...o, off: e.target.checked ? o.off.filter((x) => x !== f) : [...o.off, f] })} />
-              <span className="mono">{f.split("/").pop()}</span>
-            </label>
-          ))}
-          <div className="acts">
-            <button className="btn" onClick={() => setOptional(null)}>{t("Отмена")}</button>
-            <button className="btn pri" disabled={busy !== ""} onClick={async () => { setOptional(null); await run("file", () => importer.path(o.path, o.off, o.projectId, o.versionId)); }}>{t("Импортировать")}</button>
-          </div>
-        </Modal>
-      )}
+      {o && (() => {
+        const p = o.preview;
+        const short = p.free != null && p.free < p.size + 200 * 1024 * 1024;
+        return (
+          <Modal title={o.title ?? p.name} onClose={() => setOptional(null)} wide>
+            {o.gallery && o.gallery.length > 0 && (
+              <div className="packgallery" aria-label={t("Картинки модпака")}>
+                {o.gallery.map((u) => <img key={u} src={u} alt="" loading="lazy" />)}
+              </div>
+            )}
+            <dl className="kv packfacts">
+              <dt>{t("Версия")}</dt><dd>{[p.version, `Minecraft ${p.game}`, p.loader].filter(Boolean).join(", ")}</dd>
+              <dt>{t("Моды")}</dt><dd>{p.mods.length}</dd>
+              <dt>{t("Скачается")}</dt>
+              <dd className={short ? "err" : ""}>{sizeText(p.size)}{p.free != null ? `, ${t("свободно {0}", sizeText(p.free))}` : ""}{short ? ` · ${t("места не хватит")}` : ""}</dd>
+              <dt>{t("Память")}</dt><dd>{p.memory_set ? t("{0} ГБ, выставится сама", Math.round(p.memory_set / 512) / 2) : t("советуем {0} ГБ", p.memory_mb / 1024)}</dd>
+            </dl>
+            {p.mods.length > 0 && (
+              <details className="packmods">
+                <summary>{t("Список модов ({0})", p.mods.length)}</summary>
+                <ul>{p.mods.map((m) => <li key={m}>{m}</li>)}</ul>
+              </details>
+            )}
+            {p.optional.length > 0 && <>
+              <h3 className="subhead">{t("Необязательные компоненты")}</h3>
+              <p className="small muted" style={{ marginTop: 0 }}>{t("Автор модпака сделал эти файлы необязательными. Снимите галочки с тех, что не нужны.")}</p>
+              {p.optional.map((f) => (
+                <label key={f} className="row small">
+                  <input type="checkbox" checked={!o.off.includes(f)} onChange={(e) => setOptional({ ...o, off: e.target.checked ? o.off.filter((x) => x !== f) : [...o.off, f] })} />
+                  <span className="mono">{f.split("/").pop()}</span>
+                </label>
+              ))}
+            </>}
+            <div className="acts">
+              <button className="btn" onClick={() => setOptional(null)}>{t("Отмена")}</button>
+              <button className="btn pri" disabled={busy !== "" || short} onClick={async () => { setOptional(null); await run("file", () => importer.path(o.path, o.off, o.projectId, o.versionId)); }}>{t("Установить")}</button>
+            </div>
+          </Modal>
+        );
+      })()}
       {result && (
         <Modal title={t("Импорт завершён")} onClose={() => onDone(result.instance)}>
           <p style={{ margin: 0 }}>{t("Сборка «")}{result.instance.name}» — Minecraft {result.instance.game_version} · {result.instance.loader}.</p>

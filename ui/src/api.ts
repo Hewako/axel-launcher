@@ -418,6 +418,7 @@ export const snapshots = {
   restoreWorld: (id: string, file: string) => invoke<string>("world_restore", { id, file }),
 };
 
+export interface PackPreview { name: string; version: string; game: string; loader: string; optional: string[]; mods: string[]; size: number; free?: number | null; memory_mb: number; memory_set?: number | null }
 export const importer = {
   sources: () => invoke<{ prism: [string, string][]; official?: string }>("import_sources"),
   path: (path: string, skipOptional: string[] = [], projectId?: string, versionId?: string) =>
@@ -427,7 +428,8 @@ export const importer = {
     invoke<PackVersion>("pack_download", { projectId, versionId: versionId ?? null, channel: channel ?? null }),
   check: (id: string) => invoke<PackVersion | null>("pack_check", { id }),
   settings: (id: string, channel: Channel, pinned: boolean) => invoke<Instance>("pack_settings", { id, channel, pinned }),
-  preview: (path: string) => invoke<{ name: string; version: string; game: string; loader: string; optional: string[] }>("mrpack_preview", { path }),
+  preview: (path: string) => invoke<PackPreview>("mrpack_preview", { path }),
+  gallery: (projectId: string) => invoke<string[]>("catalog_gallery", { projectId }),
   updatePlan: (id: string, path: string) => invoke<PackUpdatePlan>("pack_update_plan", { id, path }),
   exportMrpack: (id: string, path: string, name: string, version: string) =>
     invoke<{ linked: number; bundled: string[]; report_path: string }>("export_mrpack", { id, path, name, version }),
@@ -436,4 +438,7 @@ export const importer = {
   link: (path: string, name: string, gameVersion: string, loader: LoaderKind) => invoke<ImportResult>("link_minecraft", { path, name, gameVersion, loader }),
 };
 
-export const sizeText = (b: number) => (b > 1_048_576 ? t("{0} МБ", mb(b)) : t("{0} КБ", Math.max(1, Math.round(b / 1024))));
+export const sizeText = (b: number) =>
+  b >= 10 * 1_073_741_824 ? t("{0} ГБ", Math.round(b / 1_073_741_824))
+  : b >= 1_073_741_824 ? t("{0} ГБ", (b / 1_073_741_824).toFixed(1).replace(".", ","))
+  : b > 1_048_576 ? t("{0} МБ", mb(b)) : t("{0} КБ", Math.max(1, Math.round(b / 1024)));
